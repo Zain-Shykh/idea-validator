@@ -23,6 +23,7 @@ from dataset import (
     DataError,
     Item,
     append_check,
+    clean,
     example_id,
     grounded_label,
     guard_output,
@@ -36,11 +37,6 @@ from dataset import (
 Ask = Callable[[str], str]
 
 _HELP = "[a]ccept  [f]ix  [r]eject (bad row, never used)  [s]kip  [q]uit > "
-
-
-def clean(text: str) -> str:
-    """Evidence is outside text: no terminal escape or hidden character is printed."""
-    return "".join(c for c in text if c == "\n" or c.isprintable())
 
 
 def load_dataset(folder: Path) -> tuple[dict[str, FineTuneExample], dict[str, Item]]:

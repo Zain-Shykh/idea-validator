@@ -164,7 +164,7 @@ nothing about training or model quality.
 | 3 | Terminal review | `review.py`, tests | same | [x] |
 | 4 | Split with leakage assertions | `split.py`, tests incl. committed-data test | same | [x] |
 | 5 | Training config and notebook | `train_config.yaml`, `train.ipynb`, stub-library test | same | [x] |
-| 6 | Comparison | `evaluate.py`, tests, pipeline test | same | [ ] |
+| 6 | Comparison | `evaluate.py`, tests, pipeline test | same | [x] |
 | 7 | Export and packaging: GGUF steps, model image `v1`, scorer component, weights check | `export_gguf.md`, `model-image/README.md`, `k8s-lora/`, tests | `kubectl kustomize`, `kubeconform`, docker build with a stand-in | [ ] |
 | 8 | README, setup, `data/README.md` | docs | read-through | [ ] |
 | 9 | Testing subagent, fixes | tests | full suite, ruff, mypy | [ ] |

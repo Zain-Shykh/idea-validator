@@ -111,6 +111,11 @@ class Check(ContractModel):
     label: ScorerOutput | None
 
 
+def clean(text: str) -> str:
+    """Outside text is shown or quoted without terminal escapes or hidden characters."""
+    return "".join(c for c in text if c == "\n" or c.isprintable())
+
+
 def item_id(system: str, user: str) -> str:
     return hashlib.sha256(f"{system}\x00{user}".encode()).hexdigest()[:16]
 
