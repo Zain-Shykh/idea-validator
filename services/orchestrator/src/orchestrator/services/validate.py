@@ -71,6 +71,7 @@ from common.contracts.verdict import (
     WhatIfResponse,
 )
 from common.http import ServiceError
+from common.idea_text import CLARIFICATIONS, append, shorten
 from common.injection import scan_text
 from orchestrator.services import budget
 from orchestrator.services.downstream import CHECK_TIMEOUT_S, PEERS
@@ -211,7 +212,7 @@ async def intake(r: RunContext) -> Step | None:
                 "INPUT_REJECTED", "the idea was refused by the input check",
                 {"reasons": reply.reasons},
             )  # fmt: skip
-        parts[name] = reply.redacted_text[: 200 if name == "title" else MAX_IDEA_CHARS]
+        parts[name] = shorten(reply.redacted_text, 200 if name == "title" else MAX_IDEA_CHARS)
     cp.safe_idea = IdeaInput.model_validate(parts)
 
     await r.spend_steps(1)
@@ -242,7 +243,7 @@ def _agent_idea(r: RunContext) -> IdeaInput:
 async def _search(r: RunContext) -> SearchResponse:
     idea = _agent_idea(r)
     request = SearchRequest(
-        query=f"{idea.title}\n{idea.text}"[:MAX_QUERY_CHARS], k=r.deps.settings.search_k
+        query=shorten(f"{idea.title}\n{idea.text}", MAX_QUERY_CHARS), k=r.deps.settings.search_k
     )
     key = None
     if r.cp.kb_version is not None and r.cp.deep_search != "done":
@@ -741,13 +742,9 @@ def affected_scorers(questions: list[CandidateQuestion]) -> set[str]:
 
 
 def with_clarifications(text: str, pairs: list[tuple[str, str]]) -> str:
-    """The idea text with the answers appended. The answers get at least half of the room
-    when the whole is too long, never more unless the idea is short, in equal shares."""
-    header = "\n\nClarifications:"
-    room = max(MAX_IDEA_CHARS - len(text), MAX_IDEA_CHARS // 2)
-    share = (room - len(header)) // len(pairs)
-    block = header + "".join(f"\n- {q[:MAX_QUESTION_CHARS]}\n  {a}"[:share] for q, a in pairs)
-    return text[: MAX_IDEA_CHARS - len(block)] + block
+    """The idea text with the answers appended (``common.idea_text``)."""
+    entries = [f"{q[:MAX_QUESTION_CHARS]}\n  {a}" for q, a in pairs]
+    return append(text, CLARIFICATIONS, entries, MAX_IDEA_CHARS)
 
 
 # --- CHALLENGE ---------------------------------------------------------------------------------

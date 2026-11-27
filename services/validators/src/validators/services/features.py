@@ -9,30 +9,30 @@ from itertools import zip_longest
 
 from common.contracts.analyst import Gap, Niche
 from common.contracts.core import BlockerType, Compute, EvidenceItem, IdeaCard, StudentProfile
-
-COMPLAINT_TAG = "complaint"
-_KIND_TAGS = frozenset({COMPLAINT_TAG, "product"})
-_STOP = frozenset(
-    {"a", "an", "and", "are", "as", "at", "be", "before", "by", "for", "from", "in", "into"}
-    | {"is", "it", "of", "on", "or", "that", "the", "their", "to", "with", "who"}
+from common.idea_rules import (
+    COMPLAINT_TAG,
+    EFFORT_BANDS,
+    available_hours,
+    effort_band,
+    is_complaint,
+    same_customer,
+    words,
 )
+from common.idea_rules import search as _search
 
+# the rules M3's Discover filters share live in common.idea_rules
+__all__ = [
+    "EFFORT_BANDS",
+    "available_hours",
+    "effort_band",
+    "is_complaint",
+    "same_customer",
+    "words",
+]
 
-def words(text: str) -> set[str]:
-    """Lower-case words without stop words and plural ``s``."""
-    found = re.findall(r"[a-z0-9]+", text.lower())
-    return {w[:-1] if len(w) > 3 and w.endswith("s") else w for w in found if w not in _STOP}
-
-
-def _search(pattern: str, text: str) -> re.Match[str] | None:
-    return re.search(rf"\b(?:{pattern})\b", text, re.IGNORECASE)
-
+_KIND_TAGS = frozenset({COMPLAINT_TAG, "product"})
 
 # --- evidence ----------------------------------------------------------------------------------
-
-
-def is_complaint(card: IdeaCard) -> bool:
-    return COMPLAINT_TAG in card.niche_tags
 
 
 def count_sources(items: Iterable[EvidenceItem]) -> tuple[int, int]:
@@ -84,11 +84,6 @@ def gap_coverage(gaps: Sequence[Gap], product_texts: Sequence[str]) -> float | N
     return round(unaddressed / len(gaps), 3)
 
 
-def same_customer(customer: str, idea_text: str) -> bool:
-    wanted = words(customer)
-    return bool(wanted) and wanted <= words(idea_text)
-
-
 # --- feasibility and learning ------------------------------------------------------------------
 
 # ponytail: keyword tables, tuned on the labelled set in Z10
@@ -112,36 +107,12 @@ _SKILLS = {
 _SKILL_ALIASES = {"js": "javascript", "ts": "typescript", "ml": "machine learning",
                   "sql": "databases", "reactjs": "react", "web": "web development"}  # fmt: skip
 
-# each match makes the build bigger; the count picks the band the model's estimate is clamped to
-_SCOPE = (
-    "mobile app|android|ios app",
-    "real[- ]time|live (?:chat|sync|collaboration)|multiplayer",
-    "machine learning|ml model|classifier|recommendation",
-    "fine[- ]?tun\\w*|train\\w* (?:a |our |the )?(?:\\w+ )?model",
-    "computer vision|image recognition|ocr|video processing",
-    "hardware|sensors?|arduino|raspberry pi|iot|wearables?",
-    "payments?|checkout|billing",
-    "marketplace|social network",
-    "integrat\\w+ with|sync\\w* with",
-    "offline",
-)
-EFFORT_BANDS: tuple[tuple[int, int], ...] = ((40, 160), (100, 320), (200, 700))  # hours
-
 _HEAVY_COMPUTE = "from scratch|foundation model|train\\w* (?:a |our |an )?(?:llm|language model)"
 _GPU_COMPUTE = (
     "fine[- ]?tun\\w*|train\\w* (?:a |our |the )?(?:\\w+ )?model|computer vision|"
     "image recognition|video generation"
 )
 _COMPUTE_RANK = {Compute.LAPTOP: 0, Compute.FREE_GPU: 1, Compute.PAID: 2}
-
-
-def available_hours(profile: StudentProfile) -> int:
-    return profile.hours_per_week * profile.weeks_available * profile.team_size
-
-
-def effort_band(idea_text: str) -> tuple[int, int]:
-    scope = sum(bool(_search(pattern, idea_text)) for pattern in _SCOPE)
-    return EFFORT_BANDS[0 if scope <= 1 else 1 if scope <= 3 else 2]
 
 
 def clamp_effort(hours: float, band: tuple[int, int]) -> float:
