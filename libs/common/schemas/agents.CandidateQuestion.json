@@ -1,0 +1,81 @@
+{
+  "$defs": {
+    "Dimension": {
+      "description": "The six dimensions. Declaration order is the fixed iteration order of the engine.",
+      "enum": [
+        "demand_pain",
+        "competition",
+        "differentiation",
+        "feasibility",
+        "risk",
+        "learning"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    },
+    "PlausibleAnswer": {
+      "additionalProperties": false,
+      "properties": {
+        "answer": {
+          "minLength": 1,
+          "title": "Answer",
+          "type": "string"
+        },
+        "score_deltas": {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "propertyNames": {
+            "$ref": "#/$defs/Dimension"
+          },
+          "title": "Score Deltas",
+          "type": "object"
+        }
+      },
+      "required": [
+        "answer",
+        "score_deltas"
+      ],
+      "title": "PlausibleAnswer",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "affects": {
+      "items": {
+        "$ref": "#/$defs/Dimension"
+      },
+      "minItems": 1,
+      "title": "Affects",
+      "type": "array"
+    },
+    "answers": {
+      "items": {
+        "$ref": "#/$defs/PlausibleAnswer"
+      },
+      "maxItems": 2,
+      "minItems": 2,
+      "title": "Answers",
+      "type": "array"
+    },
+    "question_id": {
+      "minLength": 1,
+      "title": "Question Id",
+      "type": "string"
+    },
+    "text": {
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "question_id",
+    "text",
+    "affects",
+    "answers"
+  ],
+  "title": "CandidateQuestion",
+  "type": "object"
+}

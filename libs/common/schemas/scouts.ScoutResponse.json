@@ -1,0 +1,24 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "fetched": {
+      "minimum": 0,
+      "title": "Fetched",
+      "type": "integer"
+    },
+    "ingested_card_ids": {
+      "items": {
+        "pattern": "^card_[A-Za-z0-9]+$",
+        "type": "string"
+      },
+      "title": "Ingested Card Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "fetched",
+    "ingested_card_ids"
+  ],
+  "title": "ScoutResponse",
+  "type": "object"
+}

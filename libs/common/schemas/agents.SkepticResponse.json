@@ -1,0 +1,84 @@
+{
+  "$defs": {
+    "Dimension": {
+      "description": "The six dimensions. Declaration order is the fixed iteration order of the engine.",
+      "enum": [
+        "demand_pain",
+        "competition",
+        "differentiation",
+        "feasibility",
+        "risk",
+        "learning"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    },
+    "Objection": {
+      "additionalProperties": false,
+      "description": "A Skeptic objection. May be unsupported until the critic checks it.",
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/Dimension"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "fatal": {
+          "default": false,
+          "title": "Fatal",
+          "type": "boolean"
+        },
+        "idea_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Idea Id"
+        },
+        "objection_id": {
+          "minLength": 1,
+          "title": "Objection Id",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "objection_id",
+        "dimension",
+        "text",
+        "evidence_ids"
+      ],
+      "title": "Objection",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "objections": {
+      "items": {
+        "$ref": "#/$defs/Objection"
+      },
+      "title": "Objections",
+      "type": "array"
+    }
+  },
+  "required": [
+    "objections"
+  ],
+  "title": "SkepticResponse",
+  "type": "object"
+}

@@ -1,0 +1,14 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "title": "Status",
+      "type": "string"
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "title": "HealthStatus",
+  "type": "object"
+}

@@ -1,0 +1,90 @@
+{
+  "$defs": {
+    "Budget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_cost_usd": {
+          "minimum": 0,
+          "title": "Max Cost Usd",
+          "type": "number"
+        },
+        "max_pages": {
+          "minimum": 0,
+          "title": "Max Pages",
+          "type": "integer"
+        },
+        "max_steps": {
+          "minimum": 0,
+          "title": "Max Steps",
+          "type": "integer"
+        },
+        "max_tokens": {
+          "minimum": 0,
+          "title": "Max Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_tokens",
+        "max_cost_usd",
+        "max_pages",
+        "max_steps"
+      ],
+      "title": "Budget",
+      "type": "object"
+    },
+    "Workflow": {
+      "enum": [
+        "discover",
+        "validate"
+      ],
+      "title": "Workflow",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "budget": {
+      "$ref": "#/$defs/Budget"
+    },
+    "parent_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Run Id"
+    },
+    "profile_version": {
+      "minimum": 1,
+      "title": "Profile Version",
+      "type": "integer"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "user_id": {
+      "minLength": 1,
+      "title": "User Id",
+      "type": "string"
+    },
+    "workflow": {
+      "$ref": "#/$defs/Workflow"
+    }
+  },
+  "required": [
+    "run_id",
+    "user_id",
+    "workflow",
+    "profile_version",
+    "budget"
+  ],
+  "title": "RunCreate",
+  "type": "object"
+}

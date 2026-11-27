@@ -1,0 +1,33 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "max_cost_usd": {
+      "minimum": 0,
+      "title": "Max Cost Usd",
+      "type": "number"
+    },
+    "max_pages": {
+      "minimum": 0,
+      "title": "Max Pages",
+      "type": "integer"
+    },
+    "max_steps": {
+      "minimum": 0,
+      "title": "Max Steps",
+      "type": "integer"
+    },
+    "max_tokens": {
+      "minimum": 0,
+      "title": "Max Tokens",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "max_tokens",
+    "max_cost_usd",
+    "max_pages",
+    "max_steps"
+  ],
+  "title": "Budget",
+  "type": "object"
+}

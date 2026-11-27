@@ -1,0 +1,54 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "match_score": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Match Score"
+    },
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "niche_id": {
+      "minLength": 1,
+      "title": "Niche Id",
+      "type": "string"
+    },
+    "size": {
+      "minimum": 0,
+      "title": "Size",
+      "type": "integer"
+    },
+    "trend_label": {
+      "enum": [
+        "rising",
+        "flat",
+        "saturated"
+      ],
+      "title": "Trend Label",
+      "type": "string"
+    },
+    "trend_slope": {
+      "title": "Trend Slope",
+      "type": "number"
+    }
+  },
+  "required": [
+    "niche_id",
+    "name",
+    "size",
+    "trend_slope",
+    "trend_label"
+  ],
+  "title": "Niche",
+  "type": "object"
+}

@@ -1,0 +1,42 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "content": {
+      "title": "Content",
+      "type": "string"
+    },
+    "fetched_at": {
+      "format": "date-time",
+      "title": "Fetched At",
+      "type": "string"
+    },
+    "from_cache": {
+      "title": "From Cache",
+      "type": "boolean"
+    },
+    "injection_flags": {
+      "minimum": 0,
+      "title": "Injection Flags",
+      "type": "integer"
+    },
+    "sanitised": {
+      "const": true,
+      "title": "Sanitised",
+      "type": "boolean"
+    },
+    "status": {
+      "title": "Status",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "status",
+    "content",
+    "sanitised",
+    "injection_flags",
+    "from_cache",
+    "fetched_at"
+  ],
+  "title": "FetchResponse",
+  "type": "object"
+}

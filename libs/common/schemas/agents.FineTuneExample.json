@@ -1,0 +1,45 @@
+{
+  "$defs": {
+    "FineTuneMessage": {
+      "additionalProperties": false,
+      "properties": {
+        "content": {
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "system",
+            "user",
+            "assistant"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "role",
+        "content"
+      ],
+      "title": "FineTuneMessage",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "DATA-7: one JSON object per line.",
+  "properties": {
+    "messages": {
+      "items": {
+        "$ref": "#/$defs/FineTuneMessage"
+      },
+      "title": "Messages",
+      "type": "array"
+    }
+  },
+  "required": [
+    "messages"
+  ],
+  "title": "FineTuneExample",
+  "type": "object"
+}

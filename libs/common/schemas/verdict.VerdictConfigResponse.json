@@ -1,0 +1,68 @@
+{
+  "$defs": {
+    "Versions": {
+      "additionalProperties": false,
+      "description": "Versions recorded on every verdict (AO-3, architecture \u00a78.5).",
+      "properties": {
+        "engine": {
+          "minLength": 1,
+          "title": "Engine",
+          "type": "string"
+        },
+        "kb_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kb Version"
+        },
+        "profile_weights": {
+          "minLength": 1,
+          "title": "Profile Weights",
+          "type": "string"
+        },
+        "prompts": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Prompts",
+          "type": "object"
+        },
+        "rubrics": {
+          "minLength": 1,
+          "title": "Rubrics",
+          "type": "string"
+        }
+      },
+      "required": [
+        "engine",
+        "rubrics",
+        "profile_weights"
+      ],
+      "title": "Versions",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "config": {
+      "additionalProperties": true,
+      "title": "Config",
+      "type": "object"
+    },
+    "versions": {
+      "$ref": "#/$defs/Versions"
+    }
+  },
+  "required": [
+    "versions",
+    "config"
+  ],
+  "title": "VerdictConfigResponse",
+  "type": "object"
+}

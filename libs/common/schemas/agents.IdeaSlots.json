@@ -1,0 +1,32 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "core_features": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Core Features",
+      "type": "array"
+    },
+    "platform": {
+      "title": "Platform",
+      "type": "string"
+    },
+    "scope": {
+      "title": "Scope",
+      "type": "string"
+    },
+    "target_user": {
+      "title": "Target User",
+      "type": "string"
+    }
+  },
+  "required": [
+    "target_user",
+    "platform",
+    "core_features",
+    "scope"
+  ],
+  "title": "IdeaSlots",
+  "type": "object"
+}

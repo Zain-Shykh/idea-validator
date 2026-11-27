@@ -1,0 +1,146 @@
+{
+  "$defs": {
+    "AgentLatency": {
+      "additionalProperties": false,
+      "properties": {
+        "agent": {
+          "minLength": 1,
+          "title": "Agent",
+          "type": "string"
+        },
+        "avg_ms": {
+          "minimum": 0,
+          "title": "Avg Ms",
+          "type": "number"
+        },
+        "calls": {
+          "minimum": 0,
+          "title": "Calls",
+          "type": "integer"
+        },
+        "p95_ms": {
+          "minimum": 0,
+          "title": "P95 Ms",
+          "type": "number"
+        }
+      },
+      "required": [
+        "agent",
+        "calls",
+        "avg_ms",
+        "p95_ms"
+      ],
+      "title": "AgentLatency",
+      "type": "object"
+    },
+    "VerdictLabel": {
+      "enum": [
+        "GO",
+        "PIVOT",
+        "NO-GO",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictLabel",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Dashboard data (AO-6).",
+  "properties": {
+    "agent_latency": {
+      "items": {
+        "$ref": "#/$defs/AgentLatency"
+      },
+      "title": "Agent Latency",
+      "type": "array"
+    },
+    "approvals": {
+      "additionalProperties": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "propertyNames": {
+        "enum": [
+          "pending",
+          "approved",
+          "declined"
+        ]
+      },
+      "title": "Approvals",
+      "type": "object"
+    },
+    "blocked_injections": {
+      "minimum": 0,
+      "title": "Blocked Injections",
+      "type": "integer"
+    },
+    "budget_stops": {
+      "default": 0,
+      "minimum": 0,
+      "title": "Budget Stops",
+      "type": "integer"
+    },
+    "cache_hit_rate": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Cache Hit Rate",
+      "type": "number"
+    },
+    "cost_per_verdict_usd": {
+      "minimum": 0,
+      "title": "Cost Per Verdict Usd",
+      "type": "number"
+    },
+    "generated_at": {
+      "format": "date-time",
+      "title": "Generated At",
+      "type": "string"
+    },
+    "runs_total": {
+      "minimum": 0,
+      "title": "Runs Total",
+      "type": "integer"
+    },
+    "scorer_fallbacks": {
+      "minimum": 0,
+      "title": "Scorer Fallbacks",
+      "type": "integer"
+    },
+    "total_cost_usd": {
+      "minimum": 0,
+      "title": "Total Cost Usd",
+      "type": "number"
+    },
+    "verdict_counts": {
+      "additionalProperties": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/VerdictLabel"
+      },
+      "title": "Verdict Counts",
+      "type": "object"
+    },
+    "verdicts_total": {
+      "minimum": 0,
+      "title": "Verdicts Total",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "generated_at",
+    "runs_total",
+    "verdicts_total",
+    "verdict_counts",
+    "cost_per_verdict_usd",
+    "total_cost_usd",
+    "agent_latency",
+    "cache_hit_rate",
+    "scorer_fallbacks",
+    "approvals",
+    "blocked_injections"
+  ],
+  "title": "OpsSummary",
+  "type": "object"
+}

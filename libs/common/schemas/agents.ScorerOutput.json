@@ -1,0 +1,40 @@
+{
+  "additionalProperties": false,
+  "description": "The JSON a scoring model must produce (also the DATA-7 assistant message).",
+  "properties": {
+    "confidence": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Confidence",
+      "type": "number"
+    },
+    "evidence_ids": {
+      "items": {
+        "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "reason": {
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "score": {
+      "maximum": 5,
+      "minimum": 0,
+      "title": "Score",
+      "type": "number"
+    }
+  },
+  "required": [
+    "score",
+    "confidence",
+    "evidence_ids",
+    "reason"
+  ],
+  "title": "ScorerOutput",
+  "type": "object"
+}

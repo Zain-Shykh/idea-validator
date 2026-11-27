@@ -1,0 +1,36 @@
+{
+  "$defs": {
+    "GateResult": {
+      "enum": [
+        "pass",
+        "fail",
+        "not_checked"
+      ],
+      "title": "GateResult",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "duplicate": {
+      "$ref": "#/$defs/GateResult"
+    },
+    "evidence": {
+      "$ref": "#/$defs/GateResult"
+    },
+    "feasibility": {
+      "$ref": "#/$defs/GateResult"
+    },
+    "risk": {
+      "$ref": "#/$defs/GateResult"
+    }
+  },
+  "required": [
+    "evidence",
+    "feasibility",
+    "risk",
+    "duplicate"
+  ],
+  "title": "Gates",
+  "type": "object"
+}

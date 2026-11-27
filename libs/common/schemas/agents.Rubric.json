@@ -1,0 +1,93 @@
+{
+  "$defs": {
+    "Dimension": {
+      "description": "The six dimensions. Declaration order is the fixed iteration order of the engine.",
+      "enum": [
+        "demand_pain",
+        "competition",
+        "differentiation",
+        "feasibility",
+        "risk",
+        "learning"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    },
+    "RubricExample": {
+      "additionalProperties": false,
+      "properties": {
+        "expected": {
+          "additionalProperties": true,
+          "title": "Expected",
+          "type": "object"
+        },
+        "input": {
+          "minLength": 1,
+          "title": "Input",
+          "type": "string"
+        }
+      },
+      "required": [
+        "input",
+        "expected"
+      ],
+      "title": "RubricExample",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "DATA-8: one versioned YAML file per dimension.",
+  "properties": {
+    "anchors": {
+      "additionalProperties": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "title": "Anchors",
+      "type": "object"
+    },
+    "dimension": {
+      "$ref": "#/$defs/Dimension"
+    },
+    "examples": {
+      "items": {
+        "$ref": "#/$defs/RubricExample"
+      },
+      "minItems": 1,
+      "title": "Examples",
+      "type": "array"
+    },
+    "features": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Features",
+      "type": "array"
+    },
+    "output_schema": {
+      "title": "Output Schema",
+      "type": "string"
+    },
+    "scale": {
+      "minLength": 1,
+      "title": "Scale",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "dimension",
+    "version",
+    "scale",
+    "anchors",
+    "features",
+    "output_schema",
+    "examples"
+  ],
+  "title": "Rubric",
+  "type": "object"
+}

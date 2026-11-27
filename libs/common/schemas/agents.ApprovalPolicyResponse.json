@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "reason": {
+      "title": "Reason",
+      "type": "string"
+    },
+    "requires_approval": {
+      "title": "Requires Approval",
+      "type": "boolean"
+    }
+  },
+  "required": [
+    "requires_approval",
+    "reason"
+  ],
+  "title": "ApprovalPolicyResponse",
+  "type": "object"
+}

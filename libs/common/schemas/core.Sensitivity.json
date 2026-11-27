@@ -1,0 +1,21 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "flipped": {
+      "minimum": 0,
+      "title": "Flipped",
+      "type": "integer"
+    },
+    "runs": {
+      "minimum": 0,
+      "title": "Runs",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "runs",
+    "flipped"
+  ],
+  "title": "Sensitivity",
+  "type": "object"
+}

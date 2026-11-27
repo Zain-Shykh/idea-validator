@@ -1,0 +1,21 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "claim_id": {
+      "minLength": 1,
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version",
+    "claim_id"
+  ],
+  "title": "ChallengeRequest",
+  "type": "object"
+}

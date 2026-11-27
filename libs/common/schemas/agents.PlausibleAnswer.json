@@ -1,0 +1,41 @@
+{
+  "$defs": {
+    "Dimension": {
+      "description": "The six dimensions. Declaration order is the fixed iteration order of the engine.",
+      "enum": [
+        "demand_pain",
+        "competition",
+        "differentiation",
+        "feasibility",
+        "risk",
+        "learning"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "answer": {
+      "minLength": 1,
+      "title": "Answer",
+      "type": "string"
+    },
+    "score_deltas": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/Dimension"
+      },
+      "title": "Score Deltas",
+      "type": "object"
+    }
+  },
+  "required": [
+    "answer",
+    "score_deltas"
+  ],
+  "title": "PlausibleAnswer",
+  "type": "object"
+}

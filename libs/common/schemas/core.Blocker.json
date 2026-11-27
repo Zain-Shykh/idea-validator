@@ -1,0 +1,39 @@
+{
+  "$defs": {
+    "BlockerType": {
+      "enum": [
+        "legal",
+        "safety"
+      ],
+      "title": "BlockerType",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "description": {
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "evidence_ids": {
+      "items": {
+        "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Evidence Ids",
+      "type": "array"
+    },
+    "type": {
+      "$ref": "#/$defs/BlockerType"
+    }
+  },
+  "required": [
+    "type",
+    "description",
+    "evidence_ids"
+  ],
+  "title": "Blocker",
+  "type": "object"
+}

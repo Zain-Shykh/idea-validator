@@ -1,0 +1,93 @@
+{
+  "$defs": {
+    "ApprovalRequest": {
+      "additionalProperties": false,
+      "description": "What the student is asked to approve, with its stated cost (U4).",
+      "properties": {
+        "action": {
+          "minLength": 1,
+          "title": "Action",
+          "type": "string"
+        },
+        "approval_id": {
+          "minLength": 1,
+          "title": "Approval Id",
+          "type": "string"
+        },
+        "estimated_cost_usd": {
+          "minimum": 0,
+          "title": "Estimated Cost Usd",
+          "type": "number"
+        },
+        "estimated_pages": {
+          "minimum": 0,
+          "title": "Estimated Pages",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "approval_id",
+        "action",
+        "estimated_cost_usd",
+        "estimated_pages"
+      ],
+      "title": "ApprovalRequest",
+      "type": "object"
+    },
+    "ClarifyQuestion": {
+      "additionalProperties": false,
+      "properties": {
+        "question_id": {
+          "minLength": 1,
+          "title": "Question Id",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "question_id",
+        "text"
+      ],
+      "title": "ClarifyQuestion",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "approval": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/ApprovalRequest"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "kind": {
+      "enum": [
+        "question",
+        "approval"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "questions": {
+      "items": {
+        "$ref": "#/$defs/ClarifyQuestion"
+      },
+      "title": "Questions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "kind"
+  ],
+  "title": "PendingInput",
+  "type": "object"
+}

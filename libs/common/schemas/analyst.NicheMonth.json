@@ -1,0 +1,27 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "launches": {
+      "minimum": 0,
+      "title": "Launches",
+      "type": "integer"
+    },
+    "mentions": {
+      "minimum": 0,
+      "title": "Mentions",
+      "type": "integer"
+    },
+    "month": {
+      "pattern": "^\\d{4}-\\d{2}$",
+      "title": "Month",
+      "type": "string"
+    }
+  },
+  "required": [
+    "month",
+    "launches",
+    "mentions"
+  ],
+  "title": "NicheMonth",
+  "type": "object"
+}

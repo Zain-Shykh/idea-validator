@@ -1,0 +1,54 @@
+{
+  "additionalProperties": false,
+  "description": "DATA-3. ``evidence_id`` is ``<card_id>#c<n>``.",
+  "properties": {
+    "card_id": {
+      "pattern": "^card_[A-Za-z0-9]+$",
+      "title": "Card Id",
+      "type": "string"
+    },
+    "evidence_id": {
+      "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+      "title": "Evidence Id",
+      "type": "string"
+    },
+    "quote": {
+      "minLength": 1,
+      "title": "Quote",
+      "type": "string"
+    },
+    "retrieved_at": {
+      "anyOf": [
+        {
+          "format": "date",
+          "type": "string"
+        },
+        {
+          "format": "date-time",
+          "type": "string"
+        }
+      ],
+      "title": "Retrieved At"
+    },
+    "source": {
+      "minLength": 1,
+      "title": "Source",
+      "type": "string"
+    },
+    "url": {
+      "minLength": 1,
+      "title": "Url",
+      "type": "string"
+    }
+  },
+  "required": [
+    "evidence_id",
+    "card_id",
+    "quote",
+    "source",
+    "url",
+    "retrieved_at"
+  ],
+  "title": "EvidenceItem",
+  "type": "object"
+}

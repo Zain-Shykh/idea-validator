@@ -1,0 +1,25 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "content": {
+      "minLength": 1,
+      "title": "Content",
+      "type": "string"
+    },
+    "role": {
+      "enum": [
+        "system",
+        "user",
+        "assistant"
+      ],
+      "title": "Role",
+      "type": "string"
+    }
+  },
+  "required": [
+    "role",
+    "content"
+  ],
+  "title": "FineTuneMessage",
+  "type": "object"
+}

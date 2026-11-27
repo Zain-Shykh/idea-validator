@@ -1,0 +1,41 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "page_budget": {
+      "minimum": 1,
+      "title": "Page Budget",
+      "type": "integer"
+    },
+    "queries": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Queries",
+      "type": "array"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "sources": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Sources",
+      "type": "array"
+    }
+  },
+  "required": [
+    "queries",
+    "sources",
+    "page_budget",
+    "run_id"
+  ],
+  "title": "ScoutRequest",
+  "type": "object"
+}

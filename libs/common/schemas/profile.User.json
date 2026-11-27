@@ -1,0 +1,21 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "email": {
+      "minLength": 1,
+      "title": "Email",
+      "type": "string"
+    },
+    "user_id": {
+      "minLength": 1,
+      "title": "User Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id",
+    "email"
+  ],
+  "title": "User",
+  "type": "object"
+}

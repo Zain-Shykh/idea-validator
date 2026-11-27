@@ -1,0 +1,28 @@
+{
+  "additionalProperties": false,
+  "description": "Without ``apply``: list proposals. With ``apply``: create the next idea version.",
+  "properties": {
+    "apply": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Apply"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "version"
+  ],
+  "title": "WhatIfRunRequest",
+  "type": "object"
+}

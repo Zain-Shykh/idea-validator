@@ -1,0 +1,30 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "T_go": {
+      "maximum": 100,
+      "minimum": 0,
+      "title": "T Go",
+      "type": "number"
+    },
+    "T_no": {
+      "maximum": 100,
+      "minimum": 0,
+      "title": "T No",
+      "type": "number"
+    },
+    "floor": {
+      "maximum": 5,
+      "minimum": 0,
+      "title": "Floor",
+      "type": "number"
+    }
+  },
+  "required": [
+    "T_go",
+    "T_no",
+    "floor"
+  ],
+  "title": "Thresholds",
+  "type": "object"
+}

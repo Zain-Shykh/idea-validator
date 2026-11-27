@@ -1,0 +1,51 @@
+{
+  "$defs": {
+    "ConcreteChange": {
+      "additionalProperties": false,
+      "properties": {
+        "change": {
+          "minLength": 1,
+          "title": "Change",
+          "type": "string"
+        },
+        "dimension": {
+          "$ref": "#/$defs/Dimension"
+        }
+      },
+      "required": [
+        "dimension",
+        "change"
+      ],
+      "title": "ConcreteChange",
+      "type": "object"
+    },
+    "Dimension": {
+      "description": "The six dimensions. Declaration order is the fixed iteration order of the engine.",
+      "enum": [
+        "demand_pain",
+        "competition",
+        "differentiation",
+        "feasibility",
+        "risk",
+        "learning"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "changes": {
+      "items": {
+        "$ref": "#/$defs/ConcreteChange"
+      },
+      "title": "Changes",
+      "type": "array"
+    }
+  },
+  "required": [
+    "changes"
+  ],
+  "title": "ConcretizeResponse",
+  "type": "object"
+}

@@ -1,0 +1,104 @@
+{
+  "$defs": {
+    "RunState": {
+      "description": "Run lifecycle (architecture \u00a76.1).",
+      "enum": [
+        "QUEUED",
+        "RUNNING",
+        "AWAITING_INPUT",
+        "AWAITING_APPROVAL",
+        "COMPLETED",
+        "FAILED",
+        "BUDGET_STOPPED",
+        "CANCELLED"
+      ],
+      "title": "RunState",
+      "type": "string"
+    },
+    "Spend": {
+      "additionalProperties": false,
+      "properties": {
+        "cost_usd": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Cost Usd",
+          "type": "number"
+        },
+        "pages": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Pages",
+          "type": "integer"
+        },
+        "steps": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Steps",
+          "type": "integer"
+        },
+        "tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Tokens",
+          "type": "integer"
+        }
+      },
+      "title": "Spend",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "``state`` is M3's checkpoint (architecture \u00a76.1).",
+  "properties": {
+    "result": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Result"
+    },
+    "spend": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/Spend"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "state": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "State"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/RunState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    }
+  },
+  "title": "RunUpdate",
+  "type": "object"
+}

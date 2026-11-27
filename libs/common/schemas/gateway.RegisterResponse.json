@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "user_id": {
+      "minLength": 1,
+      "title": "User Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id"
+  ],
+  "title": "RegisterResponse",
+  "type": "object"
+}

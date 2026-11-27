@@ -1,0 +1,258 @@
+{
+  "$defs": {
+    "Blocker": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/BlockerType"
+        }
+      },
+      "required": [
+        "type",
+        "description",
+        "evidence_ids"
+      ],
+      "title": "Blocker",
+      "type": "object"
+    },
+    "BlockerType": {
+      "enum": [
+        "legal",
+        "safety"
+      ],
+      "title": "BlockerType",
+      "type": "string"
+    },
+    "Dimension": {
+      "description": "The six dimensions. Declaration order is the fixed iteration order of the engine.",
+      "enum": [
+        "demand_pain",
+        "competition",
+        "differentiation",
+        "feasibility",
+        "risk",
+        "learning"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    },
+    "DimensionScore": {
+      "additionalProperties": false,
+      "description": "DATA-4. ``score`` is null when the scorer abstains (M9-4).",
+      "properties": {
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "dimension": {
+          "$ref": "#/$defs/Dimension"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "features": {
+          "additionalProperties": true,
+          "title": "Features",
+          "type": "object"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "rubric_version": {
+          "pattern": "^[a-z_]+@v\\d+$",
+          "title": "Rubric Version",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Score"
+        }
+      },
+      "required": [
+        "dimension",
+        "score",
+        "confidence",
+        "evidence_ids",
+        "reason",
+        "rubric_version",
+        "model"
+      ],
+      "title": "DimensionScore",
+      "type": "object"
+    },
+    "DuplicateCandidate": {
+      "additionalProperties": false,
+      "description": "An existing product, always a knowledge-base card (AVOID-4).",
+      "properties": {
+        "card_id": {
+          "pattern": "^card_[A-Za-z0-9]+$",
+          "title": "Card Id",
+          "type": "string"
+        },
+        "product_name": {
+          "minLength": 1,
+          "title": "Product Name",
+          "type": "string"
+        },
+        "same_core_features": {
+          "title": "Same Core Features",
+          "type": "boolean"
+        },
+        "same_user": {
+          "title": "Same User",
+          "type": "boolean"
+        },
+        "similarity": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Similarity",
+          "type": "number"
+        }
+      },
+      "required": [
+        "card_id",
+        "product_name",
+        "same_core_features",
+        "same_user",
+        "similarity"
+      ],
+      "title": "DuplicateCandidate",
+      "type": "object"
+    },
+    "PartialGateInputs": {
+      "additionalProperties": false,
+      "description": "Each scorer fills only its own fields; M3 merges them into ``GateInputs``.",
+      "properties": {
+        "available_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Available Hours"
+        },
+        "blockers": {
+          "items": {
+            "$ref": "#/$defs/Blocker"
+          },
+          "title": "Blockers",
+          "type": "array"
+        },
+        "duplicate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DuplicateCandidate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "est_effort_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Est Effort Hours"
+        },
+        "n_platforms": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "N Platforms"
+        },
+        "n_sources": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "N Sources"
+        }
+      },
+      "title": "PartialGateInputs",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "gate_inputs": {
+      "$ref": "#/$defs/PartialGateInputs"
+    },
+    "scores": {
+      "items": {
+        "$ref": "#/$defs/DimensionScore"
+      },
+      "maxItems": 2,
+      "minItems": 1,
+      "title": "Scores",
+      "type": "array"
+    }
+  },
+  "required": [
+    "scores"
+  ],
+  "title": "ScorerResponse",
+  "type": "object"
+}

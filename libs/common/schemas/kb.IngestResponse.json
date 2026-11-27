@@ -1,0 +1,35 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "added": {
+      "minimum": 0,
+      "title": "Added",
+      "type": "integer"
+    },
+    "card_ids": {
+      "items": {
+        "pattern": "^card_[A-Za-z0-9]+$",
+        "type": "string"
+      },
+      "title": "Card Ids",
+      "type": "array"
+    },
+    "dropped": {
+      "minimum": 0,
+      "title": "Dropped",
+      "type": "integer"
+    },
+    "duplicates": {
+      "minimum": 0,
+      "title": "Duplicates",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "added",
+    "duplicates",
+    "dropped"
+  ],
+  "title": "IngestResponse",
+  "type": "object"
+}

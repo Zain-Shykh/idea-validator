@@ -1,0 +1,481 @@
+{
+  "$defs": {
+    "Blocker": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/BlockerType"
+        }
+      },
+      "required": [
+        "type",
+        "description",
+        "evidence_ids"
+      ],
+      "title": "Blocker",
+      "type": "object"
+    },
+    "BlockerType": {
+      "enum": [
+        "legal",
+        "safety"
+      ],
+      "title": "BlockerType",
+      "type": "string"
+    },
+    "Compute": {
+      "enum": [
+        "laptop",
+        "free_gpu",
+        "paid"
+      ],
+      "title": "Compute",
+      "type": "string"
+    },
+    "Dimension": {
+      "description": "The six dimensions. Declaration order is the fixed iteration order of the engine.",
+      "enum": [
+        "demand_pain",
+        "competition",
+        "differentiation",
+        "feasibility",
+        "risk",
+        "learning"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    },
+    "DimensionScore": {
+      "additionalProperties": false,
+      "description": "DATA-4. ``score`` is null when the scorer abstains (M9-4).",
+      "properties": {
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "dimension": {
+          "$ref": "#/$defs/Dimension"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "features": {
+          "additionalProperties": true,
+          "title": "Features",
+          "type": "object"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "rubric_version": {
+          "pattern": "^[a-z_]+@v\\d+$",
+          "title": "Rubric Version",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Score"
+        }
+      },
+      "required": [
+        "dimension",
+        "score",
+        "confidence",
+        "evidence_ids",
+        "reason",
+        "rubric_version",
+        "model"
+      ],
+      "title": "DimensionScore",
+      "type": "object"
+    },
+    "DuplicateCandidate": {
+      "additionalProperties": false,
+      "description": "An existing product, always a knowledge-base card (AVOID-4).",
+      "properties": {
+        "card_id": {
+          "pattern": "^card_[A-Za-z0-9]+$",
+          "title": "Card Id",
+          "type": "string"
+        },
+        "product_name": {
+          "minLength": 1,
+          "title": "Product Name",
+          "type": "string"
+        },
+        "same_core_features": {
+          "title": "Same Core Features",
+          "type": "boolean"
+        },
+        "same_user": {
+          "title": "Same User",
+          "type": "boolean"
+        },
+        "similarity": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Similarity",
+          "type": "number"
+        }
+      },
+      "required": [
+        "card_id",
+        "product_name",
+        "same_core_features",
+        "same_user",
+        "similarity"
+      ],
+      "title": "DuplicateCandidate",
+      "type": "object"
+    },
+    "GateInputs": {
+      "additionalProperties": false,
+      "properties": {
+        "available_hours": {
+          "minimum": 0,
+          "title": "Available Hours",
+          "type": "number"
+        },
+        "blockers": {
+          "items": {
+            "$ref": "#/$defs/Blocker"
+          },
+          "title": "Blockers",
+          "type": "array"
+        },
+        "duplicate": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/DuplicateCandidate"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "est_effort_hours": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Est Effort Hours"
+        },
+        "n_platforms": {
+          "minimum": 0,
+          "title": "N Platforms",
+          "type": "integer"
+        },
+        "n_sources": {
+          "minimum": 0,
+          "title": "N Sources",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "n_sources",
+        "n_platforms",
+        "est_effort_hours",
+        "available_hours"
+      ],
+      "title": "GateInputs",
+      "type": "object"
+    },
+    "Goal": {
+      "enum": [
+        "startup",
+        "portfolio",
+        "course_project"
+      ],
+      "title": "Goal",
+      "type": "string"
+    },
+    "Objection": {
+      "additionalProperties": false,
+      "description": "A Skeptic objection. May be unsupported until the critic checks it.",
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/Dimension"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "fatal": {
+          "default": false,
+          "title": "Fatal",
+          "type": "boolean"
+        },
+        "idea_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Idea Id"
+        },
+        "objection_id": {
+          "minLength": 1,
+          "title": "Objection Id",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "objection_id",
+        "dimension",
+        "text",
+        "evidence_ids"
+      ],
+      "title": "Objection",
+      "type": "object"
+    },
+    "ScoreChange": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/Dimension"
+        },
+        "to": {
+          "maximum": 5,
+          "minimum": 0,
+          "title": "To",
+          "type": "number"
+        }
+      },
+      "required": [
+        "dimension",
+        "to"
+      ],
+      "title": "ScoreChange",
+      "type": "object"
+    },
+    "StudentProfile": {
+      "additionalProperties": false,
+      "description": "DATA-2. ``version`` increases on every profile change and is part of cache keys.",
+      "properties": {
+        "compute": {
+          "$ref": "#/$defs/Compute"
+        },
+        "goal": {
+          "$ref": "#/$defs/Goal"
+        },
+        "hours_per_week": {
+          "maximum": 168,
+          "minimum": 0,
+          "title": "Hours Per Week",
+          "type": "integer"
+        },
+        "interests": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Interests",
+          "type": "array"
+        },
+        "skills": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Skills",
+          "type": "array"
+        },
+        "team_size": {
+          "minimum": 1,
+          "title": "Team Size",
+          "type": "integer"
+        },
+        "user_id": {
+          "minLength": 1,
+          "title": "User Id",
+          "type": "string"
+        },
+        "version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        },
+        "weeks_available": {
+          "minimum": 1,
+          "title": "Weeks Available",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "user_id",
+        "skills",
+        "hours_per_week",
+        "weeks_available",
+        "team_size",
+        "compute",
+        "goal",
+        "interests"
+      ],
+      "title": "StudentProfile",
+      "type": "object"
+    },
+    "VerdictRequest": {
+      "additionalProperties": false,
+      "description": "Input of M11. ``accepted_objections`` are those the critic found evidence-backed.",
+      "properties": {
+        "accepted_objections": {
+          "items": {
+            "$ref": "#/$defs/Objection"
+          },
+          "title": "Accepted Objections",
+          "type": "array"
+        },
+        "gate_inputs": {
+          "$ref": "#/$defs/GateInputs"
+        },
+        "goal": {
+          "$ref": "#/$defs/Goal"
+        },
+        "idea_id": {
+          "minLength": 1,
+          "title": "Idea Id",
+          "type": "string"
+        },
+        "kb_version": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Kb Version"
+        },
+        "profile": {
+          "$ref": "#/$defs/StudentProfile"
+        },
+        "prompt_versions": {
+          "additionalProperties": {
+            "type": "string"
+          },
+          "title": "Prompt Versions",
+          "type": "object"
+        },
+        "rubric_set": {
+          "minLength": 1,
+          "title": "Rubric Set",
+          "type": "string"
+        },
+        "run_id": {
+          "minLength": 1,
+          "title": "Run Id",
+          "type": "string"
+        },
+        "scores": {
+          "items": {
+            "$ref": "#/$defs/DimensionScore"
+          },
+          "title": "Scores",
+          "type": "array"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "idea_id",
+        "version",
+        "run_id",
+        "goal",
+        "profile",
+        "scores",
+        "gate_inputs",
+        "rubric_set"
+      ],
+      "title": "VerdictRequest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "``search`` looks for the smallest changes to GO; ``apply`` evaluates given changes.",
+  "properties": {
+    "changes": {
+      "items": {
+        "$ref": "#/$defs/ScoreChange"
+      },
+      "title": "Changes",
+      "type": "array"
+    },
+    "mode": {
+      "enum": [
+        "search",
+        "apply"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "request": {
+      "$ref": "#/$defs/VerdictRequest"
+    }
+  },
+  "required": [
+    "request",
+    "mode"
+  ],
+  "title": "WhatIfRequest",
+  "type": "object"
+}

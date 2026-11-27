@@ -1,0 +1,93 @@
+{
+  "$defs": {
+    "Dimension": {
+      "description": "The six dimensions. Declaration order is the fixed iteration order of the engine.",
+      "enum": [
+        "demand_pain",
+        "competition",
+        "differentiation",
+        "feasibility",
+        "risk",
+        "learning"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    },
+    "DimensionChange": {
+      "additionalProperties": false,
+      "properties": {
+        "dimension": {
+          "$ref": "#/$defs/Dimension"
+        },
+        "from_score": {
+          "maximum": 5,
+          "minimum": 0,
+          "title": "From Score",
+          "type": "number"
+        },
+        "to_score": {
+          "maximum": 5,
+          "minimum": 0,
+          "title": "To Score",
+          "type": "number"
+        }
+      },
+      "required": [
+        "dimension",
+        "from_score",
+        "to_score"
+      ],
+      "title": "DimensionChange",
+      "type": "object"
+    },
+    "IdeaInput": {
+      "additionalProperties": false,
+      "description": "The text of an idea, as given to agents.",
+      "properties": {
+        "text": {
+          "maxLength": 5000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "text"
+      ],
+      "title": "IdeaInput",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "changes": {
+      "items": {
+        "$ref": "#/$defs/DimensionChange"
+      },
+      "title": "Changes",
+      "type": "array"
+    },
+    "idea": {
+      "$ref": "#/$defs/IdeaInput"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "idea",
+    "changes"
+  ],
+  "title": "ConcretizeRequest",
+  "type": "object"
+}

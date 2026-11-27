@@ -1,0 +1,152 @@
+{
+  "$defs": {
+    "ComparedIdea": {
+      "additionalProperties": false,
+      "properties": {
+        "idea_id": {
+          "minLength": 1,
+          "title": "Idea Id",
+          "type": "string"
+        },
+        "overall_score": {
+          "anyOf": [
+            {
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Overall Score"
+        },
+        "scores": {
+          "items": {
+            "$ref": "#/$defs/DimensionScore"
+          },
+          "title": "Scores",
+          "type": "array"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        },
+        "verdict": {
+          "title": "Verdict",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 0,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "idea_id",
+        "title",
+        "verdict",
+        "overall_score",
+        "scores",
+        "version"
+      ],
+      "title": "ComparedIdea",
+      "type": "object"
+    },
+    "Dimension": {
+      "description": "The six dimensions. Declaration order is the fixed iteration order of the engine.",
+      "enum": [
+        "demand_pain",
+        "competition",
+        "differentiation",
+        "feasibility",
+        "risk",
+        "learning"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    },
+    "DimensionScore": {
+      "additionalProperties": false,
+      "description": "DATA-4. ``score`` is null when the scorer abstains (M9-4).",
+      "properties": {
+        "confidence": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Confidence",
+          "type": "number"
+        },
+        "dimension": {
+          "$ref": "#/$defs/Dimension"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "features": {
+          "additionalProperties": true,
+          "title": "Features",
+          "type": "object"
+        },
+        "model": {
+          "minLength": 1,
+          "title": "Model",
+          "type": "string"
+        },
+        "reason": {
+          "minLength": 1,
+          "title": "Reason",
+          "type": "string"
+        },
+        "rubric_version": {
+          "pattern": "^[a-z_]+@v\\d+$",
+          "title": "Rubric Version",
+          "type": "string"
+        },
+        "score": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Score"
+        }
+      },
+      "required": [
+        "dimension",
+        "score",
+        "confidence",
+        "evidence_ids",
+        "reason",
+        "rubric_version",
+        "model"
+      ],
+      "title": "DimensionScore",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "a": {
+      "$ref": "#/$defs/ComparedIdea"
+    },
+    "b": {
+      "$ref": "#/$defs/ComparedIdea"
+    }
+  },
+  "required": [
+    "a",
+    "b"
+  ],
+  "title": "CompareResponse",
+  "type": "object"
+}

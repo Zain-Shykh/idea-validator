@@ -1,0 +1,111 @@
+{
+  "$defs": {
+    "Compute": {
+      "enum": [
+        "laptop",
+        "free_gpu",
+        "paid"
+      ],
+      "title": "Compute",
+      "type": "string"
+    },
+    "Goal": {
+      "enum": [
+        "startup",
+        "portfolio",
+        "course_project"
+      ],
+      "title": "Goal",
+      "type": "string"
+    },
+    "StudentProfile": {
+      "additionalProperties": false,
+      "description": "DATA-2. ``version`` increases on every profile change and is part of cache keys.",
+      "properties": {
+        "compute": {
+          "$ref": "#/$defs/Compute"
+        },
+        "goal": {
+          "$ref": "#/$defs/Goal"
+        },
+        "hours_per_week": {
+          "maximum": 168,
+          "minimum": 0,
+          "title": "Hours Per Week",
+          "type": "integer"
+        },
+        "interests": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Interests",
+          "type": "array"
+        },
+        "skills": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Skills",
+          "type": "array"
+        },
+        "team_size": {
+          "minimum": 1,
+          "title": "Team Size",
+          "type": "integer"
+        },
+        "user_id": {
+          "minLength": 1,
+          "title": "User Id",
+          "type": "string"
+        },
+        "version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        },
+        "weeks_available": {
+          "minimum": 1,
+          "title": "Weeks Available",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "user_id",
+        "skills",
+        "hours_per_week",
+        "weeks_available",
+        "team_size",
+        "compute",
+        "goal",
+        "interests"
+      ],
+      "title": "StudentProfile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "niche_wish": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Niche Wish"
+    },
+    "profile": {
+      "$ref": "#/$defs/StudentProfile"
+    }
+  },
+  "required": [
+    "profile"
+  ],
+  "title": "NicheMatchRequest",
+  "type": "object"
+}
