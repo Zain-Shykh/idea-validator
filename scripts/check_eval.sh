@@ -5,7 +5,8 @@
 #   scripts/check_eval.sh                                  # run the eval Job in the cluster
 #   scripts/check_eval.sh --report r.json [--baseline b]   # compare a report that exists
 #
-# Cluster mode needs kubectl. IMAGE_TAG (default: this commit) names the evaluation image.
+# Cluster mode needs kubectl. IMAGE_TAG (default: this commit) names the evaluation image;
+# KUBE_CONTEXT pins the cluster (default: kubectl's current context).
 set -Eeuo pipefail  # -E: functions inherit the trap
 # whatever else fails (kubectl exits 1 on most errors) must not read as a regression
 trap 'exit 2' ERR
@@ -36,13 +37,23 @@ fi
 ns=${NAMESPACE:-idea-validator}
 tag=${IMAGE_TAG:-$(git rev-parse --short HEAD)}
 timeout=${EVAL_TIMEOUT_S:-14400}
-kc() { kubectl -n "$ns" "$@"; }
+kc() { kubectl ${KUBE_CONTEXT:+--context "$KUBE_CONTEXT"} -n "$ns" "$@"; }
+
+# Kustomize deploys `app-config` under a name with a content hash and the Job is applied
+# without Kustomize, so take the name from the CronJob that was deployed with it
+config=$(kc get cronjob drift-report \
+  -o 'jsonpath={.spec.jobTemplate.spec.template.spec.containers[0].envFrom[0].configMapRef.name}')
+if [[ ! $config =~ ^app-config(-[a-z0-9]+)?$ ]]; then
+  echo "error: no app-config on CronJob drift-report; deploy the overlay first" >&2
+  exit 2
+fi
 
 kc create configmap eval-baseline --from-file=baseline.json="$baseline" \
   --dry-run=client -o yaml | kc apply -f -
 # a finished Job cannot be changed; only this Job is removed
 kc delete job eval --ignore-not-found --wait=true
-sed "s|\(idea-validator-evaluation\):set-by-overlay|\1:$tag|" k8s/base/eval-job.yaml | kc apply -f -
+sed -e "s|\(idea-validator-evaluation\):set-by-overlay|\1:$tag|" \
+  -e "s|name: app-config\$|name: $config|" k8s/base/eval-job.yaml | kc apply -f -
 
 end=$((SECONDS + timeout))
 while :; do
