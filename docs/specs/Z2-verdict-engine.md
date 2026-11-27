@@ -135,3 +135,28 @@ Coverage target: `services/verdict` ≥ 95 %.
 | Card shows a rounded value on the other side of a threshold (69.996 → 70.0, PIVOT) | rounding only at output is required by §13.1; accepted |
 
 ---
+
+## Part B — Plan
+
+### B1. Task breakdown
+| # | Task | Files | Verification | Done |
+|---|------|-------|--------------|------|
+| 1 | Rules file and its loader | `config/verdict.yaml`, `services/verdict/src/verdict/config.py`, `requirements.txt` (pyyaml), `tests/unit/test_config.py` | pytest | [ ] |
+| 2 | Pure engine with the §13.2 matrix | `verdict/engine.py`, `tests/unit/{conftest,test_gates,test_scoring,test_challenge,test_sensitivity,test_worked_example,test_whatif,test_properties,test_purity}.py` | pytest, coverage ≥ 95 % | [ ] |
+| 3 | API and readiness | `verdict/{main,settings}.py`, `api/routes.py`, `tests/unit/test_api.py`; orchestrator tests still green | `pytest -q`, mypy | [ ] |
+| 4 | Shared VE-16 fixture = engine output | `eval/fixtures/run_events_validate.jsonl` + the orchestrator copy, a test that keeps it equal | pytest | [ ] |
+| 5 | ConfigMap, mount, compose, image env, `.env.example` | `config/kustomization.yaml`, `k8s/base/{kustomization,verdict}.yaml`, `services/verdict/{Dockerfile,compose.yaml}`, `eval/behaviour/test_packaging.py` | pytest, kubeconform | [ ] |
+| 6 | Testing subagent, fixes | tests | all green | [ ] |
+| 7 | Build the verdict image only, checks, dev overlay tag | `k8s/overlays/dev/kustomization.yaml` (own image tag) | docker run | [ ] |
+| 8 | Docs, PR | docs | — | [ ] |
+
+### B2. Commit plan
+1. `docs(spec): …`, 2. `docs(plan): …`, 3. `feat(verdict): deterministic rules engine and verdict.yaml`, 4. `feat(verdict): serve the engine`, 5. `chore(k8s): verdict-config ConfigMap`, 6. `test/fix(verdict): …`, 7. `docs(Z2): …`
+
+### B3. Definition of Done (phase)
+- [ ] All A4 criteria pass; ruff + mypy clean; `services/verdict` coverage ≥ 95 %.
+- [ ] Verdict image builds, non-root; manifests pass kubeconform.
+- [ ] Checklist, plan, deviations, AI-usage log, decisions updated.
+- [ ] PR against `feat/z1-walking-skeleton`.
+
+---
