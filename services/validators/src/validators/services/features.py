@@ -8,7 +8,7 @@ from datetime import date, datetime
 from itertools import zip_longest
 
 from common.contracts.analyst import Gap, Niche
-from common.contracts.core import BlockerType, Compute, EvidenceItem, IdeaCard, StudentProfile
+from common.contracts.core import BlockerType, Compute, EvidenceItem, IdeaCard
 from common.idea_rules import (
     COMPLAINT_TAG,
     EFFORT_BANDS,
