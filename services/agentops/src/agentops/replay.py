@@ -391,7 +391,7 @@ async def replay(
             min(len(before), len(after)),
         )
         result.differences.append(
-            f"decision {first + 1}: {after[first : first + 1]}, recorded {before[first : first + 1]}"
+            f"decision {first + 1}: {after[first:][:1]}, recorded {before[first:][:1]}"
         )
     return result
 
