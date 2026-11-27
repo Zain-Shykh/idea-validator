@@ -10,11 +10,12 @@ import json
 import logging
 from collections.abc import Awaitable, Callable, Iterable, Sequence
 from dataclasses import dataclass
-from datetime import date
+from datetime import UTC, date, datetime
 from typing import Any
 
 import httpx
 
+from common import context
 from common.contracts.agents import Rubric, ScoreRequest, ScorerRequest
 from common.contracts.analyst import Gap, Niche
 from common.contracts.core import (
@@ -24,10 +25,13 @@ from common.contracts.core import (
     IdeaCard,
     IdeaInput,
     TraceKind,
+    TraceRecord,
 )
 from common.contracts.kb import SearchRequest, SearchResponse
+from common.contracts.ops import InjectionBlockedEvent, OpsEvent
 from common.http import ServiceClient, ServiceError
-from common.trace import TraceClient
+from common.injection import scan_text
+from common.trace import TraceClient, new_step_id
 from validators.services.effort import AGENT, EffortEstimator
 from validators.services.tools import Analyst, KnowledgeBase
 from validators.settings import ValidatorSettings
@@ -137,11 +141,32 @@ class Engine:
             )  # fmt: skip
         except ServiceError as exc:
             raise KbUnavailableError(exc.code) from exc
-        return [
+        hits = [
             Hit(item, card, similarity)
             for (item, similarity), card in zip(best.values(), cards, strict=True)
             if card is not None and card.id == item.card_id
         ]
+        self._report_flagged(run_id, [h.item for h in hits])
+        return hits
+
+    def _report_flagged(self, run_id: str, items: Sequence[EvidenceItem]) -> None:
+        """Count the retrieved passages that ``bounded`` will keep from the model (M12-2)."""
+        flagged = [i.evidence_id for i in items if scan_text(i.quote, i.source)]
+        if not flagged:
+            return
+        log.warning("withholding flagged evidence: %s", ", ".join(flagged))
+        self.tracer.emit(
+            TraceRecord(
+                run_id=run_id,
+                step_id=new_step_id(),
+                parent_step=context.parent_step_var.get(),
+                agent=AGENT,
+                kind=TraceKind.DECISION,
+                tool=OpsEvent.INJECTION_BLOCKED,
+                output=InjectionBlockedEvent(stage="m12", count=len(flagged)).model_dump_json(),
+                ts=datetime.now(UTC),
+            )
+        )
 
     async def resolve(self, run_id: str, ids: Sequence[str]) -> list[EvidenceItem]:
         """Evidence as M6 stores it; ids it does not know are dropped."""
@@ -192,10 +217,12 @@ class Engine:
         return f"{dimension.value}@v{self.rubrics[dimension].version}"
 
     def bounded(self, evidence: Iterable[EvidenceItem]) -> list[EvidenceItem]:
-        """What is sent to the model: few, short items (CPU latency, spec Z4 C4)."""
+        """What is sent to the model: few, short items (CPU latency, spec Z4 C4), none of them
+        flagged as an instruction (ETH-5). The whole quote is scanned, not only what is sent."""
         unique: dict[str, EvidenceItem] = {}
         for item in evidence:
-            unique.setdefault(item.evidence_id, item)
+            if not scan_text(item.quote, item.source):
+                unique.setdefault(item.evidence_id, item)
         return [
             item.model_copy(update={"quote": item.quote[: self.settings.max_quote_chars]})
             for item in list(unique.values())[: self.settings.max_evidence]
