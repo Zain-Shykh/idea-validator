@@ -1,0 +1,13 @@
+# ConfigMap `rubrics` (K8S-4); Kustomize only reads files inside a kustomization's folder.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+configMapGenerator:
+  - name: rubrics
+    files:
+      - demand_pain.yaml
+      - competition.yaml
+      - differentiation.yaml
+      - feasibility.yaml
+      - risk.yaml
+      - learning.yaml
+      - manifest.yaml

@@ -5,7 +5,8 @@ kind: Kustomization
 resources:
   - ../../base
   - redis.yaml
-# redis.yaml is outside the base, so the namespace is set here too
+  - postgres.yaml
+# these files are outside the base, so the namespace is set here too
 namespace: idea-validator
 images:
   - name: ghcr.io/zain-shykh/idea-validator-orchestrator

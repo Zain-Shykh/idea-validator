@@ -1,4 +1,5 @@
-# M13 agentops
+# M13 agentops. Needs a Postgres Service `postgres` and a Secret `db` with POSTGRES_PASSWORD
+# (docs/setup.md §6).
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,17 +29,67 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
+        # makes the traces volume writable on provisioners that honour it
+        fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        - name: db-migrate
+          image: ghcr.io/zain-shykh/idea-validator-agentops:set-by-overlay
+          imagePullPolicy: IfNotPresent
+          command: ["python", "-m", "agentops.migrate"]
+          env: &db-env
+            - name: POSTGRES_HOST
+              value: postgres
+            - name: POSTGRES_USER
+              value: ideaval
+            - name: OPS_DB
+              value: ops
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db
+                  key: POSTGRES_PASSWORD
+          envFrom:
+            - configMapRef:
+                name: app-config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 384Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
       containers:
         - name: agentops
           image: ghcr.io/zain-shykh/idea-validator-agentops:set-by-overlay
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
+          env: *db-env
           envFrom:
             - configMapRef:
                 name: app-config
+          volumeMounts:
+            - name: traces
+              mountPath: /data/traces
+            # tempfile needs a directory on the read-only root filesystem
+            - name: tmp
+              mountPath: /tmp
+            - name: rubrics
+              mountPath: /etc/rubrics
+              readOnly: true
+            - name: prompts
+              mountPath: /etc/prompts
+              readOnly: true
+            - name: rules
+              mountPath: /etc/ideaval-config
+              readOnly: true
           readinessProbe:
             httpGet:
               path: /ready
@@ -65,6 +116,38 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: [ALL]
+      volumes:
+        - name: traces
+          persistentVolumeClaim:
+            claimName: traces
+        - name: tmp
+          emptyDir: {}
+        - name: rubrics
+          configMap:
+            name: rubrics
+        - name: prompts
+          configMap:
+            name: prompts
+        - name: rules
+          projected:
+            sources:
+              - configMap:
+                  name: verdict-config
+              - configMap:
+                  name: budgets
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: traces
+  labels:
+    app: agentops
+    app.kubernetes.io/part-of: idea-validator
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 1Gi
 ---
 apiVersion: v1
 kind: Service

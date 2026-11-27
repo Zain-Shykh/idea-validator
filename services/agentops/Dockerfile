@@ -1,5 +1,5 @@
 # Build from the repo root: docker build -f services/agentops/Dockerfile -t idea-validator-agentops:$(git rev-parse --short HEAD) .
-# The steps up to COPY /venv are the same in every service, so images share those layers.
+# Rubrics, prompts and rule files are not baked in: ConfigMaps (or compose mounts) provide them.
 FROM python:3.12-slim@sha256:2f17fc044b579bab302c2e8054d3a686e2cb9a83de48e70534b94cd8ebbe06a9 AS build
 RUN python -m venv --without-pip /venv
 COPY services/agentops/requirements.txt /tmp/requirements.txt
@@ -8,8 +8,11 @@ COPY libs/common /tmp/common
 RUN pip --python /venv/bin/python install --no-cache-dir --no-deps /tmp/common
 
 FROM python:3.12-slim@sha256:2f17fc044b579bab302c2e8054d3a686e2cb9a83de48e70534b94cd8ebbe06a9
-RUN useradd --uid 10001 --create-home app
-ENV PATH=/venv/bin:$PATH PYTHONPATH=/app PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+# a new named volume copies this ownership, so the app user can write traces
+RUN useradd --uid 10001 --create-home app && mkdir -p /data/traces && chown 10001 /data/traces
+ENV PATH=/venv/bin:$PATH PYTHONPATH=/app PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
+  AGENTOPS_TRACES_DIR=/data/traces AGENTOPS_RUBRICS_DIR=/etc/rubrics \
+  AGENTOPS_PROMPTS_DIR=/etc/prompts AGENTOPS_CONFIG_DIR=/etc/ideaval-config
 COPY --from=build /venv /venv
 COPY services/agentops/src /app
 # numeric, so Kubernetes can verify runAsNonRoot

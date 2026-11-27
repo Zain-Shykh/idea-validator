@@ -7,3 +7,6 @@ configMapGenerator:
   - name: verdict-config
     files:
       - verdict.yaml
+  - name: budgets
+    files:
+      - budgets.yaml
