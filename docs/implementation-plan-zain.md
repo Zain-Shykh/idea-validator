@@ -10,7 +10,7 @@
 
 | Phase | Title | Status | Spec | PR | Started | Completed |
 |-------|-------|--------|------|----|---------|-----------|
-| Z0 | Shared contracts, `libs/common`, repo tooling | In review | [Z0](specs/Z0-contracts-common.md) | — | 2026-11-27 07:47 | — |
+| Z0 | Shared contracts, `libs/common`, repo tooling | In review | [Z0](specs/Z0-contracts-common.md) | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) | 2026-11-27 07:47 | — |
 | Z1 | Walking skeleton of Zain's services | Not started | — | — | — | — |
 | Z2 | M11 Verdict Engine | Not started | — | — | — | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | Not started | — | — | — | — |
@@ -97,6 +97,7 @@ flowchart LR
 | 2026-11-27 07:51 | Plan pushed | Part B |
 | 2026-11-27 08:00 | Implementation pushed | contracts, helpers, fixtures; 113 tests |
 | 2026-11-27 08:05 | Tests and fixes pushed | testing subagent: 3 bugs fixed; 161 tests, coverage 99 % |
+| 2026-11-27 08:07 | PR opened | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) (base `chore/headless-decision-log`, closes #2); awaiting Ahmad's review |
 
 ---
 

@@ -10,7 +10,7 @@
 | Requirement IDs | GEN-7, GEN-8, GEN-9, DATA-1..8 (schemas), API-I7, API-P8 (metrics helper), M13-1 (client side), AO-1 (propagation), AVOID-2 (cache keys) |
 | Architecture refs | §7.2, §7.3, §8.4, §8.5, §12.1, §12.2, §15, §19–§21 |
 | Depends on | nothing |
-| Issue / PR | #2 / see C1 |
+| Issue / PR | #2 / #3 |
 
 ---
 
@@ -174,7 +174,7 @@ No Dockerfile or manifest in this phase, so no image build or kubeconform.
 ## Part C — Implementation and test report
 
 ### C1. What was built
-Issue #2. PR: against `chore/headless-decision-log` (number in the plan).
+Issue #2. PR #3, against `chore/headless-decision-log`.
 
 | Path | Content |
 |------|---------|
