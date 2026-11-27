@@ -1080,6 +1080,8 @@ flowchart LR
 - Files: `jobs/finetune/{build_dataset.py, review.py, split.py, train.ipynb, train_config.yaml, export_gguf.md, evaluate.py, README section in docs/}`; data in `jobs/finetune/data/` (`all.jsonl`, `train.jsonl`, `test.jsonl`, `checked.csv`). Small text files only — **no weights in git** (M10-5).
 - Starting settings (recorded in `train_config.yaml`): QLoRA 4-bit, rank 16, alpha 32, dropout 0.05, LR 2e-4, epochs 3, batch 8 (grad-accum), max seq 2048; watch validation loss.
 
+As built (Z9, D-021): code only so far; no data, model or results. Prompts come from M9's recorded `ScoreRequest`s and M10's prompt code. The split writes `train`, `val` and `test`: idea groups with a hand-checked row are the test set, and validation loss uses `val`. Row provenance is in `items.jsonl`. `evaluate.py` gives each model one attempt per test row, without repair or fallback. The tuned model is switched on with the component `jobs/finetune/k8s-lora/component` (scorer and orchestrator `SCORER_MODEL_ID`). Commands: `jobs/finetune/README.md`.
+
 ### 14.2 Serving (M10)
 
 ```mermaid

@@ -7,12 +7,12 @@
 
 | Owner | Rows | Done | Partial |
 |-------|-----:|-----:|--------:|
-| Zain | 89 | 54 | 12 |
+| Zain | 89 | 66 | 16 |
 | Ahmad | 77 | 0 | 0 |
-| Both | 54 | 0 | 25 |
-| **Total** | **220** | **54** | **37** |
+| Both | 54 | 0 | 31 |
+| **Total** | **220** | **66** | **47** |
 
-_Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
+_Last updated: 2026-11-28 (Z0–Z8 in review, Z9 blocked; summary recounted from the rows)._
 
 ## Phase completion
 
@@ -173,12 +173,12 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [~] | M10-1 | Fine-tuned 1B–3B (LoRA/QLoRA) in own container | Zain | Z4, Z9 | Z4: own container serving the base model; fine-tuned weights Z9 |
+| [~] | M10-1 | Fine-tuned 1B–3B (LoRA/QLoRA) in own container | Zain | Z4, Z9 | Z4: own container serving the base model. Z9: switch to `scorer-lora@v1` prepared; no tuned weights |
 | [x] | M10-2 | POST /score, /health, /ready | Zain | Z4 | Z4: `services/scorer`, `test_api.py`; probes green on minikube |
 | [x] | M10-3 | Schema validation, retry once, hosted fallback logged | Zain | Z4 | Z4: `eval/behaviour/test_scorer_cassettes.py` (live hosted call not verified: no key, M5 not built) |
-| [ ] | M10-4 | Comparison base vs fine-tuned vs hosted | Zain | Z9 | |
-| [~] | M10-5 | No weights in git; requests/limits measured | Zain | Z9, Z11 | Z4: no weights in git; base model measured (spec Z4 C4); final limits Z11 |
-| [ ] | M10t-1 | Data, scripts, documented commands in repo | Zain | Z9 | |
+| [~] | M10-4 | Comparison base vs fine-tuned vs hosted | Zain | Z9 | Z9: `evaluate.py`; no results |
+| [~] | M10-5 | No weights in git; requests/limits measured | Zain | Z9, Z11 | Z4: base model measured (spec Z4 C4). Z9: no-weights check (`test_packaging.py`); tuned weights not published; final limits Z11 |
+| [~] | M10t-1 | Data, scripts, documented commands in repo | Zain | Z9 | Z9: scripts and documented commands in `jobs/finetune/`; data not produced |
 
 ## M11 Verdict Engine
 
@@ -230,7 +230,7 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 | [x] | DATA-4 | Dimension score schema | Zain | Z0 | `test_contracts.py::test_guide_example_validates` |
 | [x] | DATA-5 | Verdict schema (+missing, gate_details, flips) | Zain | Z0, Z2 | `test_contracts.py::test_guide_example_validates` |
 | [x] | DATA-6 | Trace record schema | Zain | Z0 | `test_contracts.py::test_guide_example_validates` |
-| [~] | DATA-7 | Fine-tuning JSONL format | Zain | Z9 | Z0: `FineTuneExample` schema; data in Z9 |
+| [~] | DATA-7 | Fine-tuning JSONL format | Zain | Z9 | Z0: schema. Z9: builder writes it (`test_build_dataset.py`); no data yet |
 | [x] | DATA-8 | Rubric files: anchors 0–5 + example per level | Zain | Z3 | `rubrics/*.yaml`, `test_registry.py::test_repo_rubrics_are_complete` |
 | [ ] | DATA-9 | Storage model (app, kb, ops, Redis, files) | Both | A4, A7, Z3 | |
 
@@ -282,14 +282,14 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | FT-1 | Cheaper/faster/consistent goal stated | Zain | Z9 | |
-| [ ] | FT-2 | ≥ 300 examples, all dims, all levels | Zain | Z9 | |
-| [ ] | FT-3 | Hosted-drafted labels, ≥ 60 hand-checked and marked | Both | Z9 | |
-| [ ] | FT-4 | Split by idea; no labelled-set ideas in training | Zain | Z9 | |
-| [ ] | FT-5 | JSONL messages format | Zain | Z9 | |
-| [ ] | FT-6 | LoRA/QLoRA 1B–3B on free GPU; settings recorded | Zain | Z9 | |
-| [~] | FT-7 | Merge, GGUF, served behind /score; validate/retry/fallback | Zain | Z4, Z9 | Z4: GGUF served behind `/score` with validate/retry/fallback; adapter merge Z9; full image→PVC path with the real model not run (disk) |
-| [ ] | FT-8 | Comparison table (MAE, within-1, valid JSON, real ids, latency, cost) + failure case | Zain | Z9 | |
+| [x] | FT-1 | Cheaper/faster/consistent goal stated | Zain | Z9 | Z9: `jobs/finetune/README.md`, spec Z9 A1 |
+| [~] | FT-2 | ≥ 300 examples, all dims, all levels | Zain | Z9 | Z9: sampling and stratified assembly (`test_build_dataset.py`); no data yet (spec Z9 C6) |
+| [~] | FT-3 | Hosted-drafted labels, ≥ 60 hand-checked and marked | Both | Z9 | Z9: drafting and terminal review (`test_draft_labels.py`, `test_review.py`); no drafts or hand checks yet |
+| [~] | FT-4 | Split by idea; no labelled-set ideas in training | Zain | Z9 | Z9: split and leakage assertions (`test_split.py`); not run on real data |
+| [~] | FT-5 | JSONL messages format | Zain | Z9 | Z9: rows validate as `FineTuneExample` and equal the served prompt (`test_build_dataset.py`); no data file yet |
+| [~] | FT-6 | LoRA/QLoRA 1B–3B on free GPU; settings recorded | Zain | Z9 | Z9: `train_config.yaml`, `train.ipynb` (stub libraries only); no GPU run, no loss curves |
+| [~] | FT-7 | Merge, GGUF, served behind /score; validate/retry/fallback | Zain | Z4, Z9 | Z4: GGUF served behind `/score` with validate/retry/fallback. Z9: export steps and `k8s-lora` component; no tuned model yet |
+| [~] | FT-8 | Comparison table (MAE, within-1, valid JSON, real ids, latency, cost) + failure case | Zain | Z9 | Z9: `evaluate.py` (`test_evaluate.py`); no comparison run, no failure case |
 
 ## AgenticOps
 
