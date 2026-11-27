@@ -16,6 +16,9 @@ from common import context
 DEFAULT_TIMEOUT = httpx.Timeout(30.0, connect=3.0)
 LLM_TIMEOUT = httpx.Timeout(60.0, connect=3.0)
 SCORER_TIMEOUT = httpx.Timeout(90.0, connect=3.0)
+# a validator request may wait for, then make, up to six model calls on one CPU model (Z5). Do not
+# retry it on timeout: the abandoned scoring jobs keep running.
+VALIDATOR_TIMEOUT = httpx.Timeout(600.0, connect=3.0)
 IDEMPOTENCY_HEADER = "Idempotency-Key"
 
 
