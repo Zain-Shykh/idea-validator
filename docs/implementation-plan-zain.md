@@ -12,7 +12,7 @@
 |-------|-------|--------|------|----|---------|-----------|
 | Z0 | Shared contracts, `libs/common`, repo tooling | In review | [Z0](specs/Z0-contracts-common.md) | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) | 2026-11-27 07:47 | — |
 | Z1 | Walking skeleton of Zain's services | In review | [Z1](specs/Z1-walking-skeleton.md) | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) | 2026-11-27 08:09 | — |
-| Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | — | 2026-11-27 08:44 | — |
+| Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | Not started | — | — | — | — |
 | Z4 | M10 Scorer serving (base model + fallback) | Not started | — | — | — | — |
 | Z5 | M9 Validation agents (4 scorers) | Not started | — | — | — | — |
@@ -170,6 +170,7 @@ flowchart LR
 | 2026-11-27 08:44 | Spec and plan pushed | `docs/specs/Z2-verdict-engine.md` Parts A, B |
 | 2026-11-27 08:49 | Implementation pushed | engine, API, `verdict-config` ConfigMap; 535 tests |
 | 2026-11-27 09:02 | Tests and fixes pushed | testing subagent: 3 bugs + smaller issues fixed; 587 tests, verdict coverage 100 %; image `bedf5d8` checked on Docker and minikube |
+| 2026-11-27 09:07 | PR opened | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) (base `feat/z1-walking-skeleton`, closes #6) |
 
 ---
 

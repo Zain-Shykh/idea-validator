@@ -10,7 +10,7 @@
 | Requirement IDs | M11-1..5, VE-1, VE-4a..d, VE-5..16, U6, U7 (engine side), U10, API-I4, K8S-4 (`verdict-config`), CI-2 (engine tests) |
 | Architecture refs | `architecture.md` §13 (incl. 13.1, 13.2), §7.2, §8.5, ADR-001 |
 | Depends on | Z0 (contracts), Z1 (service skeleton). No fakes: M11 has no dependencies |
-| Issue / PR | — |
+| Issue / PR | #6 / #7 |
 
 ---
 
