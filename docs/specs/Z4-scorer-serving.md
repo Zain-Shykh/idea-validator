@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session (`scripts/run-phase.sh`) |
 | Branch | `feat/z4-scorer-serving` (parent: `feat/z3-rubrics-agentops`, PR #9) |
-| Status | Draft spec |
+| Status | Plan ready |
 | Requirement IDs | M10-1 (container), M10-2, M10-3, M10-5, FT-7, API-I3, AO-1, AO-6 (fallback metric) |
 | Architecture refs | `architecture.md` §7.2, §12.1, §12.2, §14.2, §17, §21.4; ADR-005, ADR-003; D-002, D-007 |
 | Depends on | Z3 (rubrics, prompts, trace, ops events). M5 not built: `LLM_BACKEND=direct` or cassettes |
@@ -125,3 +125,36 @@ Coverage target: ≥ 80 % of `scorer` business logic.
 | Disk (4.6 GB free, floor 2 GB). Importing the real 986 MB model through the Job needs the image content, its unpacked snapshot and the PVC copy (≈ 3 GB) plus the llama.cpp image (≈ 1.13 GB) = ≈ 4.3 GB in the node | Do not run the real import. Check the pieces that fit: sidecar with the real GGUF mounted without a copy, Job with a tiny stand-in file. A4 #4 stays unticked unless the whole path ran |
 | CPU latency: 4–6 parallel scores queue on one model | measure; deadlines in env vars; report for Z5 |
 | A 1.5B base model often ignores the format | JSON-schema-constrained output, one retry, fallback |
+
+---
+
+## Part B — Plan
+
+### B1. Task breakdown
+
+| # | Task | Files | Verification | Done |
+|---|------|-------|--------------|------|
+| 1 | Shared fallback counter; public `strip_fence` | `libs/common/src/common/{metrics,llm}.py`, `services/agentops/src/agentops/services/metrics.py` | `pytest libs services/agentops` | [ ] |
+| 2 | Settings and pure prompt builder with bounds and escaping | `services/scorer/src/scorer/{settings.py,services/prompt.py}` | `test_prompt.py` | [ ] |
+| 3 | Local backend and scoring flow (validate, retry, fallback, strip, abstain, traces) | `scorer/services/{backend,scoring}.py` | `test_scoring.py`, `test_backend.py` | [ ] |
+| 4 | Routes, readiness probe, lifespan; replace stub tests | `scorer/{main.py,api/routes.py}` | `test_api.py`; `pytest eval/behaviour` | [ ] |
+| 5 | 10 fixture pairs, check script, live run on `qwen2.5:1.5b`, record cassettes, latency | `eval/fixtures/score_requests.jsonl`, `scripts/scorer_check.py`, `eval/behaviour/{cassettes/,test_scorer_cassettes.py}` | live report; cassette tests offline | [ ] |
+| 6 | Image, compose fragment, env names | `services/scorer/{Dockerfile,requirements.txt,compose.yaml}`, `.env.example` | docker build; container `/score` | [ ] |
+| 7 | Model image and manifests | `jobs/finetune/model-image/{Dockerfile,README.md}`, `k8s/base/scorer.yaml`, `eval/behaviour/test_packaging.py` | kubeconform; packaging tests | [ ] |
+| 8 | Cluster check within the disk budget | — | recorded in C3 | [ ] |
+| 9 | Testing subagent, fixes, docs, PR | — | full suite green | [ ] |
+
+### B2. Commit plan
+1. `docs(spec): add Z4 spec` · 2. `docs(plan): add Z4 plan`
+3. `refactor(common): share the fallback counter and strip_fence`
+4. `feat(scorer): validate, retry, fall back and abstain behind /score`
+5. `test(scorer): record base-model replies for ten fixture pairs`
+6. `feat(scorer): image, llama.cpp sidecar, model PVC and import job`
+7. `test(scorer): …` / `fix(scorer): …` (testing subagent) · 8. `docs(Z4): update spec report, checklist, plan, logs`
+
+### B3. Definition of Done (phase)
+- [ ] All A4 criteria pass, or are left unticked with the reason.
+- [ ] ruff + mypy clean; coverage target met.
+- [ ] Dockerfile builds, non-root; manifest validates (kubeconform).
+- [ ] Checklist rows, plan progress log, deviations, AI log, decisions updated.
+- [ ] PR opened against `feat/z3-rubrics-agentops`; reviewer = Ahmad.
