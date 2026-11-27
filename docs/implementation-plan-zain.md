@@ -21,7 +21,7 @@
 | Z8 | M8 Ideation + Discover + challenge / what-if | In review | [Z8](specs/Z8-ideation-discover.md) | [#19](https://github.com/Zain-Shykh/idea-validator/pull/19) | 2026-11-27 | — |
 | Z9 | M10t Fine-tuning pipeline + model comparison | Blocked | [Z9](specs/Z9-finetuning.md) | [#21](https://github.com/Zain-Shykh/idea-validator/pull/21) | 2026-11-27 | — |
 | Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | Blocked | — | — | — | — |
-| Z11 | Cluster integration, measurements, end-to-end acceptance | Not started | — | — | — | — |
+| Z11 | Cluster integration, measurements, end-to-end acceptance | In progress | [Z11](specs/Z11-integration-acceptance.md) | — | 2026-11-28 | — |
 | Z12 | Report and submission (shared with Ahmad) | Not started | — | — | — | — |
 
 Status values: `Not started` · `In progress` · `In review` (PR open) · `Done` (merged) · `Blocked` (say why in the log).
@@ -484,7 +484,7 @@ flowchart LR
 
 ## Z11 — Cluster integration, measurements, end-to-end acceptance
 
-- **Status:** Not started · **Spec:** `docs/specs/Z11-integration-acceptance.md` · **Branch:** `feat/z11-integration`
+- **Status:** In progress · **Spec:** `docs/specs/Z11-integration-acceptance.md` · **Branch:** `feat/z11-integration`
 - **Requirements:** U1–U10 (end-to-end on the cluster), K8S-5 (requests/limits from measurements), K8S-11, M3-5, AO-6, SS-10..16, GIT-4 (merge conflict with Ahmad)
 - **Depends on:** S4, S5, S6; Ahmad's A8/A9/A10. **Unblocks:** S7.
 
@@ -506,7 +506,7 @@ flowchart LR
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-28 03:13 | Started | Branch `feat/z11-integration` from `feat/z10-evaluation-tuning` (unmerged draft PR #23). Partly blocked from the start: no A-phase service, Gemini key or human labels |
 
 ---
 
