@@ -490,6 +490,8 @@ class TraceRecord(ContractModel):
     error: str | None = None
     ts: datetime
     prompt_version: str | None = None
+    # the full reply of a tool call, so a run can be replayed (AO-1); ``output`` stays a summary
+    reply: str | None = None
 
 
 class ErrorBody(ContractModel):

@@ -384,6 +384,12 @@ def decide(request: VerdictRequest, config: VerdictConfig) -> Verdict:
     )
 
 
+def label_only(request: VerdictRequest, config: VerdictConfig) -> VerdictLabel:
+    """``decide(...).verdict`` without the what-would-make-GO search, for offline tuning (Z10)."""
+    scores = apply_challenge(request.scores, request.accepted_objections, config)
+    return _evaluate(request, scores, config).verdict
+
+
 def apply_changes(
     request: VerdictRequest, changes: Sequence[ScoreChange], config: VerdictConfig
 ) -> Verdict:

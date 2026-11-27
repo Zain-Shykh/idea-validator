@@ -92,6 +92,8 @@ If a host port is taken (for example a local Postgres on 5432), set `POSTGRES_HO
 
 Host ports: see `docs/architecture/architecture.md` §19 (gateway 8001 … agentops 8013, UI 5173). Compose is for development only; the deployment target is Kubernetes.
 
+Evaluation, tuning, replay and drift commands (and their env vars): [`jobs/evaluation/README.md`](../jobs/evaluation/README.md). On the cluster, `scripts/check_eval.sh` needs the Secret `db`, the evaluation image and `eval/results/baseline.json`.
+
 AgentOps integration tests use a throwaway database whose name ends in `_test`; they create and **drop** it:
 ```bash
 AGENTOPS_TEST_DATABASE_URL=postgresql+psycopg://ideaval:localdev@127.0.0.1:5432/ops_test \

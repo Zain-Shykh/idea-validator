@@ -1,0 +1,13 @@
+# Pins match requirements-dev.txt and libs/common/pyproject.toml.
+fastapi==0.165.0
+pydantic==2.14.4
+pydantic-settings==2.16.3
+httpx==0.29.0
+tenacity==9.2.1
+prometheus-client==0.26.0
+# replay: M3's state machine (redis types) and the rubric, prompt and rule loaders
+redis==8.2.0
+pyyaml==6.0.4
+# eval_runs and the drift report
+sqlalchemy==2.1.9
+psycopg[binary]==3.3.9

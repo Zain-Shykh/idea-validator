@@ -87,7 +87,7 @@ def test_kustomization_lists_every_service_and_tags_every_image() -> None:
     base = docs("k8s/base/kustomization.yaml")[0]
     assert {f"{s}.yaml" for s in SERVICES} <= set(base["resources"])
     images = docs("k8s/overlays/dev/kustomization.yaml")[0]["images"]
-    assert {i["name"].rsplit("-", 1)[1] for i in images} == set(SERVICES)
+    assert {i["name"].rsplit("-", 1)[1] for i in images} == {*SERVICES, "evaluation"}
     assert all(re.fullmatch(r"[0-9a-f]{7,40}", i["newTag"]) for i in images)
 
 
@@ -338,3 +338,43 @@ def test_orchestrator_reads_its_rules_from_configmaps() -> None:
     needed = {"PROFILE_URL", "VERDICT_URL", "VALIDATORS_URL", "KB_URL", "CRITIC_URL"}
     assert needed | {"IDEATION_URL", "SCOUTS_URL", "ANALYST_URL"} <= config
     assert "ANALYST_URL" in spec["environment"]
+
+
+def test_evaluation_image_is_pinned_nonroot_and_ships_what_the_jobs_read() -> None:
+    text = (ROOT / "jobs/evaluation/Dockerfile").read_text()
+    bases = re.findall(r"^FROM (\S+)", text, re.MULTILINE)
+    assert len(bases) == 2 and all(re.search(r":3\.12-slim@sha256:[0-9a-f]{64}$", b) for b in bases)
+    assert re.findall(r"^USER (\S+)", text, re.MULTILINE) == ["10001"] and "localhost" not in text
+    for source in ("eval/labelled", "config", "rubrics", "prompts", "services/verdict/src"):
+        assert f"COPY {source} " in text
+    ignored = (ROOT / "jobs/evaluation/Dockerfile.dockerignore").read_text().splitlines()
+    root = (ROOT / ".dockerignore").read_text().splitlines()
+    # everything the repository keeps out of images (secrets first) stays out of this one
+    assert {x for x in root if not x.startswith("#")} - {"eval"} <= set(ignored)
+    assert "eval" not in ignored
+    wanted = pins(ROOT / "jobs/evaluation/requirements.txt")
+    assert set(wanted) <= set(pins(ROOT / "requirements-dev.txt"))
+
+
+@pytest.mark.parametrize(
+    "path, kind", [("k8s/base/eval-job.yaml", "Job"), ("k8s/base/drift-cronjob.yaml", "CronJob")]
+)
+def test_evaluation_jobs_are_hardened_and_bounded(path: str, kind: str) -> None:
+    (manifest,) = docs(path)
+    assert manifest["kind"] == kind and manifest["metadata"]["labels"]["tier"] == "backend"
+    job = manifest["spec"] if kind == "Job" else manifest["spec"]["jobTemplate"]["spec"]
+    assert job["activeDeadlineSeconds"] > 0 and job["backoffLimit"] <= 2
+    pod = job["template"]["spec"]
+    assert pod["securityContext"]["runAsNonRoot"] is True and pod["restartPolicy"] == "Never"
+    assert pod["enableServiceLinks"] is False and pod["automountServiceAccountToken"] is False
+    (container,) = pod["containers"]
+    assert_hardened(container, probes=False)
+    assert container["securityContext"]["readOnlyRootFilesystem"] is True
+    assert {"configMapRef": {"name": "app-config"}} in container["envFrom"]
+    password = next(e for e in container["env"] if e["name"] == "POSTGRES_PASSWORD")
+    assert password["valueFrom"]["secretKeyRef"]["name"] == "db"
+
+
+def test_the_eval_job_is_not_applied_with_the_base() -> None:
+    resources = docs("k8s/base/kustomization.yaml")[0]["resources"]
+    assert "drift-cronjob.yaml" in resources and "eval-job.yaml" not in resources

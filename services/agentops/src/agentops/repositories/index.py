@@ -1,13 +1,15 @@
-"""``traces_index`` in the ``ops`` database (architecture §8.3, DATA-9)."""
+"""``traces_index`` and ``eval_runs`` in the ``ops`` database (architecture §8.3, DATA-9)."""
 
 from collections.abc import Sequence
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Any
 
-from sqlalchemy import JSON, BigInteger, DateTime, String, create_engine, select
+from sqlalchemy import JSON, BigInteger, DateTime, Index, String, create_engine, select
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.engine import URL
 from sqlalchemy.orm import DeclarativeBase, Mapped, Session, mapped_column
+
+from common.contracts.ops import Report
 
 _JSON = JSON().with_variant(JSONB(), "postgresql")
 
@@ -37,6 +39,20 @@ class TraceIndex(Base):
     metrics: Mapped[dict[str, Any]] = mapped_column(_JSON)
 
 
+class EvalRun(Base):
+    """Evaluation and drift reports (M13-4, M13-5)."""
+
+    __tablename__ = "eval_runs"
+    __table_args__ = (Index("ix_eval_runs_kind_created_at", "kind", "created_at"),)
+
+    id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    kind: Mapped[str] = mapped_column(String(16))
+    git_sha: Mapped[str]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    metrics: Mapped[dict[str, Any]] = mapped_column(_JSON)
+    path: Mapped[str | None]
+
+
 class IndexRepository:
     def __init__(self, url: URL | str) -> None:
         kwargs: dict[str, Any] = {"pool_pre_ping": True}
@@ -59,10 +75,38 @@ class IndexRepository:
         with Session(self.engine) as session:
             return session.get(TraceIndex, run_id)
 
+    def add_report(self, report: Report) -> None:
+        with Session(self.engine) as session, session.begin():
+            session.add(EvalRun(**report.model_dump()))
+
+    def latest_report(self, kind: str) -> Report | None:
+        newest = (
+            select(EvalRun)
+            .where(EvalRun.kind == kind)
+            .order_by(EvalRun.created_at.desc(), EvalRun.id.desc())
+            .limit(1)
+        )
+        with Session(self.engine) as session:
+            row = session.scalars(newest).first()
+            if row is None:
+                return None
+            created = row.created_at
+            return Report.model_validate(
+                {
+                    "kind": row.kind,
+                    "git_sha": row.git_sha,
+                    # SQLite forgets the zone; every stored time is UTC
+                    "created_at": created if created.tzinfo else created.replace(tzinfo=UTC),
+                    "metrics": row.metrics,
+                    "path": row.path,
+                }
+            )
+
     def ping(self) -> bool:
         """Reachable and migrated."""
         with Session(self.engine) as session:
             session.execute(select(TraceIndex.run_id).limit(1))
+            session.execute(select(EvalRun.id).limit(1))
         return True
 
     def dispose(self) -> None:

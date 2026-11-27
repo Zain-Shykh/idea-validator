@@ -111,6 +111,18 @@
       "default": null,
       "title": "Prompt Version"
     },
+    "reply": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Reply"
+    },
     "retries": {
       "default": 0,
       "minimum": 0,

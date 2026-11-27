@@ -1,4 +1,4 @@
-"""M13 API (architecture §7.2, §15). Drift and evaluation reports are stubs until Z10."""
+"""M13 API (architecture §7.2, §15). The drift and evaluation jobs write the reports (Z10)."""
 
 import asyncio
 import logging
@@ -102,15 +102,24 @@ async def registry(request: Request) -> RegistryResponse:
     return RegistryResponse(entries=entries)
 
 
-def _empty_report(kind: Literal["drift", "eval"]) -> Report:
-    return Report(kind=kind, git_sha="stub", created_at=datetime.now(UTC), metrics={})
+async def _latest(request: Request, kind: Literal["drift", "eval"]) -> Report:
+    def read() -> Report | None:
+        index = _service(request).index
+        if index is None:
+            raise IndexNotConfiguredError
+        return index.latest_report(kind)
+
+    report = await _storage(read)
+    if report is None:
+        raise ApiError(404, "NOT_FOUND", f"there is no {kind} report yet")
+    return report
 
 
 @router.get("/drift/latest")
-async def drift_latest() -> Report:
-    return _empty_report("drift")
+async def drift_latest(request: Request) -> Report:
+    return await _latest(request, "drift")
 
 
 @router.get("/eval/latest")
-async def eval_latest() -> Report:
-    return _empty_report("eval")
+async def eval_latest(request: Request) -> Report:
+    return await _latest(request, "eval")

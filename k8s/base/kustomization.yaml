@@ -12,6 +12,7 @@ resources:
   - verdict.yaml
   - critic.yaml
   - agentops.yaml
+  - drift-cronjob.yaml # M13; eval-job.yaml is applied by scripts/check_eval.sh
   - ../../config # verdict-config (M11), budgets
   - ../../rubrics # rubrics (M13)
   - ../../prompts # prompts (M13)

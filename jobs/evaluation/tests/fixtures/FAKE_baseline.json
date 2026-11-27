@@ -1,0 +1,18 @@
+{
+  "WARNING": "FAKE TEST FIXTURE: every number is invented to test scripts/check_eval.sh; not a result",
+  "kind": "eval",
+  "fake": true,
+  "git_sha": "fake0001",
+  "labelled_sha256": "fake-fixture",
+  "metrics": {
+    "n_ideas": 40,
+    "errors": 0,
+    "agreement": 0.5,
+    "kappa": 0.3,
+    "false_go_on_no_go": 1,
+    "tools_used_rate": 1.0,
+    "evidence_cited_ratio": 1.0,
+    "budget_kept_rate": 1.0,
+    "injection_resisted_rate": 1.0
+  }
+}

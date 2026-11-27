@@ -171,11 +171,13 @@ async def _cached(r: ValidateContext) -> Verdict | None:
     return verdict
 
 
-async def rail[C: BaseCheckpoint](r: RunContext[C], text: str) -> InputRailResponse:
+async def rail[C: BaseCheckpoint](
+    r: RunContext[C], text: str, tool: str = "input_rail"
+) -> InputRailResponse:
     """The input rail fails closed: without it no model sees the text (M12-3)."""
     try:
         reply: InputRailResponse = await r.call(
-            "critic", "/rail/input", body=InputRailRequest(text=text), tool="input_rail",
+            "critic", "/rail/input", body=InputRailRequest(text=text), tool=tool,
             agent="critic", response_model=InputRailResponse,
             summary=lambda x: {"allowed": x.allowed},
         )  # fmt: skip
@@ -259,7 +261,7 @@ async def _search(r: ValidateContext) -> SearchResponse:
         )
         memo = await r.deps.memo.get(key, SearchResponse)
         if memo is not None:
-            await r.cache_hit("search_kb", AGENT, "Evidence search reused")
+            await r.cache_hit("search_kb", AGENT, "Evidence search reused", memo)
             return memo
     await r.spend_steps(1)
     try:
@@ -508,6 +510,7 @@ async def _call_scorer(r: ValidateContext, name: str, request: ScorerRequest) ->
                     step.output = json.dumps(
                         [[s.dimension, s.score, s.model] for s in reply.scores]
                     )
+                    step.reply = reply.model_dump_json(by_alias=True)
                     return reply
         except TimeoutError:
             code = "TIMEOUT"
@@ -586,7 +589,7 @@ async def scoring(r: ValidateContext) -> Step | None:
         memo = None if key is None else await r.deps.memo.get(key, ScorerResponse)
         if memo is not None:
             cp.scorer_results[name] = memo
-            await r.cache_hit(f"score_{name}", f"{name}_scorer", f"{name} scores reused")
+            await r.cache_hit(f"score_{name}", f"{name}_scorer", f"{name} scores reused", memo)
             continue
         todo[name] = (request, key)
 

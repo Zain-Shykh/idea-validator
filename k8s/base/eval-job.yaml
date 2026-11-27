@@ -1,0 +1,79 @@
+# M13 evaluation (AO-4, JEN-1). NOT in kustomization.yaml: a Job would run on every apply and
+# cannot be changed afterwards. scripts/check_eval.sh creates it (nightly from Jenkins), with the
+# ConfigMap `eval-baseline` from eval/results/baseline.json and the image tag of the commit.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: eval
+  labels: &labels
+    app: eval
+    module: M13
+    # allow-intra-namespace (§17.3): it calls the orchestrator, M2, M13 and Postgres
+    tier: backend
+    app.kubernetes.io/part-of: idea-validator
+spec:
+  # a second try would pay for every idea again
+  backoffLimit: 0
+  activeDeadlineSeconds: 14400
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      restartPolicy: Never
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: eval
+          image: ghcr.io/zain-shykh/idea-validator-evaluation:set-by-overlay
+          imagePullPolicy: IfNotPresent
+          command:
+            - python
+            - run_eval.py
+            - --out=/tmp/results
+            - --compare=/baseline/baseline.json
+            - --store
+            - --print-report
+          envFrom:
+            - configMapRef:
+                name: app-config
+          env:
+            - name: POSTGRES_HOST
+              value: postgres
+            - name: POSTGRES_USER
+              value: ideaval
+            - name: OPS_DB
+              value: ops
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: db
+                  key: POSTGRES_PASSWORD
+          volumeMounts:
+            - name: baseline
+              mountPath: /baseline
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 384Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+      volumes:
+        - name: baseline
+          configMap:
+            name: eval-baseline
+        - name: tmp
+          emptyDir: {}

@@ -86,9 +86,9 @@ async def run(engine: Engine, request: ScorerRequest) -> ScorerResponse:
     facts = f"{len(rivals)} competing products in the knowledge base"
     facts += f", closest: {named}." if named else "."
 
-    items = [h.item for h in products]
+    items = engine.unflagged(h.item for h in products)
     # half of the room for the gaps; without any product there is nothing to compare them with
-    gap_share = gap_evidence[: engine.settings.max_evidence // 2] if items else []
+    gap_share = engine.unflagged(gap_evidence)[: engine.settings.max_evidence // 2] if items else []
     split = [*items[: engine.settings.max_evidence - len(gap_share)], *gap_share]
     scores = await asyncio.gather(
         engine.score(request, Dimension.COMPETITION, items, values.model_dump(), facts, deadline),
