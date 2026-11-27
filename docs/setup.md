@@ -134,6 +134,8 @@ SVCS="orchestrator ideation validators scorer verdict critic agentops"
 for s in $SVCS; do docker build -f services/$s/Dockerfile -t ghcr.io/zain-shykh/idea-validator-$s:$TAG . ; done
 docker save $(for s in $SVCS; do echo ghcr.io/zain-shykh/idea-validator-$s:$TAG; done) | minikube -p idea-validator image load -
 ```
+The scorer pod also needs the model image `ghcr.io/zain-shykh/idea-validator-scorer-model:base-v1` in the node, or it waits in `Init`. It is not on GHCR yet: build and load it as in [`jobs/finetune/model-image/README.md`](../jobs/finetune/model-image/README.md) (**needs ≥ 7 GB free**).
+
 Add `--keep-context` to `minikube start` and `--context idea-validator` to `kubectl` if you do not want to switch your current context.
 
 ## 7. Local LLM (Ollama)
@@ -147,6 +149,14 @@ ollama pull qwen2.5:1.5b                         # base scorer for Z4 (≈1 GB) 
 curl -s localhost:11434/api/tags | head
 ```
 From containers use `http://host.docker.internal:11434` (Compose adds `extra_hosts: host-gateway`).
+
+**Scorer (M10) on the host** (about 30 s per score on a laptop CPU):
+```bash
+OLLAMA_BASE_URL=http://127.0.0.1:11434 SCORER_BACKEND=ollama LLM_BACKEND=direct \
+  uvicorn scorer.main:app --app-dir services/scorer/src --port 8010   # from the repo root
+python scripts/scorer_check.py --url http://127.0.0.1:8010            # ten fixture pairs
+```
+`--record eval/behaviour/cassettes/scorer_base.jsonl` (instead of `--url`, same variables) records the model's replies again. The hosted fallback needs `GEMINI_API_KEY` with `LLM_BACKEND=direct`, or M5; without it a failed local score abstains. In Compose, Ollama must listen where the container can reach it (`OLLAMA_HOST=0.0.0.0` exposes it to your network, so use a trusted one).
 
 ## 8. Cleanup, teardown and disk space
 

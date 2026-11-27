@@ -1068,6 +1068,8 @@ flowchart LR
 
 Flow per `/score`: call local model → validate → if invalid, **retry once** with the validation error → if still invalid or timeout → **hosted fallback**, trace `model = scorer-hosted`, `ideaval_scorer_fallbacks_total++` (M10-3). `SCORER_BACKEND` env selects `llamacpp` (k8s) / `ollama` (local dev) / `hosted` (comparison runs). The `model-import` Job copies the GGUF from the `scorer-model:<version>` image into the PVC (image pulls are done by the kubelet, so no pod needs internet egress).
 
+As built (Z4, D-009): both local attempts share a 60 s deadline and the fallback has 25 s; a timeout or error falls back without a retry. Evidence ids that were not in the prompt are stripped, and with none left the dimension abstains. When neither model gives a usable reply the response is an abstention with `model = none`. The llama.cpp server listens on the pod's loopback (exec probes); an init container waits for the model file; `/ready` turns 200 after one probe prompt is answered. Measured on the reference laptop: p50 35 s per score.
+
 ---
 
 ## 15. AgenticOps (M13)

@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session (`scripts/run-phase.sh`) |
 | Branch | `feat/z4-scorer-serving` (parent: `feat/z3-rubrics-agentops`, PR #9) |
-| Status | Plan ready |
+| Status | In review (A4 #4 open: disk) |
 | Requirement IDs | M10-1 (container), M10-2, M10-3, M10-5, FT-7, API-I3, AO-1, AO-6 (fallback metric) |
 | Architecture refs | `architecture.md` §7.2, §12.1, §12.2, §14.2, §17, §21.4; ADR-005, ADR-003; D-002, D-007 |
 | Depends on | Z3 (rubrics, prompts, trace, ops events). M5 not built: `LLM_BACKEND=direct` or cassettes |
@@ -82,7 +82,7 @@ flowchart TD
 
 - **Valid reply** = `ScorerOutput` shape with no extra keys, `score` a multiple of 0.5 in 0–5, `confidence` 0–1, non-empty `reason`, `evidence_ids` a list of strings. The id check comes after (strip, then abstain if empty), so an unknown or missing id is never retried into a different made-up one.
 - **Deadlines:** one for all local work (both attempts) and one for the hosted fallback; their sum stays below the caller's 90 s (§21.4).
-- **Prompt bounds** (model context 4096): at most 12 evidence items, 500 characters per quote, 2000 characters of features; only ids that are in the prompt count as provided.
+- **Prompt bounds** (model context 4096, applied to the escaped text): at most 12 evidence items, 500 characters per quote within a shared 4800, 3000 for the idea, 1000 for features (Z4-13); only ids that are in the prompt count as provided.
 - **Prompt safety:** idea, quotes, source and features are XML-escaped, and the template is filled in one pass, so input cannot close a block or inject a placeholder.
 - **Pod:** `scorer` wrapper + `llama-server` sidecar (pinned `ghcr.io/ggml-org/llama.cpp:server-v1.1.0@sha256:…`) bound to the pod's loopback, GGUF on PVC `models`; an init container waits for the file. `model-import-base-v1` Job runs the `scorer-model:base-v1` image and copies the GGUF (checksum verified, atomic rename, no-op if already there).
 
@@ -134,15 +134,15 @@ Coverage target: ≥ 80 % of `scorer` business logic.
 
 | # | Task | Files | Verification | Done |
 |---|------|-------|--------------|------|
-| 1 | Shared fallback counter; public `strip_fence` | `libs/common/src/common/{metrics,llm}.py`, `services/agentops/src/agentops/services/metrics.py` | `pytest libs services/agentops` | [ ] |
-| 2 | Settings and pure prompt builder with bounds and escaping | `services/scorer/src/scorer/{settings.py,services/prompt.py}` | `test_prompt.py` | [ ] |
-| 3 | Local backend and scoring flow (validate, retry, fallback, strip, abstain, traces) | `scorer/services/{backend,scoring}.py` | `test_scoring.py`, `test_backend.py` | [ ] |
-| 4 | Routes, readiness probe, lifespan; replace stub tests | `scorer/{main.py,api/routes.py}` | `test_api.py`; `pytest eval/behaviour` | [ ] |
-| 5 | 10 fixture pairs, check script, live run on `qwen2.5:1.5b`, record cassettes, latency | `eval/fixtures/score_requests.jsonl`, `scripts/scorer_check.py`, `eval/behaviour/{cassettes/,test_scorer_cassettes.py}` | live report; cassette tests offline | [ ] |
-| 6 | Image, compose fragment, env names | `services/scorer/{Dockerfile,requirements.txt,compose.yaml}`, `.env.example` | docker build; container `/score` | [ ] |
-| 7 | Model image and manifests | `jobs/finetune/model-image/{Dockerfile,README.md}`, `k8s/base/scorer.yaml`, `eval/behaviour/test_packaging.py` | kubeconform; packaging tests | [ ] |
-| 8 | Cluster check within the disk budget | — | recorded in C3 | [ ] |
-| 9 | Testing subagent, fixes, docs, PR | — | full suite green | [ ] |
+| 1 | Shared fallback counter; public `strip_fence` | `libs/common/src/common/{metrics,llm}.py`, `services/agentops/src/agentops/services/metrics.py` | `pytest libs services/agentops` | [x] |
+| 2 | Settings and pure prompt builder with bounds and escaping | `services/scorer/src/scorer/{settings.py,services/prompt.py}` | `test_prompt.py` | [x] |
+| 3 | Local backend and scoring flow (validate, retry, fallback, strip, abstain, traces) | `scorer/services/{backend,scoring}.py` | `test_scoring.py`, `test_backend.py` | [x] |
+| 4 | Routes, readiness probe, lifespan; replace stub tests | `scorer/{main.py,api/routes.py}` | `test_api.py`; `pytest eval/behaviour` | [x] |
+| 5 | 10 fixture pairs, check script, live run on `qwen2.5:1.5b`, record cassettes, latency | `eval/fixtures/score_requests.jsonl`, `scripts/scorer_check.py`, `eval/behaviour/{cassettes/,test_scorer_cassettes.py}` | live report; cassette tests offline | [x] |
+| 6 | Image, compose fragment, env names | `services/scorer/{Dockerfile,requirements.txt,compose.yaml}`, `.env.example` | docker build; container `/score` | [x] |
+| 7 | Model image and manifests | `jobs/finetune/model-image/{Dockerfile,README.md}`, `k8s/base/scorer.yaml`, `eval/behaviour/test_packaging.py` | kubeconform; packaging tests | [x] |
+| 8 | Cluster check within the disk budget | — | recorded in C3 | [x] |
+| 9 | Testing subagent, fixes, docs, PR | — | full suite green | [x] |
 
 ### B2. Commit plan
 1. `docs(spec): add Z4 spec` · 2. `docs(plan): add Z4 plan`
@@ -153,8 +153,106 @@ Coverage target: ≥ 80 % of `scorer` business logic.
 7. `test(scorer): …` / `fix(scorer): …` (testing subagent) · 8. `docs(Z4): update spec report, checklist, plan, logs`
 
 ### B3. Definition of Done (phase)
-- [ ] All A4 criteria pass, or are left unticked with the reason.
-- [ ] ruff + mypy clean; coverage target met.
-- [ ] Dockerfile builds, non-root; manifest validates (kubeconform).
-- [ ] Checklist rows, plan progress log, deviations, AI log, decisions updated.
-- [ ] PR opened against `feat/z3-rubrics-agentops`; reviewer = Ahmad.
+- [x] All A4 criteria pass, or are left unticked with the reason.
+- [x] ruff + mypy clean; coverage target met.
+- [x] Dockerfile builds, non-root; manifest validates (kubeconform).
+- [x] Checklist rows, plan progress log, deviations, AI log, decisions updated.
+- [x] PR opened against `feat/z3-rubrics-agentops`; reviewer = Ahmad.
+
+---
+
+## Part C — Implementation and test report
+
+### C1. What was built
+- `services/scorer/src/scorer/`: `services/prompt.py` (prompt from `scorer@v1` + rubric, bounded and escaped), `services/backend.py` (OpenAI-compatible local model), `services/scoring.py` (validate → one retry → hosted fallback → strip ids → abstain, traces, metric), `settings.py`, `main.py` (readiness probe), `api/routes.py`.
+- `services/scorer/{Dockerfile,compose.yaml,requirements.txt}` (adds PyYAML 6.0.4).
+- `k8s/base/scorer.yaml`: wrapper + llama.cpp sidecar, wait-for-model init container, `models` PVC, `model-import-base-v1` Job. Dev overlay points at scorer image `3eec195`.
+- `jobs/finetune/model-image/{Dockerfile,README.md}`.
+- `scripts/scorer_check.py`, `eval/fixtures/score_requests.jsonl` (10 fictional pairs), `eval/behaviour/cassettes/scorer_*.jsonl`.
+- Shared (Zain-owned): `common.metrics` (new), `common.llm` (`strip_fence`, `describe_errors`), `common.trace` (surrogates cleaned), `ScoreRequest.features` validator; M13 now imports the shared counter. No JSON Schema changed.
+
+### C2. Deviations from spec / architecture
+| What | Why | Logged in deviations.md as |
+|------|-----|---------------------------|
+| `model` can be `none` (abstention without a usable model reply); CPU latency is far above ADR-005's estimate, so deadlines are 60 s + 25 s | §12.2 abstention; measurements | D-009 |
+| Prompt bounds differ from the first draft of A6 (A6 now shows the final ones) | testing subagent: escaping could overflow the context | decision Z4-13 |
+
+### C3. Test report
+
+**Testing subagent** (`agent-skills:test-engineer`, one run, test files only; it added `test_edge_cases.py` and `eval/behaviour/test_scorer_ops.py`). Its run: ruff and mypy clean; `pytest -q` 878 passed, 9 failed (its own bug tests), 8 deselected; scorer coverage 99 %; image built (user 10001, 212 MB); kubeconform 27/27 valid.
+
+Bugs found, all fixed in `3eec195` (tests in `ad988ff`):
+1. Model-written text (`reason`, names of extra fields) reached stdout through decision records and logs.
+2. Unserialisable or deeply nested `features` gave HTTP 500.
+3. `OverflowError` / `RecursionError` from an odd local reply escaped instead of falling back.
+4. A lone surrogate in a reply blocked trace delivery for all later records (`common.trace`).
+5. The id rewrite damaged ordinary words (`flashcard_decks`).
+6. `scorer_check.py` counted an HTTP error twice.
+
+Also fixed from its observations: the prompt bound (now on escaped text), an invalid model URL crashed start-up, blank model id and unbounded deadlines were accepted, one timing-sensitive test.
+
+**Found by the cluster check** (after the subagent): the model image's `/model` folder had mode 0444, so uid 10001 could not read it and the import Job could never work. Fixed in `1f111ab` with a packaging assertion.
+
+**Final run** (tree at `2dd2e2b`):
+| Command | Result |
+|---------|--------|
+| `ruff check .`, `ruff format --check .`, `mypy libs services scripts` | clean |
+| `python scripts/check_registry.py` | ok, 16 entries |
+| `pytest -q` | 888 passed, 8 deselected |
+| `pytest services/scorer eval/behaviour --cov=scorer` | 227 passed, 99 % |
+| `kubectl kustomize k8s/overlays/dev \| kubeconform -strict` | 27 valid, 0 invalid |
+| `docker build` scorer (212 MB) and agentops (import check) | ok |
+| `docker compose config -q` | ok (compose services were not started) |
+
+Not run: `pytest -m integration` (Postgres code unchanged); the compose stack (the scorer container was run alone with `--network host`, read-only, uid 10001, against host Ollama).
+
+**Live, base model** (`qwen2.5:1.5b` = Qwen2.5-1.5B-Instruct Q4_K_M):
+| Where | Result |
+|-------|--------|
+| in process, Ollama (recording, before the fixes) | 10/10 valid and scored, no retry, p50 29.4 s, max 34.8 s |
+| scorer container → host Ollama (before the fixes) | 10/10, `/ready` 200, p50 28.7 s, max 33.6 s |
+| **minikube, llama.cpp sidecar, final code `3eec195`** | 10/10, no retry or fallback, p50 35.3 s, max 45.0 s |
+
+**Cluster check (A4 #4: partly)** on profile `idea-validator`:
+| Part | How | Result |
+|------|-----|--------|
+| Job → PVC | model image built from the real Dockerfile with a **1 MB random stand-in** file | checksum verified, "model imported"; second run "model already imported"; init container passed; llama.cpp rejected the stand-in (expected); the old scorer pod kept serving |
+| sidecar + readiness with the real model | `models` volume temporarily patched to a `hostPath` over `minikube mount` of a **hard link** to the GGUF (no copy) | llama.cpp loaded it in 57 s; wrapper logged "model not ready: 503 Loading model", then "model answered the probe prompt", then the pod was Ready (2/2, 0 restarts) |
+| traces | M13 metrics and `/summary` | 10 scorer model calls, 5455 / 1227 tokens, 0 rejected records |
+
+**Not verified:** (a) the whole path with the real model, image → Job → PVC → sidecar. **Blocker: disk.** It needs about 4.3 GB in the node (llama.cpp ≈ 1.1 GB, model image content + unpacked ≈ 2 GB, PVC ≈ 1 GB, scorer image) and there were 4.4 GB free with a 2 GB floor. A4 #4 stays unticked. (b) The **live hosted fallback**: no Gemini key and no M5; only cassettes. In the cluster and in the container the fallback target is absent, so a failed local score would abstain. (c) The official Hugging Face GGUF was not downloaded; Ollama's file was used.
+
+Afterwards: check objects (scorer Deployment, Job, `models` PVC) deleted, so the next `kubectl apply -k` recreates them; llama.cpp and stand-in images removed from the node; images built here removed from the host; build cache pruned; profile and Ollama server stopped. `qwen2.5:1.5b` stays pulled. Free disk: 5.5 GB at start, lowest observed 3.3 GB, 4.4 GB at the end.
+
+### C4. Measurements
+Laptop: i3-1215U (2 P + 4 E cores), no GPU.
+
+| Measure | Value |
+|---------|-------|
+| p50 / max latency per score, llama.cpp in the pod (2 threads, CPU limit 2) | 35.3 s / 45.0 s (n = 10) |
+| Same pairs, host Ollama | 28.7 s / 33.6 s |
+| Tokens per score | 500–590 in, 75–152 out |
+| Ollama speed | prompt 25–40 tok/s, generation ≈ 10 tok/s |
+| Largest English prompt allowed by the bounds | 2372 tokens (fits 4096); **125 s** on Ollama, over the 60 s deadline |
+| Pod memory, `kubectl top` | llama 826 Mi just ready, 1124 Mi after scoring; wrapper 46 Mi |
+| llama container cgroup | peak ≈ 1990 MiB including ≈ 960 MiB file cache (limit 2560 Mi). The file was on a 9p mount, so a PVC may differ |
+| Host Ollama model server | 1.37 GB RSS |
+| Model load in the pod (9p mount) | 57 s |
+| Image sizes | scorer 212 MB on disk (≈ 51 MB content); llama.cpp 296 MB compressed, ≈ 838 MB unpacked; GGUF 986 MB |
+
+ADR-005 expected 1–4 s per score; on this CPU it is about ten times that. Resource values stay those of §17.2, with the wrapper moved from the stub's 128 / 384 Mi to its planned 96 / 256 Mi; final values in Z11.
+
+**Base-model quality** (10 pairs, no ground truth, read by hand; the real comparison is Z9): every cited id was real, but
+- `competition` gave 5.0 ("little competition") despite a funded product at similarity 0.91, and its reason named a funded competitor "OpenQuiz" that is in no evidence;
+- `feasibility` gave 4.0 where `hours_ratio` was 1.08 (does not fit);
+- one score differed between runs (differentiation case 5: 4.0 when recorded, 3.0 later) despite temperature 0 and a fixed seed.
+
+A schema-valid answer is therefore not a correct one: these scores should not be trusted before Z9/Z10.
+
+### C5. Follow-ups
+- **Z5/Z7 (important):** six scores on one model slot take 3–4 minutes if sent at once; requests waiting in the queue would hit the 60 s deadline and fall back. M9 needs short evidence (≈ 1200 prompt tokens at most on this CPU) and either sequential calls with a matching caller budget, more threads or slots, or a faster host. Decide with measurements before wiring the parallel scorers.
+- **Z6:** the critic must check names in reasons, not only ids (AVOID-4); the invented "OpenQuiz" is a ready test case.
+- **Z7:** do not cache a verdict built on a `model="none"` score.
+- **Z9:** reuse `scorer.services.prompt` for the dataset; compare unconstrained valid-JSON rate (serving constrains decoding with a JSON schema, which raises it); measure repeatability.
+- **Run the full import path** on a machine or cluster with ≥ 7 GB free (`jobs/finetune/model-image/README.md`) and then tick A4 #4.
+- **Ahmad:** M5 `/llm/chat` must serve alias `scorer-hosted`; A0/A10 must publish `…-scorer-model:base-v1` to GHCR (without it a deploy leaves the new scorer pod waiting in `Init`); NetworkPolicy keeps the pod without egress.

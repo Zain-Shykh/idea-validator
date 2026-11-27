@@ -14,7 +14,7 @@
 | Z1 | Walking skeleton of Zain's services | In review | [Z1](specs/Z1-walking-skeleton.md) | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) | 2026-11-27 08:09 | — |
 | Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | In review | [Z3](specs/Z3-rubrics-agentops.md) | [#9](https://github.com/Zain-Shykh/idea-validator/pull/9) | 2026-11-27 10:04 | — |
-| Z4 | M10 Scorer serving (base model + fallback) | In progress | [Z4](specs/Z4-scorer-serving.md) | — | 2026-11-27 10:43 | — |
+| Z4 | M10 Scorer serving (base model + fallback) | In review | [Z4](specs/Z4-scorer-serving.md) | — | 2026-11-27 10:43 | — |
 | Z5 | M9 Validation agents (4 scorers) | Not started | — | — | — | — |
 | Z6 | M12 Critic and Guardrails | Not started | — | — | — | — |
 | Z7 | M3 Orchestrator: run lifecycle + Validate | Not started | — | — | — | — |
@@ -216,7 +216,7 @@ flowchart LR
 
 ## Z4 — M10 Scorer serving (base model + fallback)
 
-- **Status:** In progress · **Spec:** `docs/specs/Z4-scorer-serving.md` · **Branch:** `feat/z4-scorer-serving`
+- **Status:** In review · **Spec:** `docs/specs/Z4-scorer-serving.md` · **Branch:** `feat/z4-scorer-serving`
 - **Requirements:** M10-1 (container; fine-tuned weights arrive in Z9), M10-2, M10-3, M10-5, FT-7, API-I3, AO-1, AO-6 (fallback metric)
 - **Depends on:** Z3 (rubrics, prompts, trace). M5 not required (`LLM_BACKEND=direct` until A2). **Unblocks:** Z5.
 
@@ -231,16 +231,20 @@ flowchart LR
 **Deliverables.** `services/scorer/**`, `jobs/finetune/model-image/Dockerfile` (packs a GGUF into an image), `k8s/base/scorer.yaml` (+ PVC, model-import Job).
 
 **Acceptance criteria.**
-- [ ] With the base model, `/score` returns schema-valid `DimensionScore` for 10 fixture (idea, evidence) pairs across all six rubrics.
-- [ ] Cassette tests: invalid JSON → exactly one retry → fallback called; timeout → fallback; fallback recorded in trace (`model=scorer-hosted`) and `ideaval_scorer_fallbacks_total` increments.
-- [ ] Evidence ids not in the provided set are stripped; if none remain the response is an abstention (score null, confidence 0).
-- [ ] Pod runs on minikube: model imported into PVC by the Job, sidecar loads it, `/ready` only after the model answers a probe prompt.
-- [ ] p50 latency per score and pod memory measured and written into the spec's test report.
+- [x] With the base model, `/score` returns schema-valid `DimensionScore` for 10 fixture (idea, evidence) pairs across all six rubrics. *(live on minikube, llama.cpp)*
+- [x] Cassette tests: invalid JSON → exactly one retry → fallback called; timeout → fallback; fallback recorded in trace (`model=scorer-hosted`) and `ideaval_scorer_fallbacks_total` increments. *(live hosted call not verified: no key, no M5)*
+- [x] Evidence ids not in the provided set are stripped; if none remain the response is an abstention (score null, confidence 0).
+- [ ] Pod runs on minikube: model imported into PVC by the Job, sidecar loads it, `/ready` only after the model answers a probe prompt. ***Blocker (disk):*** *the full path with the real model needs ≈ 4.3 GB in the node; 4.4 GB were free with a 2 GB floor. Checked separately: Job → PVC with a stand-in file; sidecar and probe with the real model through a mount (spec C3).*
+- [x] p50 latency per score and pod memory measured and written into the spec's test report. *(p50 35.3 s; llama 1124 Mi, wrapper 46 Mi)*
 
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
 | 2026-11-27 10:43 | Started | Branch `feat/z4-scorer-serving` from `feat/z3-rubrics-agentops` (PR #9 unmerged) |
+| 2026-11-27 10:50 | Spec and plan pushed | `883bc31`, `75ba4f8` |
+| 2026-11-27 11:08 | Implementation pushed | up to `374cf24` |
+| 2026-11-27 11:21 | Tests and fixes pushed | testing subagent; `ad988ff`, `3eec195` |
+| 2026-11-27 11:34 | Cluster check (partial), model-image fix | `1f111ab`, `2dd2e2b`; one criterion open (disk) |
 
 ---
 
