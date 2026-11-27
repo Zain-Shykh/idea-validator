@@ -355,6 +355,9 @@ flowchart LR
 | Date & time | Event | Notes |
 |-------------|-------|-------|
 | 2026-11-27 15:55 | Started | Branch `feat/z7-orchestrator-validate` from `feat/z6-critic-guardrails` (PR #15 unmerged) |
+| 2026-11-27 15:55 | Spec | `docs/specs/Z7-orchestrator-validate.md` Part A |
+| 2026-11-27 15:56 | Plan | Part B |
+| 2026-11-27 16:19 | Implemented | State machine, run API, tests, behaviour tests; image built and run against fake services |
 
 ---
 

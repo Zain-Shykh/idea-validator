@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session |
 | Branch | `feat/z7-orchestrator-validate` (parent `feat/z6-critic-guardrails`, PR #15 unmerged) |
-| Status | Draft spec |
+| Status | Testing |
 | Requirement IDs | `M3-1..6, WF-V1..V9, U3, U4, U5, U6, U10, AO-1, AO-2, M2-4, M2-5, AVOID-1, AVOID-2, AVOID-3` |
 | Architecture refs | `architecture.md §6.1–6.3, §6.5, §6.7, §7.2, §8.4, §8.5, §15, §21.3–21.4`, ADR-001, ADR-004 |
 | Depends on | Z2 (M11), Z5 (M9), Z6 (M12), all real. Fakes: M2, M4, M5, M6, gateway; M8 is the Z1 stub |
@@ -186,13 +186,13 @@ Coverage target: ≥ 90 % of `services/orchestrator/src`.
 ### B1. Task breakdown
 | # | Task | Files | Verification | Done |
 |---|------|-------|--------------|------|
-| 1 | Transition tables, checkpoint, budget arithmetic, rules loader | `services/{state_machine,budget,rules}.py`, `settings.py`, tests | `pytest services/orchestrator/tests/unit/test_state_machine.py` | [ ] |
-| 2 | M2 client, event stream sequence, memo, downstream clients | `repositories/*`, `services/downstream.py` | mypy | [ ] |
-| 3 | Run context, Validate steps, runner | `services/{run,validate,runner}.py` | happy path test | [ ] |
-| 4 | Routes, app wiring, readiness, shutdown; remove the Z1 stub | `api/routes.py`, `main.py` | API and lifecycle tests | [ ] |
-| 5 | Fake stack and workflow tests (budget, clarify, cache, scoring, resume, guard) | `tests/unit/*`, `tests/integration/*` | `pytest services/orchestrator` | [ ] |
-| 6 | Behaviour tests with real M9, M11, M12, M13 and cassettes | `eval/behaviour/test_orchestrator.py`, cassettes | `pytest eval/behaviour` | [ ] |
-| 7 | Image, compose, manifest, `.env.example` | `Dockerfile`, `compose.yaml`, `requirements.txt`, `k8s/base/orchestrator.yaml` | build, container run against fakes, kubeconform | [ ] |
+| 1 | Transition tables, checkpoint, budget arithmetic, rules loader | `services/{state_machine,budget,rules}.py`, `settings.py`, tests | `pytest services/orchestrator/tests/unit/test_state_machine.py` | [x] |
+| 2 | M2 client, event stream sequence, memo, downstream clients | `repositories/*`, `services/downstream.py` | mypy | [x] |
+| 3 | Run context, Validate steps, runner | `services/{run,validate,runner}.py` | happy path test | [x] |
+| 4 | Routes, app wiring, readiness, shutdown; remove the Z1 stub | `api/routes.py`, `main.py` | API and lifecycle tests | [x] |
+| 5 | Fake stack and workflow tests (budget, clarify, cache, scoring, resume, guard) | `tests/unit/*`, `tests/integration/*` | `pytest services/orchestrator` | [x] |
+| 6 | Behaviour tests with real M9, M11, M12, M13 and cassettes | `eval/behaviour/test_orchestrator.py`, cassettes | `pytest eval/behaviour` | [x] |
+| 7 | Image, compose, manifest, `.env.example` | `Dockerfile`, `compose.yaml`, `requirements.txt`, `k8s/base/orchestrator.yaml` | build, container run against fakes, kubeconform | [x] |
 | 8 | Testing subagent, fixes | tests | full suite | [ ] |
 | 9 | Docs and PR | `docs/**`, README | — | [ ] |
 
