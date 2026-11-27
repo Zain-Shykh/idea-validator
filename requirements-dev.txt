@@ -1,0 +1,32 @@
+# Local development + test tooling for the whole repo, installed into ./.venv (see docs/setup.md).
+# Each service also has its own pinned requirements.txt used by its Docker image.
+# No PyTorch here on purpose: fine-tuning runs on Colab/Kaggle (jobs/finetune), embeddings use ONNX (fastembed).
+fastapi==0.165.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.4
+pydantic-settings==2.16.3
+httpx==0.29.0
+tenacity==9.2.1
+sse-starlette==3.7.1
+sqlalchemy==2.1.9
+alembic==1.20.1
+psycopg[binary]==3.3.9
+pgvector==0.5.1
+redis==8.2.0
+pyyaml==6.0.4
+prometheus-client==0.26.0
+pyjwt==2.15.1
+argon2-cffi==25.1.0
+litellm==1.111.0
+fastembed==0.9.1
+scikit-learn==1.9.1
+numpy==2.5.5
+jsonschema==4.26.0
+pytest==9.2.0
+pytest-asyncio==1.5.0
+pytest-cov==7.1.0
+respx==0.23.1
+hypothesis==6.170.17
+ruff==0.17.6
+mypy==2.4.1
+types-PyYAML==6.0.12.20261122

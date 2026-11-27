@@ -1,0 +1,50 @@
+# Personal agent context (Zain only)
+CLAUDE.md
+.claude/
+.claude-runs/
+
+# Secrets
+.env
+*.env
+!.env.example
+*.pem
+*.key
+kubeconfig*
+secrets/
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+coverage.xml
+htmlcov/
+.hypothesis/
+
+# Node
+node_modules/
+dist/
+.vite/
+
+# Models and large artefacts (never in git: use releases / registry)
+*.gguf
+*.safetensors
+*.bin
+*.pt
+*.onnx
+models/
+jobs/finetune/outputs/
+
+# Runtime data
+traces/
+*.log
+
+# Editors / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store

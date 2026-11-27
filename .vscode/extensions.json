@@ -1,0 +1,8 @@
+{
+  "recommendations": [
+    "bierner.markdown-mermaid",
+    "ms-python.python",
+    "charliermarsh.ruff",
+    "ms-kubernetes-tools.vscode-kubernetes-tools"
+  ]
+}
