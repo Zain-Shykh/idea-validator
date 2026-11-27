@@ -10,7 +10,7 @@
 | Requirement IDs | M10-1 (container), M10-2, M10-3, M10-5, FT-7, API-I3, AO-1, AO-6 (fallback metric) |
 | Architecture refs | `architecture.md` §7.2, §12.1, §12.2, §14.2, §17, §21.4; ADR-005, ADR-003; D-002, D-007 |
 | Depends on | Z3 (rubrics, prompts, trace, ops events). M5 not built: `LLM_BACKEND=direct` or cassettes |
-| Issue / PR | — / — |
+| Issue / PR | #10 / #11 |
 
 ---
 

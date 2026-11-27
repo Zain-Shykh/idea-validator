@@ -14,7 +14,7 @@
 | Z1 | Walking skeleton of Zain's services | In review | [Z1](specs/Z1-walking-skeleton.md) | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) | 2026-11-27 08:09 | — |
 | Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | In review | [Z3](specs/Z3-rubrics-agentops.md) | [#9](https://github.com/Zain-Shykh/idea-validator/pull/9) | 2026-11-27 10:04 | — |
-| Z4 | M10 Scorer serving (base model + fallback) | In review | [Z4](specs/Z4-scorer-serving.md) | — | 2026-11-27 10:43 | — |
+| Z4 | M10 Scorer serving (base model + fallback) | In review | [Z4](specs/Z4-scorer-serving.md) | [#11](https://github.com/Zain-Shykh/idea-validator/pull/11) | 2026-11-27 10:43 | — |
 | Z5 | M9 Validation agents (4 scorers) | Not started | — | — | — | — |
 | Z6 | M12 Critic and Guardrails | Not started | — | — | — | — |
 | Z7 | M3 Orchestrator: run lifecycle + Validate | Not started | — | — | — | — |
@@ -245,6 +245,7 @@ flowchart LR
 | 2026-11-27 11:08 | Implementation pushed | up to `374cf24` |
 | 2026-11-27 11:21 | Tests and fixes pushed | testing subagent; `ad988ff`, `3eec195` |
 | 2026-11-27 11:34 | Cluster check (partial), model-image fix | `1f111ab`, `2dd2e2b`; one criterion open (disk) |
+| 2026-11-27 11:41 | PR opened | [#11](https://github.com/Zain-Shykh/idea-validator/pull/11), issue #10, base `feat/z3-rubrics-agentops` |
 
 ---
 
