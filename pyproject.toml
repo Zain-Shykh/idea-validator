@@ -10,6 +10,7 @@ ignore = ["ASYNC109"]  # per-request httpx timeouts are passed as arguments on p
 [tool.ruff.lint.isort]
 known-first-party = [
     "common", "orchestrator", "ideation", "validators", "scorer", "verdict", "critic", "agentops",
+    "dataset", "build_dataset", "draft_labels", "review", "split", "evaluate",
 ]
 
 [tool.ruff.lint.flake8-bugbear]
@@ -18,7 +19,7 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header"]
 [tool.mypy]
 python_version = "3.12"
 plugins = ["pydantic.mypy"]
-mypy_path = "libs/common/src:services/orchestrator/src:services/ideation/src:services/validators/src:services/scorer/src:services/verdict/src:services/critic/src:services/agentops/src"
+mypy_path = "libs/common/src:services/orchestrator/src:services/ideation/src:services/validators/src:services/scorer/src:services/verdict/src:services/critic/src:services/agentops/src:jobs/finetune"
 explicit_package_bases = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
@@ -52,6 +53,8 @@ pythonpath = [
     "services/critic/tests/unit",  # test builders (critic_factories)
     "services/orchestrator/tests/unit",  # test builders (orchestrator_factories)
     "eval/behaviour",  # behaviour_stack, shared by the behaviour tests
+    "jobs/finetune",  # the fine-tuning scripts (M10t)
+    "jobs/finetune/tests",  # test builders (finetune_factories)
 ]
 addopts = "--import-mode=importlib -m 'not integration and not cluster'"
 asyncio_mode = "auto"
