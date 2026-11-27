@@ -10,7 +10,7 @@
 | Requirement IDs | `M3-1..6, WF-V1..V9, U3, U4, U5, U6, U10, AO-1, AO-2, M2-4, M2-5, AVOID-1, AVOID-2, AVOID-3` |
 | Architecture refs | `architecture.md §6.1–6.3, §6.5, §6.7, §7.2, §8.4, §8.5, §15, §21.3–21.4`, ADR-001, ADR-004 |
 | Depends on | Z2 (M11), Z5 (M9), Z6 (M12), all real. Fakes: M2, M4, M5, M6, gateway; M8 is the Z1 stub |
-| Issue / PR | filled in Part C |
+| Issue / PR | #16 / #17 |
 
 ---
 
