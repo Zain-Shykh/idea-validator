@@ -257,3 +257,6 @@ def test_no_model_weights_are_tracked_and_the_model_image_is_pinned() -> None:
     bases = re.findall(r"^FROM (\S+)", text, re.MULTILINE)
     assert bases and all("@sha256:" in base for base in bases)
     assert re.findall(r"^USER (\S+)", text, re.MULTILINE) == ["10001"]
+    # --chmod also applies to the folder COPY creates: without x, the Job cannot read the model
+    modes = re.findall(r"--chmod=0?([0-7]{3})", text)
+    assert modes and all(int(digit, 8) & 5 == 5 for mode in modes for digit in mode)
