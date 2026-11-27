@@ -66,7 +66,7 @@ kubectl get pods -n idea-validator
 # open http://$(minikube -p idea-validator ip)/   (after A0/A1: Ingress and UI)
 ```
 
-Checks: `ruff check . && ruff format --check . && mypy libs services jobs/finetune` · `python scripts/check_registry.py` (a changed rubric, prompt, budget or verdict rule needs a new version, then `--update`) · after a contract change `python -m common.contracts.export`, verified by `--check`.
+Checks: `ruff check . && ruff format --check . && mypy libs services jobs/finetune jobs/evaluation` · `python scripts/check_registry.py` (a changed rubric, prompt, budget or verdict rule needs a new version, then `--update`) · after a contract change `python -m common.contracts.export`, verified by `--check`.
 
 Tests: `pytest -q` (unit + contract) · `pytest -m integration` (needs `docker compose up -d postgres redis`; the AgentOps tests also need `AGENTOPS_TEST_DATABASE_URL`, docs/setup.md §5) · UI: `cd services/ui && npm test`.
 
