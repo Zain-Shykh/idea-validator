@@ -81,7 +81,10 @@ from orchestrator.services.run import (
     RunFailedError,
     stored,
 )
-from orchestrator.services.state_machine import Step
+from orchestrator.services.state_machine import BaseCheckpoint, Checkpoint, Step
+
+# a Validate step's view of a run; the helpers Discover shares take any run
+ValidateContext = RunContext[Checkpoint]
 
 # which scorer produces which dimensions (§6.2, M9-1)
 SCORERS: dict[str, tuple[Dimension, ...]] = {
@@ -109,7 +112,7 @@ CHECK_UNAVAILABLE_PREFIX = "claim check unavailable"
 # --- INTAKE ------------------------------------------------------------------------------------
 
 
-def cache_key(r: RunContext) -> str | None:
+def cache_key(r: ValidateContext) -> str | None:
     """None when a version is unknown: then nothing can be cached safely (AVOID-2)."""
     cp = r.cp
     if cp.kb_version is None or cp.engine_version is None or cp.weights_version is None:
@@ -127,7 +130,7 @@ def cache_key(r: RunContext) -> str | None:
     )
 
 
-async def _engine_versions(r: RunContext) -> None:
+async def _engine_versions(r: ValidateContext) -> None:
     try:
         reply: VerdictConfigResponse = await r.call(
             "verdict", "/config", method="GET", tool="verdict_config", agent="verdict",
@@ -142,7 +145,7 @@ async def _engine_versions(r: RunContext) -> None:
     r.cp.weights_version = reply.versions.profile_weights
 
 
-async def _kb_version(r: RunContext) -> str | None:
+async def _kb_version(r: ValidateContext) -> str | None:
     try:
         stats: KbStats = await r.call(
             "kb", "/stats", method="GET", tool="kb_stats", agent=AGENT,
@@ -153,7 +156,7 @@ async def _kb_version(r: RunContext) -> str | None:
     return stats.kb_version
 
 
-async def _cached(r: RunContext) -> Verdict | None:
+async def _cached(r: ValidateContext) -> Verdict | None:
     key = cache_key(r)
     if key is None:
         return None
@@ -168,7 +171,7 @@ async def _cached(r: RunContext) -> Verdict | None:
     return verdict
 
 
-async def rail(r: RunContext, text: str) -> InputRailResponse:
+async def rail[C: BaseCheckpoint](r: RunContext[C], text: str) -> InputRailResponse:
     """The input rail fails closed: without it no model sees the text (M12-3)."""
     try:
         reply: InputRailResponse = await r.call(
@@ -181,12 +184,13 @@ async def rail(r: RunContext, text: str) -> InputRailResponse:
     return reply
 
 
-async def intake(r: RunContext) -> Step | None:
+async def intake(r: ValidateContext) -> Step | None:
     cp = r.cp
     await _engine_versions(r)
     cp.kb_version = await _kb_version(r)
     hit = await _cached(r)
     if hit is not None:
+        cp.source_run_id = hit.run_id
         # the same decision for this run's ids; M11 made it, nothing is recomputed
         cp.verdict = hit.model_copy(
             update={
@@ -215,6 +219,8 @@ async def intake(r: RunContext) -> Step | None:
         parts[name] = shorten(reply.redacted_text, 200 if name == "title" else MAX_IDEA_CHARS)
     cp.safe_idea = IdeaInput.model_validate(parts)
 
+    if cp.parent_run_id is not None:
+        return Step.EVIDENCE  # a parent cannot wait for answers, so nothing is asked
     await r.spend_steps(1)
     try:
         asked: IntakeResponse = await r.call(
@@ -235,12 +241,12 @@ async def intake(r: RunContext) -> Step | None:
 # --- EVIDENCE and DEEP_SEARCH ------------------------------------------------------------------
 
 
-def _agent_idea(r: RunContext) -> IdeaInput:
+def _agent_idea(r: ValidateContext) -> IdeaInput:
     assert r.cp.safe_idea is not None  # INTAKE sets it before any later step
     return r.cp.safe_idea
 
 
-async def _search(r: RunContext) -> SearchResponse:
+async def _search(r: ValidateContext) -> SearchResponse:
     idea = _agent_idea(r)
     request = SearchRequest(
         query=shorten(f"{idea.title}\n{idea.text}", MAX_QUERY_CHARS), k=r.deps.settings.search_k
@@ -269,7 +275,7 @@ async def _search(r: RunContext) -> SearchResponse:
     return found
 
 
-async def _flagged(r: RunContext, items: list[EvidenceItem]) -> set[str]:
+async def flagged_ids[C: BaseCheckpoint](r: RunContext[C], items: list[EvidenceItem]) -> set[str]:
     """Evidence that looks like an order to a model; it reaches no agent (M12-2, ETH-5)."""
     if not items:
         return set()
@@ -286,11 +292,11 @@ async def _flagged(r: RunContext, items: list[EvidenceItem]) -> set[str]:
     return {f.evidence_id for f in reply.flagged}
 
 
-async def evidence(r: RunContext) -> Step | None:
+async def evidence(r: ValidateContext) -> Step | None:
     cp = r.cp
     found = await _search(r)
     items = [EvidenceItem(**x.model_dump(exclude={"score", "card_name"})) for x in found.results]
-    withheld = await _flagged(r, items)
+    withheld = await flagged_ids(r, items)
     cp.evidence = [i for i in items if i.evidence_id not in withheld]
     cards = len({i.card_id for i in cp.evidence})
     sources = len({i.source for i in cp.evidence})
@@ -306,14 +312,14 @@ async def evidence(r: RunContext) -> Step | None:
     return await _ask_for_deep_search(r)
 
 
-async def _ask_for_deep_search(r: RunContext) -> Step | None:
+async def _ask_for_deep_search(r: ValidateContext) -> Step | None:
     settings = r.deps.settings
     estimate = budget.deep_search_estimate(
         settings.deep_search_pages, settings.deep_search_page_cost_usd
     )
     r.cp.deep_search_pages = estimate.pages
     await r.sync_spend()
-    left = budget.remaining(r.cp.spend, r.cp.budget)
+    left = r.remaining()
     try:
         policy: ApprovalPolicyResponse = await r.call(
             "critic", "/policy/approval", tool="approval_policy", agent="critic",
@@ -332,6 +338,8 @@ async def _ask_for_deep_search(r: RunContext) -> Step | None:
     if not needs:
         r.cp.deep_search = "approved"
         return Step.DEEP_SEARCH
+    if r.cp.parent_run_id is not None:
+        return _skip_deep_search(r)
 
     request = ApprovalRequest(
         # one deep search per run: asking again after a lost checkpoint is the same approval
@@ -360,12 +368,23 @@ async def _ask_for_deep_search(r: RunContext) -> Step | None:
     return None
 
 
-async def deep_search(r: RunContext) -> Step | None:
+def _skip_deep_search(r: ValidateContext) -> Step:
+    """A child cannot ask for approval, so a search that needs it is not run (U4)."""
+    r.cp.deep_search = "declined"
+    r.cp.degrade("deep search needs approval, which a Discover run does not ask for")
+    return Step.FEATURES
+
+
+async def deep_search(r: ValidateContext) -> Step | None:
     cp = r.cp
     if cp.deep_search == "approved":
         pages = cp.deep_search_pages
         # tokens or cost may be used up although the search itself was within budget
         await r.spend_steps(1)
+        if cp.parent_run_id is not None and pages > r.remaining().max_pages:
+            # another child bought the pages after the policy looked
+            _skip_deep_search(r)
+            return Step.EVIDENCE
         cp.deep_search = "started"
         r.add_spend(pages=pages)
         # stored before the call: after a crash the search is not bought a second time
@@ -397,7 +416,7 @@ async def deep_search(r: RunContext) -> Step | None:
 # --- FEATURES and SCORING ----------------------------------------------------------------------
 
 
-async def features(r: RunContext) -> Step | None:
+async def features(r: ValidateContext) -> Step | None:
     """Scorers compute their own features before their model call (B-006); the one number M3
     needs itself, in case the feasibility scorer fails, comes from the profile."""
     p = r.cp.profile
@@ -405,7 +424,7 @@ async def features(r: RunContext) -> Step | None:
     return Step.SCORING
 
 
-def _memo_key(r: RunContext, name: str, request: ScorerRequest) -> str | None:
+def _memo_key(r: ValidateContext, name: str, request: ScorerRequest) -> str | None:
     if r.cp.kb_version is None:
         return None
     rules = r.deps.rules
@@ -427,7 +446,7 @@ def _failed(score: DimensionScore) -> bool:
     return score.reason.startswith(FAILED_PREFIX)
 
 
-def trustworthy(r: RunContext, reply: ScorerResponse) -> bool:
+def trustworthy(r: ValidateContext, reply: ScorerResponse) -> bool:
     """Whether a reply may be reused: no failure, no fallback model, a real effort estimate."""
     model = r.deps.settings.scorer_model_id
     return not any(
@@ -438,7 +457,7 @@ def trustworthy(r: RunContext, reply: ScorerResponse) -> bool:
     )
 
 
-def _abstain(r: RunContext, dimension: Dimension, reason: str) -> DimensionScore:
+def _abstain(r: ValidateContext, dimension: Dimension, reason: str) -> DimensionScore:
     return DimensionScore(
         dimension=dimension,
         score=None,
@@ -450,12 +469,12 @@ def _abstain(r: RunContext, dimension: Dimension, reason: str) -> DimensionScore
     )
 
 
-def _right_shape(r: RunContext, name: str, reply: ScorerResponse) -> bool:
+def _right_shape(r: ValidateContext, name: str, reply: ScorerResponse) -> bool:
     got = sorted((s.dimension, s.rubric_version) for s in reply.scores)
     return got == sorted((d, r.deps.rules.rubric_ids[d]) for d in SCORERS[name])
 
 
-async def _call_scorer(r: RunContext, name: str, request: ScorerRequest) -> ScorerResponse:
+async def _call_scorer(r: ValidateContext, name: str, request: ScorerRequest) -> ScorerResponse:
     """At most 3 attempts inside one limit (600 s, D-010). A timeout is never retried: the
     abandoned job still occupies the model. A scorer that still fails abstains (M9-4)."""
     code = "TIMEOUT"
@@ -503,7 +522,7 @@ async def _call_scorer(r: RunContext, name: str, request: ScorerRequest) -> Scor
 
 
 async def _only_known_evidence(
-    r: RunContext, replies: dict[str, ScorerResponse]
+    r: ValidateContext, replies: dict[str, ScorerResponse]
 ) -> dict[str, ScorerResponse]:
     """No evidence, no claim: ids M6 does not know are stripped; a score or blocker with none
     left is dropped."""
@@ -549,7 +568,7 @@ async def _only_known_evidence(
     return checked
 
 
-async def scoring(r: RunContext) -> Step | None:
+async def scoring(r: ValidateContext) -> Step | None:
     """Four scorers in parallel (M3-2, WF-V3). Only what changed is run again (M3-5)."""
     cp = r.cp
     todo: dict[str, tuple[ScorerRequest, str | None]] = {}
@@ -618,7 +637,7 @@ def merge_gate_inputs(results: dict[str, ScorerResponse], available_hours: int) 
     )
 
 
-def verdict_request(r: RunContext, objections: list[Objection]) -> VerdictRequest:
+def verdict_request(r: ValidateContext, objections: list[Objection]) -> VerdictRequest:
     cp = r.cp
     by_dimension = {s.dimension: s for reply in cp.scorer_results.values() for s in reply.scores}
     return VerdictRequest(
@@ -637,7 +656,7 @@ def verdict_request(r: RunContext, objections: list[Objection]) -> VerdictReques
 
 
 async def _m11[T](
-    r: RunContext,
+    r: ValidateContext,
     path: str,
     body: VerdictRequest,
     model: type[T],
@@ -654,7 +673,7 @@ async def _m11[T](
     return reply
 
 
-async def _decide(r: RunContext, objections: list[Objection], tool: str) -> Verdict:
+async def _decide(r: ValidateContext, objections: list[Objection], tool: str) -> Verdict:
     """The verdict of the current scores, from M11 and only from M11 (VE-1). The request is
     kept with its original scores: M11 returns them after challenge penalties."""
     request = verdict_request(r, objections)
@@ -669,7 +688,7 @@ async def _decide(r: RunContext, objections: list[Objection], tool: str) -> Verd
 
 
 async def _label_if(
-    r: RunContext, deltas: dict[Dimension, float], current: Verdict
+    r: ValidateContext, deltas: dict[Dimension, float], current: Verdict
 ) -> VerdictLabel:
     """M11's verdict if the scores moved by ``deltas``. An unscored dimension cannot move."""
     request = r.cp.verdict_request
@@ -697,7 +716,7 @@ async def _label_if(
     return reply.verdict.verdict
 
 
-async def prelim_verdict(r: RunContext) -> Step | None:
+async def prelim_verdict(r: ValidateContext) -> Step | None:
     current = await _decide(r, [], "prelim_verdict")
     cp = r.cp
     if cp.clarified:  # at most one clarify round
@@ -716,7 +735,7 @@ async def prelim_verdict(r: RunContext) -> Step | None:
     return Step.CLARIFY if flipping else Step.CHALLENGE
 
 
-async def clarify(r: RunContext) -> Step | None:
+async def clarify(r: ValidateContext) -> Step | None:
     if r.cp.clarified:  # the answers are in
         return Step.SCORING
     questions = [
@@ -772,7 +791,7 @@ def usable_objections(
     return usable[:MAX_OBJECTIONS]
 
 
-async def challenge(r: RunContext) -> Step | None:
+async def challenge(r: ValidateContext) -> Step | None:
     """The Skeptic objects, the Critic checks (WF-V6). Only supported objections reach M11."""
     cp = r.cp
     cp.objections = []
@@ -827,7 +846,7 @@ async def challenge(r: RunContext) -> Step | None:
 # --- VERDICT, STABILITY, CARD ------------------------------------------------------------------
 
 
-async def verdict(r: RunContext) -> Step | None:
+async def verdict(r: ValidateContext) -> Step | None:
     await _decide(r, r.cp.objections, "final_verdict")
     return Step.STABILITY
 
@@ -848,7 +867,7 @@ def with_suggestions(
     return worded
 
 
-async def stability(r: RunContext) -> Step | None:
+async def stability(r: ValidateContext) -> Step | None:
     """What would make it GO (M11 search), put into words by M8 (WF-V7)."""
     request, current = r.cp.verdict_request, r.cp.verdict
     assert request is not None and current is not None
@@ -869,7 +888,7 @@ async def stability(r: RunContext) -> Step | None:
         return Step.CARD
     # wording is optional: over budget the card keeps the engine's own words
     await r.sync_spend()
-    if budget.exhausted(r.cp.spend, r.cp.budget):
+    if r.budget_problems():
         r.cp.degrade("no budget left to word the changes")
         return Step.CARD
     r.add_spend(steps=1)
@@ -909,10 +928,12 @@ def claims_of(card: Verdict) -> list[Claim]:
     ]  # fmt: skip
 
 
-def not_cacheable(r: RunContext, card: Verdict) -> list[str]:
+def not_cacheable(r: ValidateContext, card: Verdict) -> list[str]:
     """Why this card must not answer a later run (M2-4, AVOID-2)."""
     cp = r.cp
     reasons = list(cp.degraded)
+    if cp.parent_run_id is not None:
+        reasons.append("a Discover run asked no questions")
     if cp.clarified:
         reasons.append("answers were added during the run")
     if card.versions.engine != cp.engine_version:
@@ -927,7 +948,7 @@ def not_cacheable(r: RunContext, card: Verdict) -> list[str]:
     return reasons
 
 
-async def card(r: RunContext) -> Step | None:
+async def card(r: ValidateContext) -> Step | None:
     """Store the card, cache it if it may be reused, and finish (WF-V8)."""
     cp = r.cp
     result = cp.verdict
@@ -970,7 +991,7 @@ async def card(r: RunContext) -> Step | None:
     return None
 
 
-STEPS: dict[Step, Callable[[RunContext], Awaitable[Step | None]]] = {
+STEPS: dict[Step, Callable[[ValidateContext], Awaitable[Step | None]]] = {
     Step.INTAKE: intake,
     Step.EVIDENCE: evidence,
     Step.DEEP_SEARCH: deep_search,

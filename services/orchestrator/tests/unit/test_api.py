@@ -71,7 +71,6 @@ async def test_unknown_run_and_bad_ids() -> None:
 @pytest.mark.parametrize(
     ("change", "expected"),
     [
-        ({"workflow": "discover"}, (501, "NOT_IMPLEMENTED")),
         ({"idea_version_id": "iv_missing"}, (404, "NOT_FOUND")),
         ({"idea_version_id": "iv_theirs"}, (404, "NOT_FOUND")),
         ({"profile": profile(user_id="u_2")}, (422, "VALIDATION_ERROR")),

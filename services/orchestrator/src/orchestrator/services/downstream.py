@@ -24,6 +24,7 @@ PEERS: dict[str, tuple[str, float, float]] = {
     "ideation": ("ideation_url", 60.0, 90.0),
     "validators": ("validators_url", 600.0, 600.0),
     "scouts": ("scouts_url", 120.0, 120.0),
+    "analyst": ("analyst_url", 10.0, 25.0),
     "agentops": ("agentops_url", 3.0, 3.0),
 }
 # M12 judges up to 10 claims one after another within its own 120 s

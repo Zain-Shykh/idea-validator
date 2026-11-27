@@ -1,6 +1,6 @@
 """Test builders for M3: an in-memory Redis and a fake stack behind one httpx transport.
 
-M11 is the real app. M2, M4, M6, M8, M9, M12 and M13 are fakes that validate every request
+M11 is the real app. M2, M4, M6, M7, M8, M9, M12 and M13 are fakes that validate every request
 against ``common.contracts``, so a body M3 gets wrong fails the test.
 """
 
@@ -26,8 +26,13 @@ from common.contracts.agents import (
     ConcreteChange,
     ConcretizeRequest,
     ConcretizeResponse,
+    EnrichedIdea,
     FlaggedEvidence,
+    GapAnalyzeRequest,
+    GapAnalyzeResponse,
     IdeaSlots,
+    IdeateRequest,
+    IdeateResponse,
     InputRailRequest,
     InputRailResponse,
     IntakeRequest,
@@ -40,12 +45,14 @@ from common.contracts.agents import (
     SkepticRequest,
     SkepticResponse,
 )
+from common.contracts.analyst import Gap, Niche, NicheMatchRequest
 from common.contracts.core import (
     Dimension,
     DimensionScore,
     IdeaCard,
     RunEvent,
     RunEventType,
+    StudentProfile,
     TraceKind,
     TraceRecord,
     Verdict,
@@ -57,6 +64,7 @@ from common.contracts.profile import (
     ApprovalUpdate,
     CachedVerdict,
     Idea,
+    IdeaCreate,
     IdeaVersion,
     IdeaVersionCreate,
     RunCreate,
@@ -66,7 +74,7 @@ from common.contracts.profile import (
     VerdictStored,
 )
 from common.contracts.scouts import ScoutRequest, ScoutResponse
-from common.fakes import FakeKB
+from common.fakes import FakeAnalyst, FakeKB
 from common.injection import scan_text
 from common.registry import load_budgets
 from common.trace import TraceClient
@@ -101,6 +109,51 @@ def fixture_cards() -> list[IdeaCard]:
             FIXTURES / "cards_small.jsonl", FIXTURES / "validator_cards.jsonl"
         ).cards.values()
     )
+
+
+def card_named(name: str) -> IdeaCard:
+    return next(c for c in fixture_cards() if c.name == name)
+
+
+def evidence_of(name: str) -> str:
+    return f"{card_named(name).id}#c0"
+
+
+GAP_EVIDENCE = evidence_of("Ask HN: flashcards")
+NICHE = Niche(
+    niche_id="education", name="Education", size=10, trend_slope=0.1, trend_label="rising"
+)
+GAP = Gap(
+    gap_id="g1",
+    niche_id="education",
+    statement="Making flashcards from slides is manual",
+    evidence_ids=[GAP_EVIDENCE, evidence_of("Anki export issue")],
+    score=3,
+)
+
+
+def idea(title: str = "Diagram cards", text: str | None = None, **changes: Any) -> dict:
+    """A generated idea small enough for any fixture profile and like no fixture product."""
+    values = {
+        "title": title,
+        "text": text or f"{title}: a web page that keeps pictures when making revision cards.",
+        "niche_id": "education",
+        "target_user": "medical students",
+        "gap_evidence_ids": [GAP_EVIDENCE],
+        "rationale": "people retype cards by hand",
+    }
+    return values | changes
+
+
+def objection(dimension: str = "differentiation", fatal: bool = True, **changes: Any) -> dict:
+    values = {
+        "objection_id": "x",
+        "dimension": dimension,
+        "text": f"weak {dimension.replace('_', ' ')}",
+        "evidence_ids": [GAP_EVIDENCE],
+        "fatal": fatal,
+    }
+    return values | changes
 
 
 def profile(**changes: Any) -> dict[str, Any]:
@@ -262,6 +315,11 @@ class Stack(httpx.AsyncBaseTransport):
         self.scorer_delay_s = 0.0
         self.in_flight = 0
         self.most_in_flight = 0
+        # M7 and the ideation agents of Discover: one reply per debate round (the last repeats)
+        self.analyst = FakeAnalyst([NICHE], [GAP])
+        self.idea_rounds: list[list[dict]] = [[idea()]]
+        self.profiles: dict[str, StudentProfile] = {}
+        self.idea_keys: dict[str, str] = {}
         self.add_idea()
 
     # --- helpers -------------------------------------------------------------------------------
@@ -317,6 +375,35 @@ class Stack(httpx.AsyncBaseTransport):
                 if any(v.id == parts[2] for v in idea.versions):
                     return _reply(idea)
             return error(404, "NOT_FOUND")
+        if parts == ["ideas"] and method == "POST":
+            new_idea = IdeaCreate.model_validate_json(body)
+            key = request.headers["Idempotency-Key"]
+            if key not in self.idea_keys:
+                number = len(self.idea_keys) + 1
+                idea_id = f"idea_gen{number}"
+                version = IdeaVersion(
+                    id=f"iv_gen{number}", idea_id=idea_id, version=1, created_at=NOW,
+                    text=new_idea.text, origin="initial",
+                )  # fmt: skip
+                self.ideas[idea_id] = Idea(
+                    id=idea_id, created_at=NOW, versions=[version],
+                    **new_idea.model_dump(exclude={"text"}),
+                )  # fmt: skip
+                self.idea_keys[key] = idea_id
+            return _reply(self.ideas[self.idea_keys[key]])
+        if parts[0] == "ideas" and method == "GET":
+            if parts[1] not in self.ideas:
+                return error(404, "NOT_FOUND")
+            if len(parts) == 2:
+                return _reply(self.ideas[parts[1]])
+            version_id = next(
+                (v.id for v in self.ideas[parts[1]].versions if str(v.version) == parts[3]), None
+            )
+            found_verdicts = [s for s in self.stored if s.idea_version_id == version_id]
+            return _reply(found_verdicts[-1]) if found_verdicts else error(404, "NOT_FOUND")
+        if parts[0] == "profiles":
+            found_profile = self.profiles.get(parts[1])
+            return _reply(found_profile) if found_profile else error(404, "NOT_FOUND")
         if parts[0] == "ideas" and method == "POST":
             create = IdeaVersionCreate.model_validate_json(body)
             idea = self.ideas[parts[1]]
@@ -332,6 +419,8 @@ class Stack(httpx.AsyncBaseTransport):
         if parts[0] == "runs":
             if method == "POST":
                 created = RunCreate.model_validate_json(body)
+                if created.run_id in self.runs:  # idempotent by run id
+                    return _reply(self.runs[created.run_id])
                 record = RunRecord(**created.model_dump(), status="QUEUED", created_at=NOW)
                 self.runs[created.run_id] = record
                 return _reply(record)
@@ -369,6 +458,9 @@ class Stack(httpx.AsyncBaseTransport):
         if path == "/stats":
             stats = KbStats(cards_by_source={}, cards_by_niche={}, kb_version=self.kb_version)
             return _reply(stats)
+        if path.startswith("/cards/"):
+            card = await self.kb.card(unquote(path.removeprefix("/cards/")))
+            return error(404, "NOT_FOUND") if card is None else _reply(card)
         if path == "/search":
             return _reply(await self.kb.search(SearchRequest.model_validate_json(request.content)))
         assert path == "/evidence", path
@@ -410,7 +502,21 @@ class Stack(httpx.AsyncBaseTransport):
             )
         return _reply(CheckResponse(results=results))
 
+    async def _analyst(self, request: httpx.Request, path: str) -> httpx.Response:
+        if path == "/niches/match":
+            NicheMatchRequest.model_validate_json(request.content)
+            return _reply(await self.analyst.niches())
+        assert path == "/gaps", path
+        return _reply(await self.analyst.gaps(request.url.params["niche_id"]))
+
     async def _ideation(self, request: httpx.Request, path: str) -> httpx.Response:
+        if path == "/ideate":
+            number = IdeateRequest.model_validate_json(request.content).round
+            ideas = self.idea_rounds[min(number, len(self.idea_rounds)) - 1]
+            return _reply(IdeateResponse.model_validate({"ideas": ideas}))
+        if path == "/gap-analyze":
+            wanted = GapAnalyzeRequest.model_validate_json(request.content)
+            return _reply(GapAnalyzeResponse(ideas=[EnrichedIdea(idea=i) for i in wanted.ideas]))
         if path == "/intake":
             IntakeRequest.model_validate_json(request.content)
             slots = IdeaSlots(target_user="", platform="", core_features=[], scope="")
@@ -508,6 +614,7 @@ def settings(**changes: Any) -> OrchestratorSettings:
             "CRITIC",
             "IDEATION",
             "AGENTOPS",
+            "ANALYST",
         )
     }
     del values["AGENTOPS_URL"]
@@ -568,6 +675,26 @@ class Orchestrator:
         )
         assert response.status_code == 202, response.text
         return response.json()["run_id"]
+
+    async def discover(self, **changes: Any) -> str:
+        """Start a Discover run and wait until it stops."""
+        body: dict[str, Any] = {"workflow": "discover", "user_id": USER, "profile": profile()}
+        response = await self.client.post("/runs", json=body | changes)
+        assert response.status_code == 202, response.text
+        run_id = response.json()["run_id"]
+        await self.wait(run_id)
+        return run_id
+
+    def children(self, run_id: str) -> list[str]:
+        return [r for r, record in self.stack.runs.items() if record.parent_run_id == run_id]
+
+    def verdicts(self, run_id: str) -> list[Verdict]:
+        result = self.stack.runs[run_id].result
+        assert result is not None, self.state(run_id).get("error_code")
+        return [Verdict.model_validate_json(json.dumps(v)) for v in result["verdicts"]]
+
+    def dropped(self, run_id: str) -> list[dict[str, Any]]:
+        return [e.data or {} for e in self.of_type(run_id, RunEventType.IDEA_DROPPED)]
 
     async def run(self, version_id: str = "iv_1", **profile_changes: Any) -> str:
         run_id = await self.start(version_id, **profile_changes)

@@ -5,13 +5,14 @@ them. Every id in a path is validated or percent-encoded here."""
 from typing import Any
 from urllib.parse import quote
 
-from common.contracts.core import Verdict
+from common.contracts.core import StudentProfile, Verdict
 from common.contracts.profile import (
     Approval,
     ApprovalCreate,
     ApprovalUpdate,
     CachedVerdict,
     Idea,
+    IdeaCreate,
     IdeaVersion,
     IdeaVersionCreate,
     RunCreate,
@@ -45,6 +46,27 @@ class ProfileStore:
     async def idea_of_version(self, version_id: str) -> Idea:
         return await self._call(
             "GET", f"/internal/ideas/versions/{_seg(version_id)}", response_model=Idea
+        )
+
+    async def create_idea(self, body: IdeaCreate, key: str) -> Idea:
+        return await self._call(
+            "POST", "/internal/ideas", body=body, response_model=Idea, idempotency_key=key
+        )
+
+    async def idea(self, idea_id: str) -> Idea:
+        """The idea with all its versions."""
+        return await self._call("GET", f"/internal/ideas/{_seg(idea_id)}", response_model=Idea)
+
+    async def stored_verdict(self, idea_id: str, version: int) -> VerdictStore:
+        """The latest verdict of a version, with its claims. Proposed to M2 (spec Z8 A5)."""
+        return await self._call(
+            "GET", f"/internal/ideas/{_seg(idea_id)}/versions/{int(version)}/verdict",
+            response_model=VerdictStore,
+        )  # fmt: skip
+
+    async def profile(self, user_id: str) -> StudentProfile:
+        return await self._call(
+            "GET", f"/internal/profiles/{_seg(user_id)}", response_model=StudentProfile
         )
 
     async def add_version(self, idea_id: str, body: IdeaVersionCreate, key: str) -> IdeaVersion:
