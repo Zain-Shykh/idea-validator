@@ -260,3 +260,20 @@ def test_no_model_weights_are_tracked_and_the_model_image_is_pinned() -> None:
     # --chmod also applies to the folder COPY creates: without x, the Job cannot read the model
     modes = re.findall(r"--chmod=0?([0-7]{3})", text)
     assert modes and all(int(digit, 8) & 5 == 5 for mode in modes for digit in mode)
+
+
+def test_validators_get_rubrics_and_prompts_and_one_scorer_slot() -> None:
+    """K8S-4: rubrics and prompts are mounted where the image looks; one call to the CPU model."""
+    deployment = docs("k8s/base/validators.yaml")[0]["spec"]
+    pod = deployment["template"]["spec"]
+    (container,) = pod["containers"]
+    mounts = {m["name"]: m["mountPath"] for m in container["volumeMounts"]}
+    volumes = {v["name"]: v["configMap"]["name"] for v in pod["volumes"]}
+    dockerfile = (ROOT / "services/validators/Dockerfile").read_text()
+    compose = docs("services/validators/compose.yaml")[0]["services"]["validators"]
+    for name, variable in (("rubrics", "RUBRICS"), ("prompts", "PROMPTS")):
+        assert volumes[name] == name
+        assert f"VALIDATORS_{variable}_DIR={mounts[name]}" in dockerfile
+        assert f"../../{name}:{mounts[name]}:ro" in compose["volumes"]
+    assert deployment["replicas"] == 1
+    assert {"name": "VALIDATORS_SCORER_CONCURRENCY", "value": "1"} in container["env"]

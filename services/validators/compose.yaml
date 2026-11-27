@@ -9,3 +9,15 @@ services:
       - "127.0.0.1:8009:8000"
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # M6 and M7 are not built yet: until then scoring answers 503 KB_UNAVAILABLE
+      KB_URL: ${KB_URL:-http://kb:8000}
+      ANALYST_URL: ${ANALYST_URL:-http://analyst:8000}
+      SCORER_URL: http://scorer:8000
+      # effort estimates need M5 (TOOLS_URL); without it the middle of the code's band is used
+      LLM_BACKEND: gateway
+      TOOLS_URL: ${TOOLS_URL:-}
+      AGENTOPS_URL: http://agentops:8000
+      VALIDATORS_SCORER_CONCURRENCY: ${VALIDATORS_SCORER_CONCURRENCY:-1}
+    volumes:
+      - ../../rubrics:/etc/rubrics:ro
+      - ../../prompts:/etc/prompts:ro
