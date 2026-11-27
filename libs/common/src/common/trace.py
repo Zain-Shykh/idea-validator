@@ -3,8 +3,8 @@
 Every record is written to stdout as one JSON line (K8S-12) and, when ``AGENTOPS_URL`` is set,
 POSTed to M13 in batches. Tracing never makes the traced call fail.
 
-Prompts, model replies and tool inputs (search queries carry the student's idea) never reach
-stdout, which is widely readable: the line carries only their length and hash; the full record
+Prompts, model and tool replies and tool inputs (search queries carry the student's idea) never
+reach stdout, which is widely readable: the line carries only their length and hash; the full record
 goes to M13 (replay, AO-1).
 """
 
@@ -53,8 +53,8 @@ def _digest(text: str | None) -> str | None:
 
 def _stdout_view(record: TraceRecord) -> TraceRecord:
     if record.kind is TraceKind.DECISION:
-        return record
-    hidden = {"input": _digest(record.input)}
+        return record if record.reply is None else record.model_copy(update={"reply": None})
+    hidden = {"input": _digest(record.input), "reply": _digest(record.reply)}
     if record.kind is TraceKind.LLM_CALL:
         hidden["output"] = _digest(record.output)
     return record.model_copy(update=hidden)
@@ -65,7 +65,7 @@ def _encodable(record: TraceRecord) -> TraceRecord:
     fail on every delivery and block all later records."""
     cleaned = {
         name: value.encode("utf-8", "replace").decode()
-        for name in ("tool", "input", "output", "model", "error")
+        for name in ("tool", "input", "output", "reply", "model", "error")
         if (value := getattr(record, name)) is not None
     }
     return record.model_copy(update=cleaned)
@@ -77,6 +77,7 @@ class Step:
 
     step_id: int
     output: str | None = None
+    reply: str | None = None
     tokens_in: int = 0
     tokens_out: int = 0
     cost_usd: float = 0.0
@@ -216,6 +217,7 @@ class TraceClient:
                     tool=tool,
                     input=input,
                     output=step.output,
+                    reply=step.reply,
                     tokens_in=step.tokens_in,
                     tokens_out=step.tokens_out,
                     cost_usd=step.cost_usd,

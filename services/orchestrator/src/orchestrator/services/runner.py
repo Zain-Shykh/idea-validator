@@ -21,6 +21,7 @@ from redis.exceptions import RedisError
 from common import context
 from common.cache_keys import digest
 from common.contracts.core import (
+    ApprovalRequest,
     IdeaInput,
     PendingInput,
     RunEventType,
@@ -279,23 +280,14 @@ class Runner:
                 assert approval is not None
                 if approval.approval_id != request.approval_id:
                     raise _conflict("this is not the pending approval")
-                approved = request.decision == "approve"
-                decision = "approved" if approved else "declined"
+                decision = "approved" if request.decision == "approve" else "declined"
                 try:
                     await self.deps.store.decide_approval(
                         approval.approval_id, ApprovalUpdate(decision=decision)
                     )
                 except ServiceError as exc:
                     raise _unavailable("the approval store") from exc
-                if approved:
-                    estimate = budget.deep_search_estimate(
-                        approval.estimated_pages, self.deps.settings.deep_search_page_cost_usd
-                    ).model_copy(update={"cost_usd": approval.estimated_cost_usd})
-                    r.cp.budget = budget.raised_for(r.cp.spend, r.cp.budget, estimate)
-                    r.cp.deep_search = "approved"
-                else:
-                    r.cp.deep_search = "declined"
-                    r.cp.degrade("deep search declined")
+                self.apply_decision(r, approval, request)
                 await self._continue(r)
                 r.ops(
                     OpsEvent.APPROVAL,
@@ -304,17 +296,32 @@ class Runner:
         finally:
             context.run_id_var.reset(token)
 
+    def apply_decision(
+        self, r: RunContext[Checkpoint], approval: ApprovalRequest, request: ApproveRequest
+    ) -> None:
+        """What the student's answer to the pending approval does to the run."""
+        r.record_input("student_approval", request)
+        if request.decision == "approve":
+            estimate = budget.deep_search_estimate(
+                approval.estimated_pages, self.deps.settings.deep_search_page_cost_usd
+            ).model_copy(update={"cost_usd": approval.estimated_cost_usd})
+            r.cp.budget = budget.raised_for(r.cp.spend, r.cp.budget, estimate)
+            r.cp.deep_search = "approved"
+        else:
+            r.cp.deep_search = "declined"
+            r.cp.degrade("deep search declined")
+
     async def answer(self, run_id: str, user_id: str, request: AnswerRequest) -> None:
         token = context.run_id_var.set(run_id)
         try:
             async with self.lock(run_id):
                 r, pending = await self._waiting(run_id, user_id, RunState.AWAITING_INPUT)
-                await self._apply_answers(r, pending, request)
+                await self.apply_answers(r, pending, request)
                 await self._continue(r)
         finally:
             context.run_id_var.reset(token)
 
-    async def _apply_answers(
+    async def apply_answers(
         self, r: RunContext[Checkpoint], pending: PendingInput, request: AnswerRequest
     ) -> None:
         cp = r.cp
@@ -350,6 +357,7 @@ class Runner:
             )
         except ServiceError as exc:
             raise _unavailable("the idea store") from exc
+        r.record_input("student_answer", request)
         cp.idea = IdeaInput(title=cp.idea.title, text=text)
         cp.idea_version_id, cp.version = version.id, version.version
         assert cp.safe_idea is not None
@@ -463,6 +471,10 @@ class Runner:
         except Exception as exc:
             _log_crash("run crashed", exc, run_id)
 
+    async def drive_in_place(self, r: RunContext[Any]) -> None:
+        """Run steps in the caller's task until the run waits or ends (replay)."""
+        await self._steps(r)
+
     async def _steps(self, r: RunContext[Any]) -> None:
         cp = r.cp
         discovering = isinstance(cp, DiscoverCheckpoint)
@@ -472,6 +484,8 @@ class Runner:
         r.drive = self._steps
         try:
             if cp.status is RunState.QUEUED:
+                if not discovering:
+                    r.record_input("run_input", cp)  # where a replay starts (AO-1)
                 r.set_status(RunState.RUNNING)
                 await r.save()
             while cp.status is RunState.RUNNING:

@@ -108,6 +108,10 @@ class Deps:
 _NOT_MIRRORED = frozenset({RunEventType.RUN_STARTED, RunEventType.RUN_FINISHED})
 
 
+def _dump(reply: ContractModel) -> str:
+    return reply.model_dump_json(by_alias=True)
+
+
 class RunContext[C: BaseCheckpoint]:
     def __init__(
         self,
@@ -225,12 +229,25 @@ class RunContext[C: BaseCheckpoint]:
             )
         )
 
-    def cache_record(self, tool: str, hit: bool) -> None:
+    def record_input(self, name: str, value: ContractModel) -> None:
+        """What replay needs and no call carries (AO-1). The text goes to M13 only: on stdout
+        the input of a tool call is a length and a hash."""
+        with self.deps.trace.step(
+            AGENT, TraceKind.TOOL_CALL, tool=name,
+            input=value.model_dump_json(by_alias=True), run_id=self.run_id,
+        ):  # fmt: skip
+            pass
+
+    def cache_record(self, tool: str, hit: bool, value: ContractModel | None = None) -> None:
         with self.deps.trace.step(AGENT, TraceKind.TOOL_CALL, tool=tool, run_id=self.run_id) as s:
             s.cache_hit = hit
+            s.reply = None if value is None else value.model_dump_json(by_alias=True)
 
-    async def cache_hit(self, tool: str, agent: str, message: str) -> None:
-        self.cache_record(tool, True)
+    async def cache_hit(
+        self, tool: str, agent: str, message: str, value: ContractModel | None = None
+    ) -> None:
+        """``value``: what was reused from the memo."""
+        self.cache_record(tool, True, value)
         await self.emit(
             RunEventType.CACHE_HIT, message, agent=agent, step=self.step, data={"tool": tool}
         )
@@ -276,6 +293,7 @@ class RunContext[C: BaseCheckpoint]:
                 timeout=None if timeout_s is None else httpx.Timeout(timeout_s, connect=3.0),
             )
             step.output = json.dumps(summary(reply))
+            step.reply = _dump(reply)
             return reply
 
     # --- spend and budget ------------------------------------------------------------------

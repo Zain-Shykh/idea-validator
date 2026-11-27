@@ -135,3 +135,19 @@ def test_tool_inputs_stay_out_of_stdout_but_reach_the_record() -> None:
         s.output = "card_a#c0"
     assert "MY IDEA" not in stream.getvalue()
     assert "card_a#c0" in stream.getvalue() and "[redacted chars=7" in stream.getvalue()
+
+
+def test_a_tool_reply_goes_to_m13_and_never_to_stdout() -> None:
+    sent: list[TraceRecord] = []
+
+    async def sink(batch: list[TraceRecord]) -> None:
+        sent.extend(batch)
+
+    out = io.StringIO()
+    client = TraceClient(sink=sink, stream=out)
+    for kind in (TraceKind.TOOL_CALL, TraceKind.LLM_CALL, TraceKind.DECISION):
+        with client.step("orchestrator", kind, run_id="run_1") as step:
+            step.reply = '{"quote": "the student secret"}'
+    asyncio.run(client.flush())
+    assert [r.reply for r in sent] == ['{"quote": "the student secret"}'] * 3
+    assert "student secret" not in out.getvalue()

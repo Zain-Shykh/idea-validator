@@ -259,7 +259,7 @@ async def _search(r: ValidateContext) -> SearchResponse:
         )
         memo = await r.deps.memo.get(key, SearchResponse)
         if memo is not None:
-            await r.cache_hit("search_kb", AGENT, "Evidence search reused")
+            await r.cache_hit("search_kb", AGENT, "Evidence search reused", memo)
             return memo
     await r.spend_steps(1)
     try:
@@ -508,6 +508,7 @@ async def _call_scorer(r: ValidateContext, name: str, request: ScorerRequest) ->
                     step.output = json.dumps(
                         [[s.dimension, s.score, s.model] for s in reply.scores]
                     )
+                    step.reply = reply.model_dump_json(by_alias=True)
                     return reply
         except TimeoutError:
             code = "TIMEOUT"
@@ -586,7 +587,7 @@ async def scoring(r: ValidateContext) -> Step | None:
         memo = None if key is None else await r.deps.memo.get(key, ScorerResponse)
         if memo is not None:
             cp.scorer_results[name] = memo
-            await r.cache_hit(f"score_{name}", f"{name}_scorer", f"{name} scores reused")
+            await r.cache_hit(f"score_{name}", f"{name}_scorer", f"{name} scores reused", memo)
             continue
         todo[name] = (request, key)
 
