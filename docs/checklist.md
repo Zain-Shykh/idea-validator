@@ -7,12 +7,12 @@
 
 | Owner | Rows | Done | Partial |
 |-------|-----:|-----:|--------:|
-| Zain | 89 | 38 | 12 |
+| Zain | 89 | 42 | 14 |
 | Ahmad | 77 | 0 | 0 |
-| Both | 54 | 0 | 17 |
-| **Total** | **220** | **38** | **29** |
+| Both | 54 | 0 | 18 |
+| **Total** | **220** | **42** | **32** |
 
-_Last updated: 2026-11-27 (Z0–Z5 in review; summary recounted from the rows)._
+_Last updated: 2026-11-27 (Z0–Z6 in review; summary recounted from the rows)._
 
 ## Phase completion
 
@@ -194,10 +194,10 @@ _Last updated: 2026-11-27 (Z0–Z5 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | M12-1 | Claim check against evidence (/check) | Zain | Z6 | |
-| [ ] | M12-2 | Injection defence (fetched text is data) | Zain | Z6 | |
-| [ ] | M12-3 | Input rail | Zain | Z6 | |
-| [ ] | M12-4 | Approval above budget | Zain | Z6, Z7 | |
+| [x] | M12-1 | Claim check against evidence (/check) | Zain | Z6 | Z6: `test_check.py`, `eval/behaviour/test_critic.py` (fake KB, hand-written cassettes) |
+| [x] | M12-2 | Injection defence (fetched text is data) | Zain | Z6 | Z6: `eval/behaviour/test_critic_injection.py`, `test_injection.py`; own rules only (D-013) |
+| [x] | M12-3 | Input rail | Zain | Z6 | Z6: `services/critic/tests/unit/test_rail.py`, `test_adversarial.py` |
+| [~] | M12-4 | Approval above budget | Zain | Z6, Z7 | Z6: rule and `/policy/approval` (`test_policy.py`); M3 asking and recording approval is Z7 |
 
 ## M13 AgenticOps
 
@@ -250,7 +250,7 @@ _Last updated: 2026-11-27 (Z0–Z5 in review; summary recounted from the rows)._
 | [ ] | API-I2 | M6 POST /search | Ahmad | A4 | |
 | [x] | API-I3 | M10 POST /score | Zain | Z4 | Z4: `POST /score`, spec Z4 C3 |
 | [x] | API-I4 | M11 POST /verdict, /whatif | Zain | Z2 | `test_api.py` |
-| [ ] | API-I5 | M12 POST /check | Zain | Z6 | |
+| [x] | API-I5 | M12 POST /check | Zain | Z6 | Z6: `services/critic/tests/unit/test_api.py` |
 | [x] | API-I6 | M13 POST /trace, GET /runs/{id}/trace | Zain | Z3 | `test_trace.py`, minikube smoke (spec Z3 C3) |
 | [~] | API-I7 | /health, /ready everywhere | Both | Z1, A1 | Z0: `/health`, `/ready` in `create_app`; services in Z1, A1 |
 
@@ -301,7 +301,7 @@ _Last updated: 2026-11-27 (Z0–Z5 in review; summary recounted from the rows)._
 | [ ] | AO-4 | Evaluation harness (agreement, confusion matrix, behaviour) as K8s Job + nightly Jenkins | Both | Z10, A10 | |
 | [ ] | AO-5 | Drift reports after each ingestion | Zain | Z10 | |
 | [~] | AO-6 | Dashboard (cost/verdict, latency/agent, cache hit, fallbacks, approvals, blocked injections) | Both | Z3, A9 | Z3: `/summary` and Prometheus metrics; dashboard page A9 |
-| [ ] | AO-7 | Behaviour tests: invalid JSON, tool timeout, empty source, poisoned page | Zain | Z10 | |
+| [~] | AO-7 | Behaviour tests: invalid JSON, tool timeout, empty source, poisoned page | Zain | Z10 | Z6: poisoned page (`test_critic_injection.py`); drift-free full suite is Z10 |
 
 ## Verdict tuning and evaluation
 
@@ -321,7 +321,7 @@ _Last updated: 2026-11-27 (Z0–Z5 in review; summary recounted from the rows)._
 | [ ] | ETH-2 | Per-domain rate limits, clear User-Agent, caching, back-off | Ahmad | A2 | |
 | [ ] | ETH-3 | No logins, no private data | Ahmad | A3 | |
 | [ ] | ETH-4 | Every card keeps source + URL; verdict card links them | Both | A4, A9 | |
-| [ ] | ETH-5 | Fetched text is data, never obeyed | Both | A2, Z6 | |
+| [~] | ETH-5 | Fetched text is data, never obeyed | Both | A2, Z6 | Z6: M12 scan, M9 filter and evidence-as-data judge prompt; M5 sanitiser is A2 |
 | [ ] | ETH-6 | Card data snapshot | Ahmad | A4 | |
 
 ## Platform

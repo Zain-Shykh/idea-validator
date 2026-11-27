@@ -163,6 +163,12 @@ python scripts/scorer_check.py --url http://127.0.0.1:8010            # ten fixt
 pytest -q services/validators eval/behaviour       # no model needed
 ```
 
+**Critic (M12)** answers `/rail/input`, `/scan` and (with `config/budgets.yaml`) `/policy/approval` on its own. `/check` also needs M6 (`KB_URL`), which is not built yet, so it answers 503 `KB_UNAVAILABLE`; without a model (M5, or `LLM_BACKEND=direct`) claims that pass the code checks are `unverifiable`.
+```bash
+KB_URL=http://127.0.0.1:8005 LLM_BACKEND=direct uvicorn critic.main:app --app-dir services/critic/src --port 8012   # from the repo root
+pytest -q services/critic eval/behaviour           # no model needed
+```
+
 ## 8. Cleanup, teardown and disk space
 
 Check: `df -h ~` and `docker system df`.
