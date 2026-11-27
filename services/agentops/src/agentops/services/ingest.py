@@ -37,12 +37,15 @@ class InvalidBatchError(Exception):
 
 def _problem(record: TraceRecord) -> str | None:
     """What the contract allows but the files or the database cannot take."""
-    if context.safe_id(record.run_id) is None:
+    # "." and ".." are harmless as file names but no HTTP client could read them back
+    if context.safe_id(record.run_id) is None or not record.run_id.strip("."):
         return "run_id must match [A-Za-z0-9._:-]{1,128}"
     if "\x00" in record.agent:
         return "agent must not contain NUL"
-    numbers = (record.step_id, record.tokens_in, record.tokens_out, record.latency_ms)
-    if max(numbers) > 2**53 or max(numbers[1:]) > MAX_NUMBER or record.cost_usd > MAX_NUMBER:
+    numbers = (record.tokens_in, record.tokens_out, record.latency_ms)
+    # step ids stay below 2**53 so the UI can hold them
+    ids = (record.step_id, record.parent_step or 0)
+    if max(ids) > 2**53 or max(numbers) > MAX_NUMBER or record.cost_usd > MAX_NUMBER:
         return "number out of range"
     if not 2000 <= record.ts.year < 2100:
         return "ts out of range"

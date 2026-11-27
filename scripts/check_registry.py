@@ -67,7 +67,8 @@ def compare(lock: Lock, current: Lock) -> tuple[list[str], list[str]]:
         if key not in lock:
             pending.append(f"{key}: not in the lock yet")
         elif key not in current:
-            pending.append(f"{key}: in the lock but the file is gone")
+            # recording a removal would let the file come back changed under its old version
+            refused.append(f"{key}: file is gone (if intended, remove its lock entry by hand)")
         elif lock[key] != current[key]:
             problems = _unbumped(key, lock[key], current[key])
             refused += problems
@@ -95,7 +96,7 @@ def main(argv: list[str] | None = None) -> int:
         print(f"registry check failed: {exc}", file=sys.stderr)
         return 1
     if refused:
-        print("bump the version of every changed file:", *refused, sep="\n  ", file=sys.stderr)
+        print("refused, bump changed files:", *refused, sep="\n  ", file=sys.stderr)
         return 1
     if args.update:
         path.write_text(json.dumps(current, indent=2, sort_keys=True) + "\n", encoding="utf-8")

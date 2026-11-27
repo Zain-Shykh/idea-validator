@@ -90,6 +90,8 @@ def test_malformed_batches_are_rejected_and_counted(client: TestClient, body: by
         {"run_id": "../escape"},
         {"run_id": "a/b"},
         {"run_id": "*"},
+        {"run_id": ".."},
+        {"parent_step": 2**60},
         {"run_id": "x" * 129},
         {"agent": "a\u0000"},
         {"step_id": 2**60},

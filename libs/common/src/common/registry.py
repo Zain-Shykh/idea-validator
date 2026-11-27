@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Any, Self
 
 import yaml
-from pydantic import Field, ValidationError, model_validator
+from pydantic import Field, model_validator
 
 from common.contracts.agents import Rubric, ScorerOutput
 from common.contracts.base import Amount, ContractModel, Count
@@ -86,7 +86,8 @@ def sha256_of(path: Path) -> str:
 def _guard[T](path: Path, load: Callable[[], T]) -> T:
     try:
         return load()
-    except (OSError, UnicodeError, yaml.YAMLError, ValidationError) as exc:
+    # ValueError covers bad UTF-8, ValidationError and PyYAML's impossible dates (2026-02-30)
+    except (OSError, ValueError, yaml.YAMLError) as exc:
         raise RegistryError(f"{path.name}: {exc}") from exc
 
 
