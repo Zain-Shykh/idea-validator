@@ -10,7 +10,7 @@
 
 | Phase | Title | Status | Spec | PR | Started | Completed |
 |-------|-------|--------|------|----|---------|-----------|
-| Z0 | Shared contracts, `libs/common`, repo tooling | Not started | — | — | — | — |
+| Z0 | Shared contracts, `libs/common`, repo tooling | In progress | [Z0](specs/Z0-contracts-common.md) | — | 2026-11-27 07:47 | — |
 | Z1 | Walking skeleton of Zain's services | Not started | — | — | — | — |
 | Z2 | M11 Verdict Engine | Not started | — | — | — | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | Not started | — | — | — | — |
@@ -53,7 +53,7 @@ flowchart LR
 
 ## Z0 — Shared contracts, `libs/common`, repo tooling
 
-- **Status:** Not started · **Spec:** `docs/specs/Z0-contracts-common.md` · **Branch:** `feat/z0-contracts-common`
+- **Status:** In progress · **Spec:** `docs/specs/Z0-contracts-common.md` · **Branch:** `feat/z0-contracts-common`
 - **Requirements:** GEN-7, GEN-8, GEN-9, DATA-1..8, API-I7, M13-1 (client side), AO-1 (propagation)
 - **Depends on:** nothing. **Unblocks:** everyone (sync **S1**).
 
@@ -92,7 +92,7 @@ flowchart LR
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 07:49 | Phase started | Branch `feat/z0-contracts-common` from `chore/headless-decision-log` (PR #1) |
 
 ---
 
