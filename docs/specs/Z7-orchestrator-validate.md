@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session |
 | Branch | `feat/z7-orchestrator-validate` (parent `feat/z6-critic-guardrails`, PR #15 unmerged) |
-| Status | Testing |
+| Status | In review |
 | Requirement IDs | `M3-1..6, WF-V1..V9, U3, U4, U5, U6, U10, AO-1, AO-2, M2-4, M2-5, AVOID-1, AVOID-2, AVOID-3` |
 | Architecture refs | `architecture.md §6.1–6.3, §6.5, §6.7, §7.2, §8.4, §8.5, §15, §21.3–21.4`, ADR-001, ADR-004 |
 | Depends on | Z2 (M11), Z5 (M9), Z6 (M12), all real. Fakes: M2, M4, M5, M6, gateway; M8 is the Z1 stub |
@@ -129,7 +129,7 @@ Approval is asked in EVIDENCE (before DEEP_SEARCH); CLARIFY waits for the answer
 - **Clarify filter:** for each candidate, apply each answer's `score_deltas` (clamped to 0..5, scored dimensions only) through M11 `/whatif` `apply`; an answer without applicable deltas keeps the preliminary label. Ask when the two labels differ. After the answers, scorers whose dimensions are in an asked question's `affects` get the new idea text; the others keep their old input, so their memo key hits.
 - **Step memo:** `cache:step:{step}:{digest}` in Redis, 24 h, only when the KB version is known. Evidence search: query, k, KB version. Scorer: name, idea, evidence, rubric and prompt versions, scorer model, KB version, and the profile for `feasibility` only. Failed scorer replies and midpoint effort estimates are not stored.
 - **Verdict cache:** key `common.cache_keys.verdict_key` with all nine parts (idea text = title and text; engine and weights from M11 `/config`; KB version from M6 `/stats`). No KB version → no cache. Stored only if the run had no degraded step and no clarify round, and every scored dimension has `model == SCORER_MODEL_ID`.
-- **Budget:** M3 counts steps (one per agent or tool call; M11 and M2 calls are free) and pages; tokens and cost are the sums of the run's records in M13. Before a spending step: any cap used up → `BUDGET_STOPPED`.
+- **Budget:** M3 counts steps (one per agent or tool call; M11 and M2 calls are free) and pages; tokens and cost are the sums of the run's records in M13. Before a spending step, the deep search included: any cap used up → `BUDGET_STOPPED`; only the optional wording step is skipped instead.
 
 ### A7. Edge cases and failure handling
 | Case | Expected behaviour |
@@ -151,6 +151,8 @@ Approval is asked in EVIDENCE (before DEEP_SEARCH); CLARIFY waits for the answer
 | M2 fails mid-run | the drive stops without a state change; the run stays resumable (error event) |
 | Double approve or answer | the second is 409 |
 | Waiting longer than `WAIT_TIMEOUT_S` | `CANCELLED` on the next answer, approve or resume |
+| A final state cannot be stored | no `run_finished`; error `STORE_UNAVAILABLE`; the run stays resumable (added after testing) |
+| Recovery meets a run a request is handling | recovery leaves it alone; never two drivers (added after testing) |
 
 ### A8. Test plan
 | Level | What | Command |
@@ -193,15 +195,90 @@ Coverage target: ≥ 90 % of `services/orchestrator/src`.
 | 5 | Fake stack and workflow tests (budget, clarify, cache, scoring, resume, guard) | `tests/unit/*`, `tests/integration/*` | `pytest services/orchestrator` | [x] |
 | 6 | Behaviour tests with real M9, M11, M12, M13 and cassettes | `eval/behaviour/test_orchestrator.py`, cassettes | `pytest eval/behaviour` | [x] |
 | 7 | Image, compose, manifest, `.env.example` | `Dockerfile`, `compose.yaml`, `requirements.txt`, `k8s/base/orchestrator.yaml` | build, container run against fakes, kubeconform | [x] |
-| 8 | Testing subagent, fixes | tests | full suite | [ ] |
-| 9 | Docs and PR | `docs/**`, README | — | [ ] |
+| 8 | Testing subagent, fixes | tests | full suite | [x] |
+| 9 | Docs and PR | `docs/**`, README | — | [x] |
 
 ### B2. Commit plan
 1. `docs(spec)`, 2. `docs(plan)`, 3. `feat(orchestrator): state machine, budget and rules`, 4. `feat(orchestrator): validate workflow and run API`, 5. `test(orchestrator): …`, 6. `build(orchestrator): …`, 7. `fix(orchestrator): …` (from the test report), 8. `docs(Z7): …`.
 
 ### B3. Definition of Done (phase)
-- [ ] All A4 criteria pass.
-- [ ] ruff, ruff format and mypy clean; coverage target met.
-- [ ] Orchestrator image builds and runs non-root; manifests validate; image removed afterwards.
-- [ ] Checklist, plan, decisions, deviations, AI log updated.
-- [ ] PR opened against `feat/z6-critic-guardrails`; never merged.
+- [x] All A4 criteria pass.
+- [x] ruff, ruff format and mypy clean; coverage target met.
+- [x] Orchestrator image builds and runs non-root; manifests validate; image removed afterwards.
+- [x] Checklist, plan, decisions, deviations, AI log updated.
+- [x] PR opened against `feat/z6-critic-guardrails`; never merged.
+
+---
+
+## Part C — Implementation and test report
+
+### C1. What was built
+| Files | Content |
+|-------|---------|
+| `services/orchestrator/src/orchestrator/services/state_machine.py` | Run and Validate transition tables, checkpoint |
+| `…/services/validate.py` | The eleven Validate steps, scorer calls, clarify filter, challenge, stability, card, cache rules |
+| `…/services/runner.py`, `run.py`, `results.py` | Lifecycle (create, drive, answer, approve, resume, recover, expire, shutdown), events, traces, spend |
+| `…/services/budget.py`, `rules.py`, `downstream.py` | Budget arithmetic, versioned rules, peer clients with time limits |
+| `…/repositories/` | M2 client, event stream, step memo, active-run set |
+| `…/main.py`, `api/routes.py`, `settings.py` | API with the ownership check, readiness, bounded shutdown |
+| Z1 stub | removed (`stub_run.py`, the packaged event fixture, its tests); `eval/fixtures/run_events_validate.jsonl` stays for the gateway and UI |
+| `services/orchestrator/{Dockerfile,compose.yaml,requirements.txt}`, `k8s/base/orchestrator.yaml`, `k8s/overlays/dev` (image tag only), `.env.example`, `pyproject.toml` | Packaging |
+| `services/orchestrator/tests/**`, `eval/behaviour/test_orchestrator.py`, `cassettes/orchestrator_agents.json` | Tests |
+
+No shared contract changed.
+
+### C2. Deviations from spec / architecture
+| What | Why | Logged in deviations.md as |
+|------|-----|---------------------------|
+| INTAKE→CARD shortcut; checkpoint holds step outputs; Redis active-run set and its recovery | cache hit path; resume without Redis memo | D-015 |
+| M2 paths beyond §7.2; `X-User-Id` required on run endpoints; `GET /runs/{id}` | M2 and the gateway do not exist | D-016 |
+| Scorer retries inside the 600 s limit; challenge and what-if 501; what `/ready` checks; rubrics and prompts mounted | see the row | D-017 |
+
+During testing the spec gained two A7 rows (marked there).
+
+### C3. Test report
+**Testing subagent** (`agent-skills:test-engineer`, one run, test files only). It added `tests/unit/test_edge_cases.py` (31 cases) and reported 15 failing cases for 11 bugs. On the code it tested: ruff, format and mypy clean; `pytest -q` 1547 passed, 15 failed; coverage 97 %; Redis integration 1 passed; kubeconform 27/27.
+
+| # | Bug (worst first) | Fix |
+|---|-------------------|-----|
+| 1 | A reply stripped of unknown evidence ids came back clean from the memo and the card was cached | changed replies are not memoised |
+| 2 | Startup recovery racing approve or resume started two drivers | recovery skips locked runs; `_spawn` refuses a second driver |
+| 3 | Deep search started with the token cap used up | caps checked before the search |
+| 4 | A changed setting could buy more pages than approved | approved pages kept in the checkpoint |
+| 5 | Other answers after a failed save reused the idempotency key | key includes a digest of the text |
+| 6 | Three long answers erased the idea | answers share at least half the room, equally |
+| 7 | A lost checkpoint left a second approval record | one approval id per run |
+| 8 | `run_finished` sent for a state that was not stored | nothing is announced until stored; also `run_status`, `verdict`, `approval` |
+| 9 | Ids `.` and `..` changed the M2 path | rejected as not found |
+| 10 | M2 error text could reach stdout | exceptions not chained; logs carry type and frames only |
+| 11 | Lock entries never freed | weak-value dictionaries |
+
+All fixed in `71b3f4c`; none left open. Before the subagent, the automated security review found that a run id alone gave access to the run; fixed (Z7-17).
+
+**Final results** (after the fixes):
+- `ruff check .`, `ruff format --check .`, `mypy libs services` (110 files): clean.
+- `pytest -q --cov=services/orchestrator/src`: 1562 passed, 6 deselected; orchestrator coverage 97 % (target 90 %).
+- `pytest -q -m integration services/orchestrator` (real Redis): 1 passed.
+- `kubectl kustomize k8s/overlays/dev | kubeconform -strict`: 27 valid.
+- Image, run `--read-only`: on `85baded`, with the fake services served over HTTP and a real Redis, one Validate run ended COMPLETED (`GO`, 80.0, 37 events, 8 steps; a request without `X-User-Id` was 422; no error or warning lines and no idea text on stdout). On the final `71b3f4c`: uid 10001, `/health` 200, `/ready` 503 without dependencies, stop in 0.6 s with exit 0; the full run was not repeated on it.
+
+**Not tested:** a real M2, M4 or M6 (they do not exist); real models (no Gemini key; cassettes and stand-ins only); real M8 behaviour (stub until Z8); the cluster (no criterion needs it, disk).
+
+### C4. Measurements
+| What | Value |
+|------|-------|
+| Orchestrator image | 221 MB (shares the base layers with the other services) |
+| Memory, after one run in the container (`85baded`) | 63 MiB (limit 384 MiB) |
+| `docker stop`, idle | 0.85 s (`85baded`), 0.6 s (`71b3f4c`) |
+
+Run time with real models is not measured (Z11).
+
+### C5. Follow-ups
+- **Ahmad (A1, A8):** implement the M2 paths of A5, honour `Idempotency-Key` on M2 writes, send `X-User-Id` on every M3 call; then add `profile` to `ORCH_READY_REQUIRES` (S3). A2: M5 enforces its own page and token caps (AO-2).
+- **Z8:** real intake, skeptic and concretizer; challenge (keep a claim when the reason starts `claim check unavailable`), what-if, Discover.
+- **Z10:** replay uses the M11 call's trace input (original scores); tool outputs other than M11's are summarised in the trace, so replaying recorded tool results needs fuller records.
+- **Z10/Z11:** M9 sends only the first 1200 characters of the idea to the model, so answers appended to a long idea do not reach it; tune the budgets and the deep-search estimate with measurements.
+- Steps charged after the last checkpoint are not counted if the save fails and the step re-runs, so repeated crashes could pass the step cap.
+- M3 does not look up a duplicate's `card_id` in M6 (M9 builds it from a KB card).
+- No user cancel endpoint and no sweeper: an unanswered run is cancelled only when someone returns to it.
+- One orchestrator replica; more need a lease per run.

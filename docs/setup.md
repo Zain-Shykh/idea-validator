@@ -169,6 +169,12 @@ KB_URL=http://127.0.0.1:8005 LLM_BACKEND=direct uvicorn critic.main:app --app-di
 pytest -q services/critic eval/behaviour           # no model needed
 ```
 
+**Orchestrator (M3)** needs Redis, M2 (`PROFILE_URL`), M6 (`KB_URL`), M8, M9, M11 and M12. M2 and M6 are not built yet, so in Compose or the cluster `POST /runs` answers 503; the tests run the whole workflow against fakes. Compose and the manifest set `ORCH_READY_REQUIRES=verdict` (add `profile` when M2 runs). Calls to `/runs/{id}` need the `X-User-Id` header. Run one replica.
+```bash
+pytest -q services/orchestrator eval/behaviour     # no model, no M2 needed
+docker compose up -d redis && pytest -q -m integration services/orchestrator
+```
+
 ## 8. Cleanup, teardown and disk space
 
 Check: `df -h ~` and `docker system df`.

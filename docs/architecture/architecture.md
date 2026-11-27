@@ -293,6 +293,13 @@ Notes:
 - **Scorer → dimension mapping:** `demand` → `demand_pain`; `competition` → `competition`, `differentiation`; `feasibility` → `feasibility`, `learning`; `risk` → `risk` (M9-1). Scorers that depend on the profile: `feasibility` only — so a profile change re-runs only that scorer (M3-5).
 - **Timeouts and retries (M3-3, D-010):** each M9 request has a 600 s timeout (`VALIDATOR_TIMEOUT`, it may wait for the model) and is not retried on timeout; one M10 call has 90 s and is not retried by M9; a scorer that still fails **abstains** (score `null`, confidence 0, reason recorded). Partial failure never crashes the run.
 
+As built (D-015..D-017, decisions Z7-1..20):
+- **Cache:** INTAKE reads M11 `/config` and M6 `/stats`, then the verdict cache; a hit goes straight to CARD. Degraded, fallback, `model=none`, estimated and clarified results are not cached.
+- **Checkpoint:** holds the outputs of completed steps, including the M11 request with the original scores. `orch:active-runs` names the runs to resume at startup. One replica.
+- **Budget:** M3 counts steps and pages; tokens and cost are read from M13, where the caller of a model records them. A used-up cap stops the run before the next paid step.
+- **Scorer retries:** at most two, for invalid replies, 429, 5xx and connection failures, inside the one 600 s limit; never after a timeout.
+- **Not yet:** challenge and what-if endpoints (501 until Z8).
+
 ### 6.3 Validate — sequence
 
 ```mermaid
@@ -516,8 +523,10 @@ All requests/responses JSON (except SSE). Auth: `Authorization: Bearer <JWT>` on
 | M2 | `POST /internal/verdicts` | `Verdict` + `DimensionScore[]` + claims | ids |
 | M2 | `POST /internal/approvals`, `PATCH /internal/approvals/{id}` | approval | approval |
 | M2 | `GET/PUT /internal/cache/verdicts/{key}` | verdict JSON | hit/miss (+ `cache_hit` metric) |
+| M2 | `GET /internal/ideas/versions/{version_id}` (proposed, D-016) | — | `Idea` with that version |
 | M2 | `GET /internal/compare` | two idea ids | comparison |
 | M3 | `POST /runs` | `{workflow, user_id, idea_version_id?, niche_wish?, profile}` | `{run_id}` |
+| M3 | `GET /runs/{id}` (needs `X-User-Id`, as do answer, approve and resume, D-016) | — | `RunStatus` |
 | M3 | `POST /runs/{id}/answer`, `/approve`, `/resume` | answers / decision | `202` |
 | M3 | `POST /ideas/{id}/challenge`, `/whatif` | see §7.1 | see §7.1 |
 | M4 | `POST /scout` | `{queries[], sources[], page_budget, run_id}` | `{fetched, ingested_card_ids[]}` |
@@ -780,6 +789,7 @@ erDiagram
 | `rl:domain:{domain}` / `rl:llm:{provider}` | M5 | window | Per-domain / per-provider rate limit |
 | `rl:api:{user_or_ip}:{route}` | Gateway | 60 s | Public API rate limit (M1-4) |
 | `run:{run_id}:events` (Stream) | M3 writes, gateway reads | 24 h after finish | Live progress (U3) |
+| `orch:active-runs` (set) | M3 | 7 d | Runs to resume after a restart (D-015) |
 
 Cache hits are recorded as `cache_hit: true` in the trace record, increment `ideaval_cache_requests_total{cache,result}`, and set `from_cache: true` in the verdict card so the UI shows a badge (M2-5).
 
@@ -1257,8 +1267,8 @@ Policies: `default-deny-all`, `allow-dns-egress`, `allow-ingress-controller` (�
 | `budgets` | `config/budgets.yaml` | orchestrator, tools, critic |
 | `llm-models` | `config/llm-models.yaml` | tools |
 | `sources` | `config/sources.yaml` | tools, scouts |
-| `rubrics` | `rubrics/*.yaml` | validators, scorer, agentops |
-| `prompts` | `prompts/*.md` | ideation, critic, validators, agentops |
+| `rubrics` | `rubrics/*.yaml` | validators, scorer, agentops, orchestrator |
+| `prompts` | `prompts/*.md` | ideation, critic, validators, agentops, orchestrator |
 | `app-config` | literals (service URLs, log level, `LLM_BACKEND=gateway`) | all |
 | Secret `api-keys` | created by Jenkins/`scripts/create_secrets.sh` from `.env` | tools only |
 | Secret `db` / `jwt` / `redis` | same | profile, kb, analyst, agentops, gateway, orchestrator |
