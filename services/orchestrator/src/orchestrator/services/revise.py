@@ -24,6 +24,7 @@ from common.contracts.core import (
     DimensionScore,
     IdeaInput,
     RunState,
+    Spend,
     Verdict,
     VerdictRequest,
     WhatWouldMakeGo,
@@ -214,6 +215,10 @@ async def _check(runner: Runner, run_id: str, found: Judged, claim: Claim) -> Ch
     state.status, state.step = RunState.COMPLETED, Step.CARD
     state.created_at = state.updated_at = now
     state.parent_run_id, state.source_run_id = None, None
+    # the source run's spend stays on the source run
+    state.spend = Spend()
+    state.idea_id = found.idea.id
+    state.idea = IdeaInput(title=found.idea.title, text=found.version.text)
     r = _context(runner, run_id, state)
     sent = claim.model_copy(update={"text": claim_text(claim.text)})
     try:
@@ -384,6 +389,7 @@ async def apply(
         done = await _existing(runner, run_id)
         if done is not None:
             state = Checkpoint.model_validate(done.state)
+            await runner.ensure_started(run_id, "Validate run started")
             return WhatIfApplyResponse(run_id=run_id, new_version=state.version)
         proposal = await runner.deps.proposals.get(_proposal_key(idea_id, number, proposal_id))
         if proposal is None:

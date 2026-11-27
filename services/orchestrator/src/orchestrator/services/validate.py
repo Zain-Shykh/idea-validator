@@ -762,7 +762,8 @@ def affected_scorers(questions: list[CandidateQuestion]) -> set[str]:
 
 def with_clarifications(text: str, pairs: list[tuple[str, str]]) -> str:
     """The idea text with the answers appended (``common.idea_text``)."""
-    entries = [f"{q[:MAX_QUESTION_CHARS]}\n  {a}" for q, a in pairs]
+    # the first line is the question and only the question: shortening relies on it
+    entries = [f"{' '.join(q.split())[:MAX_QUESTION_CHARS]}\n  {a}" for q, a in pairs]
     return append(text, CLARIFICATIONS, entries, MAX_IDEA_CHARS)
 
 

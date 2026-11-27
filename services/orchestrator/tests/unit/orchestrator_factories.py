@@ -320,6 +320,9 @@ class Stack(httpx.AsyncBaseTransport):
         self.idea_rounds: list[list[dict]] = [[idea()]]
         self.profiles: dict[str, StudentProfile] = {}
         self.idea_keys: dict[str, str] = {}
+        # M2 honours Idempotency-Key (spec Z8 A9)
+        self.version_keys: dict[str, IdeaVersion] = {}
+        self.verdict_keys: dict[str, str] = {}
         self.add_idea()
 
     # --- helpers -------------------------------------------------------------------------------
@@ -406,6 +409,9 @@ class Stack(httpx.AsyncBaseTransport):
             return _reply(found_profile) if found_profile else error(404, "NOT_FOUND")
         if parts[0] == "ideas" and method == "POST":
             create = IdeaVersionCreate.model_validate_json(body)
+            key = request.headers["Idempotency-Key"]
+            if key in self.version_keys:
+                return _reply(self.version_keys[key])
             idea = self.ideas[parts[1]]
             version = IdeaVersion(
                 **create.model_dump(),
@@ -415,6 +421,7 @@ class Stack(httpx.AsyncBaseTransport):
                 created_at=NOW,
             )
             idea.versions.append(version)
+            self.version_keys[key] = version
             return _reply(version)
         if parts[0] == "runs":
             if method == "POST":
@@ -444,8 +451,12 @@ class Stack(httpx.AsyncBaseTransport):
             )
             return _reply(self.approvals[parts[1]])
         if parts[0] == "verdicts":
-            self.stored.append(VerdictStore.model_validate_json(body))
-            return _reply(VerdictStored(verdict_id=f"v{len(self.stored)}"))
+            item = VerdictStore.model_validate_json(body)
+            key = request.headers["Idempotency-Key"]
+            if key not in self.verdict_keys:
+                self.stored.append(item)
+                self.verdict_keys[key] = f"v{len(self.stored)}"
+            return _reply(VerdictStored(verdict_id=self.verdict_keys[key]))
         assert parts[:2] == ["cache", "verdicts"]
         key = "/".join(parts[2:])
         if method == "PUT":

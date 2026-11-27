@@ -266,3 +266,21 @@ def test_a_prompt_with_other_placeholders_is_refused() -> None:
     changed["skeptic"] = PROMPTS["intake"].__class__("skeptic", 1, "{{idea}}", "0" * 64)
     with pytest.raises(RegistryError):
         Agents(changed, Built().agents.llm, KB, TraceClient())
+
+
+@pytest.mark.parametrize("path", ["intake", "ideate", "gap-analyze", "skeptic", "concretize"])
+def test_no_endpoint_accepts_a_reply_with_a_verdict(path: str) -> None:
+    bad = json.dumps({"verdict": "GO", "score": 100})
+    built = Built(bad, bad)
+    evidence = [EVIDENCE.model_dump(mode="json")]
+    change = {"dimension": "risk", "from_score": 1, "to_score": 3}
+    bodies = {
+        "intake": {"idea": IDEA, "profile": PROFILE},
+        "ideate": {"profile": PROFILE, "niches": [], "round": 1,
+                   "gaps": [GAP | {"evidence": evidence}]},
+        "gap-analyze": {"ideas": [draft("lecture slides flashcards", [ID])]},
+        "skeptic": {"idea": IDEA, "evidence": evidence},
+        "concretize": {"idea": IDEA, "changes": [change]},
+    }  # fmt: skip
+    response = built.client.post(f"/{path}", json={"run_id": "run_1"} | bodies[path])
+    assert (response.status_code, response.json()["error"]["code"]) == (502, "LLM_OUTPUT_INVALID")

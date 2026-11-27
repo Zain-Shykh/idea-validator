@@ -186,6 +186,16 @@ class Runner:
         )
         return await self._start(run_id or new_id("run"), cp, "Validate run started")
 
+    async def ensure_started(self, run_id: str, message: str) -> None:
+        """For a repeated request whose first try stored the run and failed before starting
+        it: nothing else would drive it, it is not yet among the runs recovery picks up."""
+        r = await self.load(run_id)
+        if r.cp.status is not RunState.QUEUED or self._busy(run_id):
+            return
+        await r.emit(RunEventType.RUN_STARTED, message, required=True)
+        await self.deps.active.add(run_id)
+        self._spawn(run_id)
+
     async def _create_discover(self, request: StartRunRequest) -> str:
         now = self.deps.clock()
         cp = DiscoverCheckpoint(

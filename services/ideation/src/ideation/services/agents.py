@@ -287,7 +287,9 @@ class Agents:
         ideas = request.ideas[:MAX_IDEAS]
         if not ideas:
             return GapAnalyzeResponse(ideas=[])
-        evidence = [await self._idea_evidence(idea, request.run_id) for idea in ideas]
+        evidence = await asyncio.gather(
+            *(self._idea_evidence(idea, request.run_id) for idea in ideas)
+        )
         shown = {i.evidence_id: i for items in evidence for i in items}
         enriched = [EnrichedIdea(idea=idea) for idea in ideas]
         if not shown:

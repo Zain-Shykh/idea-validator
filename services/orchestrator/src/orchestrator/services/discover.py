@@ -185,7 +185,9 @@ async def niches(r: DiscoverContext) -> DiscoverStep | None:
             response_model=NicheListResponse,
             summary=lambda x: [n.niche_id for n in x.niches],
         )  # fmt: skip
-        chosen = matched.niches[:MAX_NICHES]
+        # M7 builds ids, names and statements from scraped text, and all of them go into a
+        # prompt (ETH-5)
+        chosen = [n for n in matched.niches if not scan_text(n.niche_id)][:MAX_NICHES]
         gaps: list[Gap] = []
         for niche in chosen:
             found: GapsResponse = await r.call(
@@ -200,7 +202,6 @@ async def niches(r: DiscoverContext) -> DiscoverStep | None:
     gaps = gaps[:MAX_GAPS]
     known = await _known_evidence(r, [i for g in gaps for i in g.evidence_ids[:MAX_GAP_EVIDENCE]])
     usable = {i.evidence_id: i for i in await _usable(r, list(known.values()))}
-    # M7 builds names and statements from scraped text, and they go into a prompt too (ETH-5)
     cp.niches = [
         NicheContext(niche_id=n.niche_id, name=n.name, trend_label=n.trend_label)
         for n in chosen

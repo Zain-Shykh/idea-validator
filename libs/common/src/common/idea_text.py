@@ -31,6 +31,17 @@ def _render(sections: Sections) -> str:
     )
 
 
+def _cut(entry: str, length: int) -> str:
+    """An entry of two parts (a question, then its answer) loses the first part first: what
+    the student said comes last and matters most. A third of the room stays for the first."""
+    if len(entry) <= length:
+        return entry
+    first, newline, rest = entry.partition("\n")
+    if newline:
+        first = first[: max(length - len(rest) - 1, length // 3)]
+    return (first + newline + rest)[:length]
+
+
 def _fit(base: str, sections: Sections, limit: int) -> str:
     """At most ``limit`` characters. The appended entries get at least half of the room when
     the whole is too long, never more unless the idea is short, in equal shares."""
@@ -44,7 +55,7 @@ def _fit(base: str, sections: Sections, limit: int) -> str:
         count = sum(len(entries) for _, entries in sections)
         fixed = len(_render([(header, [""] * len(entries)) for header, entries in sections]))
         share = max(0, room - fixed) // count
-        tail = _render([(h, [e[:share] for e in entries]) for h, entries in sections])[:limit]
+        tail = _render([(h, [_cut(e, share) for e in entries]) for h, entries in sections])[:limit]
     return base[: limit - len(tail)] + tail
 
 

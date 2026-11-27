@@ -215,3 +215,35 @@ async def test_a_dependency_down_is_503(host: str, path: str) -> None:
     m3.stack.overrides.clear()
     # a repeat after the outage completes it
     assert (await challenge(m3)).json()["outcome"] == "removed"
+
+
+async def test_an_engine_reply_for_another_run_changes_nothing() -> None:
+    m3, run_id = await judged()
+    reject(m3)
+    stale = m3.card(run_id).model_dump_json(by_alias=True)
+    m3.stack.overrides[("verdict", "/verdict")] = lambda _: httpx.Response(200, content=stale)
+    stored = len(m3.stack.stored)
+    assert (await challenge(m3)).status_code == 503
+    assert len(m3.stack.stored) == stored
+
+
+async def test_discover_cards_are_the_engines_replies() -> None:
+    """VE-12 for Discover: without a what-would-make-GO suggestion nothing is changed at all,
+    and every listed card is the one stored for a child."""
+    stack = Stack()
+    replies: list[Verdict] = []
+
+    async def spy(request: httpx.Request) -> httpx.Response:
+        response = await stack.verdict_asgi.handle_async_request(request)
+        body = await response.aread()
+        replies.append(Verdict.model_validate_json(body))
+        return httpx.Response(response.status_code, content=body)
+
+    stack.overrides[("verdict", "/verdict")] = spy
+    m3 = Orchestrator(stack)
+    run_id = await m3.discover(max_ideas=1)
+    (card,) = m3.verdicts(run_id)
+    assert card.model_copy(update={"what_would_make_go": []}) == replies[-1].model_copy(
+        update={"what_would_make_go": []}
+    )
+    assert stack.stored[-1].verdict == card
