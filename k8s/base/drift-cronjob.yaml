@@ -1,0 +1,74 @@
+# M13 drift report (AO-5). Runs daily, after ingestion. To report right after one ingestion run:
+#   kubectl -n idea-validator create job drift-now --from=cronjob/drift-report
+# It writes the report to the ops database (GET /drift/latest on agentops) and to its log.
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: drift-report
+  labels: &labels
+    app: drift-report
+    module: M13
+    # allow-intra-namespace (§17.3): it calls the knowledge base and Postgres
+    tier: backend
+    app.kubernetes.io/part-of: idea-validator
+spec:
+  # UTC. Ahmad's ingestion has no schedule yet: move this after it (A4)
+  schedule: "30 4 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  startingDeadlineSeconds: 3600
+  jobTemplate:
+    spec:
+      backoffLimit: 2
+      activeDeadlineSeconds: 600
+      template:
+        metadata:
+          labels: *labels
+        spec:
+          restartPolicy: Never
+          automountServiceAccountToken: false
+          enableServiceLinks: false
+          securityContext:
+            runAsNonRoot: true
+            runAsUser: 10001
+            seccompProfile:
+              type: RuntimeDefault
+          containers:
+            - name: drift
+              image: ghcr.io/zain-shykh/idea-validator-evaluation:set-by-overlay
+              imagePullPolicy: IfNotPresent
+              command: ["python", "drift.py", "--out=/tmp/results"]
+              envFrom:
+                - configMapRef:
+                    name: app-config
+              env:
+                - name: POSTGRES_HOST
+                  value: postgres
+                - name: POSTGRES_USER
+                  value: ideaval
+                - name: OPS_DB
+                  value: ops
+                - name: POSTGRES_PASSWORD
+                  valueFrom:
+                    secretKeyRef:
+                      name: db
+                      key: POSTGRES_PASSWORD
+              volumeMounts:
+                - name: tmp
+                  mountPath: /tmp
+              resources:
+                requests:
+                  cpu: 50m
+                  memory: 128Mi
+                limits:
+                  cpu: 500m
+                  memory: 384Mi
+              securityContext:
+                allowPrivilegeEscalation: false
+                readOnlyRootFilesystem: true
+                capabilities:
+                  drop: [ALL]
+          volumes:
+            - name: tmp
+              emptyDir: {}
