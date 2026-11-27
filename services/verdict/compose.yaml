@@ -9,3 +9,5 @@ services:
       - "127.0.0.1:8011:8000"
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ../../config/verdict.yaml:/etc/verdict/verdict.yaml:ro

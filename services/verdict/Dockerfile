@@ -1,5 +1,5 @@
 # Build from the repo root: docker build -f services/verdict/Dockerfile -t idea-validator-verdict:$(git rev-parse --short HEAD) .
-# The steps up to COPY /venv are the same in every service, so images share those layers.
+# The rules are not in the image: mount config/verdict.yaml (ConfigMap or compose volume).
 FROM python:3.12-slim@sha256:2f17fc044b579bab302c2e8054d3a686e2cb9a83de48e70534b94cd8ebbe06a9 AS build
 RUN python -m venv --without-pip /venv
 COPY services/verdict/requirements.txt /tmp/requirements.txt
@@ -9,7 +9,8 @@ RUN pip --python /venv/bin/python install --no-cache-dir --no-deps /tmp/common
 
 FROM python:3.12-slim@sha256:2f17fc044b579bab302c2e8054d3a686e2cb9a83de48e70534b94cd8ebbe06a9
 RUN useradd --uid 10001 --create-home app
-ENV PATH=/venv/bin:$PATH PYTHONPATH=/app PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+ENV PATH=/venv/bin:$PATH PYTHONPATH=/app PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 \
+    VERDICT_CONFIG_PATH=/etc/verdict/verdict.yaml
 COPY --from=build /venv /venv
 COPY services/verdict/src /app
 # numeric, so Kubernetes can verify runAsNonRoot

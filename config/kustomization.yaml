@@ -1,0 +1,9 @@
+# ConfigMaps generated from the rule files in this folder (K8S-4). It lives here because
+# Kustomize only reads files inside a kustomization's own folder; k8s/base includes it.
+# The name gets a content hash, so editing a file rolls the pods that mount it.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+configMapGenerator:
+  - name: verdict-config
+    files:
+      - verdict.yaml

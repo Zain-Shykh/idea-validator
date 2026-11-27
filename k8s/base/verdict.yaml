@@ -39,6 +39,11 @@ spec:
           envFrom:
             - configMapRef:
                 name: app-config
+          volumeMounts:
+            # the image has no rules of its own; VERDICT_CONFIG_PATH points here
+            - name: verdict-config
+              mountPath: /etc/verdict
+              readOnly: true
           readinessProbe:
             httpGet:
               path: /ready
@@ -65,6 +70,10 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: [ALL]
+      volumes:
+        - name: verdict-config
+          configMap:
+            name: verdict-config
 ---
 apiVersion: v1
 kind: Service
