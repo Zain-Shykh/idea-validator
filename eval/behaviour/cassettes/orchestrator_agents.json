@@ -1,0 +1,14 @@
+{
+  "_note": "Recorded-by-hand replies of M8, which is a stub until Z8, and of the M12 judge.",
+  "intake": {
+    "slots": {"target_user": "university students", "platform": "web", "core_features": ["slides to flashcards"], "scope": "one course"},
+    "questions": [
+      {"question_id": "q1", "text": "Is it for your own course only, or for any lecture deck?", "affects": ["differentiation"],
+       "answers": [{"answer": "my own course", "score_deltas": {"differentiation": 0.5}},
+                   {"answer": "any deck", "score_deltas": {"differentiation": -0.5}}]}
+    ]
+  },
+  "skeptic_dimension": "demand_pain",
+  "skeptic_text": "students retype cards by hand today",
+  "judge": {"agent": "critic", "alias": "agent-default", "model": "gemini/gemini-flash-latest", "tokens_in": 310, "tokens_out": 28, "cost_usd": 0.0004, "content": "{\"verdict\": \"supported\", \"reason\": \"stated in the quote\"}"}
+}
