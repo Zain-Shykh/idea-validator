@@ -1,0 +1,27 @@
+# DATA-8 rubric. Any change needs a higher `version` here and in manifest.yaml (new rubric_set),
+# then `python scripts/check_registry.py --update` (AO-3).
+dimension: differentiation
+version: 1
+scale: "0-5, higher is better for the student. Higher means a clear gap that existing products do not address. With no usable evidence the scorer abstains: it never gives 0 for missing evidence."
+anchors:
+  5: "Evidence shows an important gap that no retrieved product addresses, and the idea targets exactly that gap."
+  4: "A clear gap that existing products address only poorly, and the idea targets it."
+  3: "A real but narrow difference (a segment, platform or workflow) that most products ignore."
+  2: "Minor differences that competitors could copy quickly or that users rarely ask for."
+  1: "Only cosmetic differences from an existing product."
+  0: "The evidence shows an existing product with the same core features for the same user; no difference is stated."
+features: [n_competitors, max_similarity, gap_coverage]
+output_schema: score, confidence, evidence_ids, reason
+examples:
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_c501#c0] (hackernews) \"No tool can read the diagrams in my slides, and that is where the exam is.\" [card_c502#c0] (github) \"Every converter drops figures completely.\""
+    expected: {"score": 5, "confidence": 0.75, "evidence_ids": ["card_c501#c0", "card_c502#c0"], "reason": "An important gap, diagrams, that no found product covers (card_c501#c0, card_c502#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_c401#c0] (hackernews) \"Existing converters mangle formulas, I fix every card.\" [card_c402#c0] (github) \"Formula support is broken in all tools I tried.\""
+    expected: {"score": 4, "confidence": 0.7, "evidence_ids": ["card_c401#c0", "card_c402#c0"], "reason": "Existing products handle formulas poorly (card_c401#c0, card_c402#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_c301#c0] (hackernews) \"None of these work offline on a cheap phone.\" [card_c302#c0] (yc) \"A study app that is web only.\""
+    expected: {"score": 3, "confidence": 0.65, "evidence_ids": ["card_c301#c0", "card_c302#c0"], "reason": "A narrow offline-phone difference (card_c301#c0, card_c302#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_c201#c0] (hackernews) \"I would like another colour theme for cards.\" [card_c202#c0] (yc) \"Competitor ships themes monthly.\""
+    expected: {"score": 2, "confidence": 0.55, "evidence_ids": ["card_c201#c0", "card_c202#c0"], "reason": "A small difference that is easy to copy (card_c201#c0, card_c202#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_c101#c0] (yc) \"Product with the same import and review flow, different layout only.\""
+    expected: {"score": 1, "confidence": 0.6, "evidence_ids": ["card_c101#c0"], "reason": "Only the layout differs (card_c101#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_c001#c0] (yc) \"An app that generates flashcards from students' own lecture slides with spaced repetition.\""
+    expected: {"score": 0, "confidence": 0.75, "evidence_ids": ["card_c001#c0"], "reason": "An existing product already does exactly this for the same user (card_c001#c0)."}

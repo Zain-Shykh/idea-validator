@@ -1,0 +1,27 @@
+# DATA-8 rubric. Any change needs a higher `version` here and in manifest.yaml (new rubric_set),
+# then `python scripts/check_registry.py --update` (AO-3).
+dimension: feasibility
+version: 1
+scale: "0-5, higher is better for the student. Higher means the build fits this student's hours, skills and compute with margin. The hours gate itself is decided by code, not by this score. With no usable evidence the scorer abstains: it never gives 0 for missing evidence."
+anchors:
+  5: "Effort is at most half of the available hours, the student already has nearly all skills, and the compute available is enough."
+  4: "Effort is clearly within the available hours with one new, well-documented skill; compute is enough."
+  3: "Effort fits with little margin, or one or two new skills of moderate difficulty are needed."
+  2: "Effort is close to or slightly above the available hours, or several new skills are needed."
+  1: "Effort is well above the available hours, or a core part needs expertise or compute the student does not have."
+  0: "Evidence from similar builds shows this cannot be built with the student's hours, skills and compute."
+features: [available_hours, est_effort_hours, hours_ratio, skill_overlap, compute_fit, new_skills]
+output_schema: score, confidence, evidence_ids, reason
+examples:
+  - input: "IDEA: Student: Python and React, 240 available hours, laptop. EVIDENCE: [card_d501#c0] (github) \"Similar slide parser built in about 80 hours with Python and React.\""
+    expected: {"score": 5, "confidence": 0.75, "evidence_ids": ["card_d501#c0"], "reason": "A similar build took a third of the available hours with the same skills (card_d501#c0)."}
+  - input: "IDEA: Student: Python and React, 240 available hours, laptop. EVIDENCE: [card_d401#c0] (github) \"Comparable project took 150 hours and used one extra PDF library.\""
+    expected: {"score": 4, "confidence": 0.7, "evidence_ids": ["card_d401#c0"], "reason": "It fits with one new documented library (card_d401#c0)."}
+  - input: "IDEA: Student: Python and React, 240 available hours, laptop. EVIDENCE: [card_d301#c0] (github) \"Took us 200 hours including learning OCR.\""
+    expected: {"score": 3, "confidence": 0.65, "evidence_ids": ["card_d301#c0"], "reason": "It fits with little margin and a new skill (card_d301#c0)."}
+  - input: "IDEA: Student: Python and React, 240 available hours, laptop. EVIDENCE: [card_d201#c0] (github) \"About 260 hours, we had to learn OCR, queues and mobile.\" [card_d202#c0] (hackernews) \"Layout detection was much harder than expected.\""
+    expected: {"score": 2, "confidence": 0.6, "evidence_ids": ["card_d201#c0", "card_d202#c0"], "reason": "Effort is slightly above the hours and several skills are new (card_d201#c0, card_d202#c0)."}
+  - input: "IDEA: Student: Python and React, 240 available hours, laptop. EVIDENCE: [card_d101#c0] (github) \"Three engineers spent months training a layout model on GPUs.\""
+    expected: {"score": 1, "confidence": 0.6, "evidence_ids": ["card_d101#c0"], "reason": "A core part needs skills and compute the student lacks (card_d101#c0)."}
+  - input: "IDEA: Student: Python and React, 240 available hours, laptop. EVIDENCE: [card_d001#c0] (hackernews) \"A funded team needed two years and a GPU cluster for this.\""
+    expected: {"score": 0, "confidence": 0.65, "evidence_ids": ["card_d001#c0"], "reason": "Similar builds show it is out of reach (card_d001#c0)."}

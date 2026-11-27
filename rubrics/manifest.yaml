@@ -1,0 +1,10 @@
+# The rubric set recorded on every verdict (versions.rubrics, AO-3). A rubric version change must be
+# repeated here, and any change here needs a new rubric_set.
+rubric_set: r1
+rubrics:
+  demand_pain: 1
+  competition: 1
+  differentiation: 1
+  feasibility: 1
+  risk: 1
+  learning: 1

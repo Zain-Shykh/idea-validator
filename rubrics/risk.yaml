@@ -1,0 +1,27 @@
+# DATA-8 rubric. Any change needs a higher `version` here and in manifest.yaml (new rubric_set),
+# then `python scripts/check_registry.py --update` (AO-3).
+dimension: risk
+version: 1
+scale: "0-5, higher is better for the student. Higher means less legal, privacy, safety or platform-dependency concern. Legal or safety blockers are decided by a gate in code, not by this score. With no usable evidence the scorer abstains: it never gives 0 for missing evidence."
+anchors:
+  5: "The evidence raises no legal, privacy, safety or platform-dependency concern."
+  4: "One minor concern with a simple, known mitigation."
+  3: "A moderate concern, such as ordinary personal data or one replaceable third-party API, that needs deliberate handling."
+  2: "A serious concern: sensitive data, a single irreplaceable platform, or unclear terms of service."
+  1: "Several serious concerns, or a regulated domain without a clear way to comply."
+  0: "The evidence shows the core of the idea is illegal, unsafe or forbidden by the platform it depends on."
+features: [risk_hits, platform_dependency, regulated_domain]
+output_schema: score, confidence, evidence_ids, reason
+examples:
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_e501#c0] (github) \"Runs fully locally on files the user owns; no accounts.\""
+    expected: {"score": 5, "confidence": 0.65, "evidence_ids": ["card_e501#c0"], "reason": "Local processing of the user's own files shows no concern (card_e501#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_e401#c0] (hackernews) \"Remind users to upload only material they may use.\""
+    expected: {"score": 4, "confidence": 0.65, "evidence_ids": ["card_e401#c0"], "reason": "A minor copyright concern with a simple mitigation (card_e401#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_e301#c0] (github) \"We store emails and use one hosted model API; switching took a week.\""
+    expected: {"score": 3, "confidence": 0.6, "evidence_ids": ["card_e301#c0"], "reason": "Ordinary personal data and a replaceable API (card_e301#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_e201#c0] (hackernews) \"The only data source changed its terms and half the apps broke.\""
+    expected: {"score": 2, "confidence": 0.6, "evidence_ids": ["card_e201#c0"], "reason": "The idea depends on a single platform (card_e201#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_e101#c0] (hackernews) \"Tools handling student health notes got legal complaints.\" [card_e102#c0] (github) \"Compliance review blocked the release.\""
+    expected: {"score": 1, "confidence": 0.6, "evidence_ids": ["card_e101#c0", "card_e102#c0"], "reason": "A regulated domain without a clear path to comply (card_e101#c0, card_e102#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_e001#c0] (hackernews) \"The university and the platform forbid redistributing lecture slides; accounts were banned.\""
+    expected: {"score": 0, "confidence": 0.7, "evidence_ids": ["card_e001#c0"], "reason": "The core activity is forbidden (card_e001#c0)."}

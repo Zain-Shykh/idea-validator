@@ -19,6 +19,8 @@ dependencies = [
 [project.optional-dependencies]
 # LLM_BACKEND=direct (local development only)
 direct = ["litellm==1.111.0"]
+# common.registry reads YAML (M13, agents)
+registry = ["pyyaml==6.0.4"]
 
 [tool.setuptools.packages.find]
 where = ["src"]

@@ -1,0 +1,10 @@
+# Budget caps (AO-2). Enforced by the orchestrator (M3) and the tool layer (M5); over budget means
+# ask for approval or stop. Starting values, tuned in Z7/Z11. Any change needs a higher `version`,
+# then `python scripts/check_registry.py --update`.
+version: v1
+workflows:              # per run
+  validate: {max_tokens: 60000, max_cost_usd: 0.10, max_pages: 20, max_steps: 40}
+  discover: {max_tokens: 150000, max_cost_usd: 0.25, max_pages: 60, max_steps: 80}
+actions:                # per single action; an estimate above a cap needs approval (M12-4)
+  llm_call: {max_tokens: 8000, max_cost_usd: 0.02}
+  deep_search: {max_pages: 30, max_cost_usd: 0.05}
