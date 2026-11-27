@@ -365,7 +365,7 @@ flowchart LR
 
 ## Z8 — M8 Ideation + Discover workflow + challenge / what-if
 
-- **Status:** Not started · **Spec:** `docs/specs/Z8-ideation-discover.md` · **Branch:** `feat/z8-ideation-discover`
+- **Status:** In progress · **Spec:** `docs/specs/Z8-ideation-discover.md` · **Branch:** `feat/z8-ideation-discover`
 - **Requirements:** M8-1..5, WF-D1..D9, U2, U7, U8, U9 (versions), VE-12, VE-14, API-P6 (orchestrator side), AVOID-1, AVOID-7
 - **Depends on:** Z7; M7 via `FakeAnalyst` until A6. **Unblocks:** S5.
 
@@ -390,7 +390,7 @@ flowchart LR
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 16:57 | Started | Branch `feat/z8-ideation-discover` from `feat/z7-orchestrator-validate` (PR #17 unmerged) |
 
 ---
 
