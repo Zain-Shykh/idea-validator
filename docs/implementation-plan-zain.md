@@ -15,7 +15,7 @@
 | Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | In review | [Z3](specs/Z3-rubrics-agentops.md) | [#9](https://github.com/Zain-Shykh/idea-validator/pull/9) | 2026-11-27 10:04 | — |
 | Z4 | M10 Scorer serving (base model + fallback) | In review | [Z4](specs/Z4-scorer-serving.md) | [#11](https://github.com/Zain-Shykh/idea-validator/pull/11) | 2026-11-27 10:43 | — |
-| Z5 | M9 Validation agents (4 scorers) | Not started | — | — | — | — |
+| Z5 | M9 Validation agents (4 scorers) | In progress | [Z5](specs/Z5-validators.md) | — | 2026-11-27 11:46 | — |
 | Z6 | M12 Critic and Guardrails | Not started | — | — | — | — |
 | Z7 | M3 Orchestrator: run lifecycle + Validate | Not started | — | — | — | — |
 | Z8 | M8 Ideation + Discover + challenge / what-if | Not started | — | — | — | — |
@@ -251,7 +251,7 @@ flowchart LR
 
 ## Z5 — M9 Validation agents (four scorers)
 
-- **Status:** Not started · **Spec:** `docs/specs/Z5-validators.md` · **Branch:** `feat/z5-validators`
+- **Status:** In progress · **Spec:** `docs/specs/Z5-validators.md` · **Branch:** `feat/z5-validators`
 - **Requirements:** M9-1..4, VE-2, VE-3, WF-V3, WF-V4, VE-4 (gate inputs), AVOID-4, AVOID-7
 - **Depends on:** Z4; M6 via `FakeKB` until S3, M7 via `FakeAnalyst` until A6. **Unblocks:** Z7, Z9 (feature code reused for dataset building).
 
@@ -276,7 +276,7 @@ flowchart LR
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 11:46 | Started | Branch `feat/z5-validators` from `feat/z4-scorer-serving` (PR #11 unmerged) |
 
 ---
 
