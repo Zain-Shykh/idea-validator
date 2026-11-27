@@ -13,6 +13,7 @@ import argparse
 import asyncio
 import io
 import json
+import logging
 import re
 import sys
 from collections.abc import Sequence
@@ -426,6 +427,9 @@ def main(argv: Sequence[str] | None = None) -> int:
     if context.safe_id(args.run_id) is None:
         print("error: invalid run id", file=sys.stderr)
         return 2
+    # the in-process verdict app logs every request: not part of the answer
+    before = logging.root.manager.disable
+    logging.disable(logging.INFO)
     try:
         records = load_records(args)
         result = asyncio.run(replay(records, args.run_id, verdict_config=args.verdict_config))
@@ -434,6 +438,8 @@ def main(argv: Sequence[str] | None = None) -> int:
         detail = str(exc) if isinstance(exc, ReplayError | OSError) else type(exc).__name__
         print(f"error: {detail}", file=sys.stderr)
         return 2
+    finally:
+        logging.disable(before)
     print(f"recorded: {result.recorded_status} {result.recorded_verdict}")
     print(f"replayed: {result.status} {result.verdict}")
     for difference in result.differences:

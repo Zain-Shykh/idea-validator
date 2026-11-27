@@ -70,6 +70,8 @@ Checks: `ruff check . && ruff format --check . && mypy libs services jobs/finetu
 
 Tests: `pytest -q` (unit + contract) · `pytest -m integration` (needs `docker compose up -d postgres redis`; the AgentOps tests also need `AGENTOPS_TEST_DATABASE_URL`, docs/setup.md §5) · UI: `cd services/ui && npm test`.
 
+Evaluation, verdict tuning, run replay and drift: [`jobs/evaluation/README.md`](jobs/evaluation/README.md). No human labels or results exist yet.
+
 Fine-tuning the scorer (data scripts, Colab notebook, comparison): [`jobs/finetune/README.md`](jobs/finetune/README.md). No data or tuned model exists yet.
 
 ## Repository layout
