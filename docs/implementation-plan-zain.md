@@ -17,7 +17,7 @@
 | Z4 | M10 Scorer serving (base model + fallback) | In review | [Z4](specs/Z4-scorer-serving.md) | [#11](https://github.com/Zain-Shykh/idea-validator/pull/11) | 2026-11-27 10:43 | — |
 | Z5 | M9 Validation agents (4 scorers) | In review | [Z5](specs/Z5-validators.md) | [#13](https://github.com/Zain-Shykh/idea-validator/pull/13) | 2026-11-27 11:46 | — |
 | Z6 | M12 Critic and Guardrails | In review | [Z6](specs/Z6-critic-guardrails.md) | [#15](https://github.com/Zain-Shykh/idea-validator/pull/15) | 2026-11-27 12:25 | — |
-| Z7 | M3 Orchestrator: run lifecycle + Validate | Not started | — | — | — | — |
+| Z7 | M3 Orchestrator: run lifecycle + Validate | In progress | [Z7](specs/Z7-orchestrator-validate.md) | — | 2026-11-27 15:55 | — |
 | Z8 | M8 Ideation + Discover + challenge / what-if | Not started | — | — | — | — |
 | Z9 | M10t Fine-tuning pipeline + model comparison | Not started | — | — | — | — |
 | Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | Not started | — | — | — | — |
@@ -323,7 +323,7 @@ flowchart LR
 
 ## Z7 — M3 Orchestrator: run lifecycle + Validate workflow
 
-- **Status:** Not started · **Spec:** `docs/specs/Z7-orchestrator-validate.md` · **Branch:** `feat/z7-orchestrator-validate`
+- **Status:** In progress · **Spec:** `docs/specs/Z7-orchestrator-validate.md` · **Branch:** `feat/z7-orchestrator-validate`
 - **Requirements:** M3-1..6, WF-V1..V9, U3, U4, U5, U6, U10, AO-1, AO-2, M2-4, M2-5, AVOID-1, AVOID-2, AVOID-3
 - **Depends on:** Z2, Z5, Z6 (real), M2/M4/M6 fakes until S3/S4. **Unblocks:** S4 (Validate end-to-end), Ahmad's gateway/UI integration.
 
@@ -354,7 +354,7 @@ flowchart LR
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 15:55 | Started | Branch `feat/z7-orchestrator-validate` from `feat/z6-critic-guardrails` (PR #15 unmerged) |
 
 ---
 
