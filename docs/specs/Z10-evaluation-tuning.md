@@ -10,7 +10,7 @@
 | Requirement IDs | AO-1 (replay), AO-4, AO-5, AO-7, M13-4, M13-5, EVAL-1..4, VE-10, JEN-1 (nightly eval stage content), SUB-2c, SUB-2f, SS-14..16 |
 | Architecture refs | `architecture.md` §8.3, §15, §17.3, §17.4, §18, §21.5 |
 | Depends on | Z7, Z8, Z9. Missing: real M2, M6, M4, M5, M7 (A-phases), Gemini key, fine-tuned model, cluster deployment of Ahmad's services, human labels |
-| Issue / PR | set in Part C |
+| Issue / PR | #22 / #23 (draft, into `feat/z9-finetuning`) |
 
 ---
 

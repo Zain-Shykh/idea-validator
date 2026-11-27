@@ -478,6 +478,7 @@ flowchart LR
 | 2026-11-28 03:04 | Implementation | Tasks 1–9 done and pushed; image built, smoke-tested and removed |
 | 2026-11-28 03:04 | Tests | Testing subagent: 6 root causes, all fixed; 2116 passed, 2 skipped; 7 integration tests passed |
 | 2026-11-28 03:04 | Blocked | **No labels, baseline, confusion matrix, tuned value, cluster run or real drift report.** Needs: owner review of the ideas, labels by Zain and Ahmad, M2/M5/M6 (A2, A4, A7), Gemini key, cluster stack, UI (A9). Steps: spec Z10 C6 |
+| 2026-11-28 03:05 | PR | Draft PR [#23](https://github.com/Zain-Shykh/idea-validator/pull/23) against `feat/z9-finetuning`, closes #22; no reviewer could be requested (Ahmad is not a collaborator yet) |
 
 ---
 
