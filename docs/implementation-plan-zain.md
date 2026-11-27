@@ -13,7 +13,7 @@
 | Z0 | Shared contracts, `libs/common`, repo tooling | In review | [Z0](specs/Z0-contracts-common.md) | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) | 2026-11-27 07:47 | — |
 | Z1 | Walking skeleton of Zain's services | In review | [Z1](specs/Z1-walking-skeleton.md) | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) | 2026-11-27 08:09 | — |
 | Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | — |
-| Z3 | Rubrics, prompts registry, M13 AgenticOps core | Not started | — | — | — | — |
+| Z3 | Rubrics, prompts registry, M13 AgenticOps core | In progress | [Z3](specs/Z3-rubrics-agentops.md) | — | 2026-11-27 10:04 | — |
 | Z4 | M10 Scorer serving (base model + fallback) | Not started | — | — | — | — |
 | Z5 | M9 Validation agents (4 scorers) | Not started | — | — | — | — |
 | Z6 | M12 Critic and Guardrails | Not started | — | — | — | — |
@@ -176,7 +176,7 @@ flowchart LR
 
 ## Z3 — Rubrics, prompts registry, M13 AgenticOps core
 
-- **Status:** Not started · **Spec:** `docs/specs/Z3-rubrics-agentops.md` · **Branch:** `feat/z3-rubrics-agentops`
+- **Status:** In progress · **Spec:** `docs/specs/Z3-rubrics-agentops.md` · **Branch:** `feat/z3-rubrics-agentops`
 - **Requirements:** DATA-8, VE-2, AO-1 (store + read), AO-2 (budgets config), AO-3, AO-6 (summary API), M13-1..3, M13-6, M2-5 (cache-hit metric aggregation), API-I6, K8S-12
 - **Depends on:** Z0, Z1. **Unblocks:** Z4/Z5 (rubrics), Ahmad's Ops page (`/summary`), trace ingestion for all services.
 
@@ -204,7 +204,7 @@ flowchart LR
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 10:04 | Started | Branch `feat/z3-rubrics-agentops` from `feat/z2-verdict-engine` (PR #7 unmerged) |
 
 ---
 
