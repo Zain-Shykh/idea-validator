@@ -39,12 +39,8 @@ IdeaId = Annotated[str, Path(pattern=r"^[A-Za-z0-9._:-]{1,128}$")]
 
 
 @router.post("/runs", status_code=202)
-async def start_run(
-    body: StartRunRequest,
-    runner: Service,
-    user_id: Annotated[str | None, Header(alias=context.USER_ID_HEADER)] = None,
-) -> StartRunResponse:
-    if user_id is not None and user_id != body.user_id:
+async def start_run(body: StartRunRequest, user_id: UserId, runner: Service) -> StartRunResponse:
+    if user_id != body.user_id:
         raise ApiError(403, "FORBIDDEN", "a run can only be started for the signed-in user")
     return StartRunResponse(run_id=await runner.create(body))
 

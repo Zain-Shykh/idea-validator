@@ -526,7 +526,7 @@ All requests/responses JSON (except SSE). Auth: `Authorization: Bearer <JWT>` on
 | M2 | `GET /internal/ideas/versions/{version_id}` (proposed, D-016) | — | `Idea` with that version |
 | M2 | `GET /internal/compare` | two idea ids | comparison |
 | M3 | `POST /runs` | `{workflow, user_id, idea_version_id?, niche_wish?, profile}` | `{run_id}` |
-| M3 | `GET /runs/{id}` (needs `X-User-Id`, as do answer, approve and resume, D-016) | — | `RunStatus` |
+| M3 | `GET /runs/{id}` (needs `X-User-Id`, as do `POST /runs`, answer, approve and resume, D-016) | — | `RunStatus` |
 | M3 | `POST /runs/{id}/answer`, `/approve`, `/resume` | answers / decision | `202` |
 | M3 | `POST /ideas/{id}/challenge`, `/whatif` | see §7.1 | see §7.1 |
 | M4 | `POST /scout` | `{queries[], sources[], page_budget, run_id}` | `{fetched, ingested_card_ids[]}` |

@@ -94,6 +94,15 @@ async def test_start_for_someone_else_is_403() -> None:
     assert code(response) == (403, "FORBIDDEN")
 
 
+async def test_start_without_a_user_header_is_refused() -> None:
+    """Fails closed: a gateway that forgets the header starts nothing for anyone."""
+    m3 = Orchestrator(Stack())
+    m3.client.headers.pop("X-User-Id")
+    response = await m3.client.post("/runs", json=START | {"profile": profile()})
+    assert code(response) == (422, "VALIDATION_ERROR")
+    assert not m3.stack.runs and not m3.stack.calls
+
+
 async def test_store_down_is_503() -> None:
     stack = Stack()
     stack.overrides[("profile", "/internal")] = lambda _: error(500, "INTERNAL_ERROR")

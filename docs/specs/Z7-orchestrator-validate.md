@@ -65,7 +65,7 @@ Test files are under `services/orchestrator/tests/unit/` unless a path is given.
 | `POST /runs/{id}/resume` | 202 | 404; 409 terminal or waiting for the student |
 | `POST /ideas/{id}/challenge`, `/whatif` | — | 501 until Z8 |
 
-Every `/runs/{id}` endpoint needs the `X-User-Id` header the gateway sets from the token (§21.2): missing → 422, another user's run → 404. On `POST /runs` a header that differs from `user_id` is 403.
+`POST /runs` and every `/runs/{id}` endpoint need the `X-User-Id` header the gateway sets from the token (§21.2): missing → 422, another user's run → 404. On `POST /runs` a header that differs from `user_id` is 403.
 
 No shared contract changes. The checkpoint is private to M3 and travels in `RunUpdate.state`.
 
@@ -253,7 +253,7 @@ During testing the spec gained two A7 rows (marked there).
 | 10 | M2 error text could reach stdout | exceptions not chained; logs carry type and frames only |
 | 11 | Lock entries never freed | weak-value dictionaries |
 
-All fixed in `71b3f4c`; none left open. Before the subagent, the automated security review found that a run id alone gave access to the run; fixed (Z7-17).
+All fixed in `71b3f4c`; none left open. Before the subagent, the automated security review found that a run id alone gave access to the run; fixed (Z7-17). After the PR was opened it found that `POST /runs` still accepted a request without the header; now required (Z7-21).
 
 **Final results** (after the fixes):
 - `ruff check .`, `ruff format --check .`, `mypy libs services` (110 files): clean.
