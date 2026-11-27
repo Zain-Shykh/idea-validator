@@ -10,7 +10,7 @@
 | Requirement IDs | GEN-6, GEN-8, DOCK-1..3, K8S-1, K8S-5 (probes), K8S-11, AVOID-8 |
 | Architecture refs | `architecture.md` §5, §6.1, §6.7, §7.2, §17, §19, §20, §21; ADR-004 |
 | Depends on | Z0 (`libs/common`). A0 does not exist: minimal compose, kustomization and dev overlay are created here |
-| Issue / PR | filled at PR time |
+| Issue / PR | #4 / #5 |
 
 ---
 

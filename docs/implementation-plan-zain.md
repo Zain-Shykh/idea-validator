@@ -11,7 +11,7 @@
 | Phase | Title | Status | Spec | PR | Started | Completed |
 |-------|-------|--------|------|----|---------|-----------|
 | Z0 | Shared contracts, `libs/common`, repo tooling | In review | [Z0](specs/Z0-contracts-common.md) | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) | 2026-11-27 07:47 | — |
-| Z1 | Walking skeleton of Zain's services | In review | [Z1](specs/Z1-walking-skeleton.md) | — | 2026-11-27 08:09 | — |
+| Z1 | Walking skeleton of Zain's services | In review | [Z1](specs/Z1-walking-skeleton.md) | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) | 2026-11-27 08:09 | — |
 | Z2 | M11 Verdict Engine | Not started | — | — | — | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | Not started | — | — | — | — |
 | Z4 | M10 Scorer serving (base model + fallback) | Not started | — | — | — | — |
@@ -131,6 +131,7 @@ flowchart LR
 | 2026-11-27 08:10 | Spec and plan pushed | `docs/specs/Z1-walking-skeleton.md` Parts A, B |
 | 2026-11-27 08:20 | Implementation pushed | seven stubs, images, compose, manifests; 244 tests; compose and cluster checks passed |
 | 2026-11-27 08:35 | Tests and fixes pushed | testing subagent: 2 bugs + 3 smaller issues fixed; 363 tests + 3 integration; images rebuilt (`11276f4`) and rechecked |
+| 2026-11-27 08:40 | PR opened | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) (base `feat/z0-contracts-common`, closes #4); awaiting Ahmad's review |
 
 ---
 
