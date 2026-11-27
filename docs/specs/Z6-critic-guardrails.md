@@ -10,7 +10,7 @@
 | Requirement IDs | M12-1..4, ETH-5, AO-7 (poisoned page), U8 (critic side), WF-D6, WF-V6, API-I5 |
 | Architecture refs | `architecture.md` §6.2, §6.4–6.6, §7.2, §12.1, §12.2, §12.5, §15, §16, §17.4 |
 | Depends on | Z3 (prompts, budgets), Z5 (FakeKB, validators). M6 and M5 do not exist: `FakeKB`, cassettes |
-| Issue / PR | — |
+| Issue / PR | #14 / #15 |
 
 ---
 
@@ -162,7 +162,7 @@ Coverage target: ≥ 80 % of `critic` and ≥ 85 % of `common`.
 - [x] ruff + mypy clean; coverage target met.
 - [x] Critic image builds, non-root; manifests validate.
 - [x] Checklist, plan, deviations, AI-usage log updated.
-- [ ] PR opened against `feat/z5-validators`.
+- [x] PR opened against `feat/z5-validators`.
 
 ---
 
