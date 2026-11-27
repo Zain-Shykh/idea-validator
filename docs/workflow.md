@@ -57,6 +57,7 @@ For Zain, everything from **Branch** to **Open PR** runs inside **one headless C
 | `docs/specs/template.md` | Template for specs | Rarely | both |
 | `docs/conventions.md` | Code, test, commit conventions | When a convention changes | both |
 | `docs/decisions/ADR-*.md` | Design decision records (≥ 3 required) | When a significant decision is made/changed | decision owner |
+| `docs/decisions.md` | Running log of every implementation decision (append-only) | Whenever a phase takes a decision | author |
 | `docs/ai-usage-log.md` | What AI wrote, what we changed, why (GEN-2) | Every PR that used AI | author (append-only) |
 | `docs/setup.md` | How to set up the project on a new machine | When tooling/setup changes | whoever changes setup |
 | `docs/contribution.md` | Signed contribution table | End of project | both |
@@ -107,7 +108,7 @@ PERMISSION_MODE=bypassPermissions scripts/run-phase.sh Z2   # if 'auto' mode blo
 
 What the script does (`scripts/run-phase.sh`):
 1. Extracts the prompt between the `HEADLESS-PROMPT` markers below and replaces `{{PHASE}}`.
-2. Runs `claude -p "<prompt>" --permission-mode ${PERMISSION_MODE:-auto} -n phase-<PHASE> --output-format stream-json --verbose`.
+2. Runs `claude -p "<prompt>" --model ${MODEL:-claude-sonnet-5-5} --effort ${EFFORT:-medium} --strict-mcp-config --permission-mode ${PERMISSION_MODE:-auto} -n phase-<PHASE> --output-format stream-json --verbose`.
 3. Streams the full session log to `.claude-runs/<PHASE>-<timestamp>.jsonl` (git-ignored) and prints the final message.
 
 Watch it live from another terminal: `tail -f .claude-runs/<file>.jsonl | jq -r 'select(.type=="assistant") | .message.content[]? | select(.type=="text") | .text'`.
@@ -122,7 +123,9 @@ The script sends exactly this text (with `{{PHASE}}` replaced). Edit it here, no
 
 <!-- HEADLESS-PROMPT:START -->
 ```text
-You are an unattended (headless) Claude Code session implementing phase {{PHASE}} of the "Idea Generator with Go / No-Go" project (course CS4032). Nobody will answer questions during this session. When something is ambiguous, choose the option most consistent with docs/requirements.md and docs/architecture/architecture.md, write the assumption into the spec (section A9), and continue.
+You are an unattended (headless) Claude Code session implementing phase {{PHASE}} of the "Idea Generator with Go / No-Go" project (course CS4032). Nobody will answer questions during this session. When something is ambiguous, choose the option most consistent with docs/requirements.md and docs/architecture/architecture.md, write the assumption into the spec (section A9), log it in docs/decisions.md, and continue.
+
+DECISION LOG (mandatory): every choice you make that requirements.md and architecture.md do not already fix (libraries and versions, schema or field choices, defaults, assumptions, shortcuts, skipped or deferred work, test strategy, blocker workarounds) gets one row appended to docs/decisions.md (ID <PHASE>-<n>, with why, rejected alternatives, affected files/IDs). Add rows as you decide and commit them with the related change.
 
 READ FIRST (only what is relevant to {{PHASE}}):
 1. CLAUDE.md — project context and rules.
@@ -130,17 +133,17 @@ READ FIRST (only what is relevant to {{PHASE}}):
 3. The {{PHASE}} section of the owner's plan: docs/implementation-plan-zain.md for Z phases, docs/implementation-plan-ahmad.md for A phases (objective, description, deliverables, acceptance criteria).
 4. docs/requirements.md — every requirement ID listed for {{PHASE}}.
 5. docs/architecture/architecture.md — the sections the phase references; docs/decisions/ for related ADRs.
-6. docs/conventions.md; docs/work-distribution.md section 2 (file ownership: edit only files this phase owns); docs/specs/template.md; docs/architecture/deviations.md.
+6. docs/decisions.md (decisions earlier phases already took; stay consistent with them); docs/conventions.md; docs/work-distribution.md section 2 (file ownership: edit only files this phase owns); docs/specs/template.md; docs/architecture/deviations.md.
 7. Existing code you will call or extend (libs/common contracts, earlier services, fakes).
 
 STEPS:
-1. Git setup: git fetch origin; git checkout main; git pull. If {{PHASE}} depends on code that exists only in an unmerged PR branch, branch from that branch and target the PR at it. Create branch feat/<phase id in lowercase>-<short slug>. In the plan, set {{PHASE}} status to "In progress" and add a progress-log row (timestamp from: date '+%Y-%m-%d %H:%M').
+1. Git setup: git fetch origin; git checkout main; git pull. If {{PHASE}} depends on code that exists only in an unmerged PR branch, branch from that branch and target the PR at it. If EXTRA INSTRUCTIONS name a parent branch, check out and pull that branch instead of main, and target the PR at it. Create branch feat/<phase id in lowercase>-<short slug>. In the plan, set {{PHASE}} status to "In progress" and add a progress-log row (timestamp from: date '+%Y-%m-%d %H:%M').
 2. SPEC: copy docs/specs/template.md to docs/specs/{{PHASE}}-<slug>.md and fill Part A completely (every acceptance criterion mapped to a requirement ID and a named test). Commit "docs(spec): add {{PHASE}} spec" and run: git push -u origin HEAD.
 3. PLAN: fill Part B in the same file (small ordered tasks with files and verification, commit plan, DoD). Commit "docs(plan): add {{PHASE}} plan" and push.
 4. IMPLEMENT Part B task by task, writing tests together with the code. Use the repo virtualenv (source .venv/bin/activate). Run ruff check, mypy and pytest as you go. Make small conventional commits and push after each meaningful group.
 5. TEST: spawn exactly ONE testing subagent with the Agent tool (subagent_type "agent-skills:test-engineer"; if unavailable use "general-purpose"). Give it the spec path, the acceptance criteria, the changed files, and the commands. Use the testing-subagent prompt in docs/workflow.md section 5.3. Wait for its report.
 6. FIX every bug in the report at its root cause (not the symptom). Re-run the full test suite, ruff and mypy until everything is green. Commit the new tests and fixes and push.
-7. DOCS: fill spec Part C (what was built, deviations, the subagent's test report with commands and results, measurements, follow-ups). Tick the rows in docs/checklist.md for requirements this phase completed (only rows owned by this phase's owner). Update the plan: status "In review", progress-log rows for spec, plan, implementation, tests and PR with timestamps, tick the acceptance criteria that pass. Append to docs/architecture/deviations.md any difference from the architecture or spec (and update architecture.md accordingly), or nothing if there is none. Append one row to docs/ai-usage-log.md. Update README.md / docs/setup.md / .env.example if run commands, setup or env vars changed. Commit "docs({{PHASE}}): update spec report, checklist, plan, logs" and push.
+7. DOCS: fill spec Part C (what was built, deviations, the subagent's test report with commands and results, measurements, follow-ups). Tick the rows in docs/checklist.md for requirements this phase completed (only rows owned by this phase's owner). Update the plan: status "In review", progress-log rows for spec, plan, implementation, tests and PR with timestamps, tick the acceptance criteria that pass. Append to docs/architecture/deviations.md any difference from the architecture or spec (and update architecture.md accordingly), or nothing if there is none. Append one row to docs/ai-usage-log.md. Check that docs/decisions.md has a row for every decision taken in this phase. Update README.md / docs/setup.md / .env.example if run commands, setup or env vars changed. Commit "docs({{PHASE}}): update spec report, checklist, plan, logs" and push.
 8. PR: create an issue for the phase if none exists (gh issue create), then gh pr create --base main (or the parent branch) with title "<type>(<scope>): {{PHASE}} <phase title>" and a body following the PR template in docs/workflow.md section 6, including "Closes #<issue>". Try to request the other member as reviewer (gh pr edit --add-reviewer <login>); ignore failure. NEVER merge the PR.
 9. FINISH with a short final message: branch, PR URL, what was delivered, test results (counts, coverage), deviations, open issues and follow-ups.
 
@@ -151,7 +154,7 @@ HARD RULES:
 - The language model never decides or adjusts a verdict; only the M11 Verdict Engine does. Every score and claim must cite evidence ids, otherwise abstain.
 - Everything is validated against the contracts in libs/common. Never hard-code localhost in images; config via env vars / ConfigMaps.
 - No destructive commands: no rm -rf outside build artefacts you created, no docker system prune, no minikube delete, no kubectl delete namespace, no database drops outside test containers.
-- Disk space is limited (about 10 GB free): build only the images you touched and run "docker image prune -f" at the end.
+- Disk space is limited (about 10 GB free): build only the images you touched. At the end remove only the images you built (docker rmi by tag) and run "docker builder prune -f". Never run "docker image prune" or remove images or volumes of other projects. If free disk (df -h ~) drops below 2 GB, stop building and record it as a blocker. Stop the idea-validator minikube profile and any compose services you started before you finish.
 - Pin every new dependency in the service's requirements.txt (and requirements-dev.txt if needed locally). Install only into .venv.
 - Stay in scope. Out-of-scope ideas go to spec Part C "Follow-ups".
 - If blocked (missing credential, cluster down, dependency not ready and no fake possible): do everything else, set the phase status to "Blocked" with the reason in the plan, push, open a DRAFT PR (gh pr create --draft), and stop.

@@ -88,6 +88,7 @@ data/snapshots/  card data snapshot                 scripts/            helper s
 | [`docs/architecture/architecture.md`](docs/architecture/architecture.md) | Architecture, diagrams, contracts, deployment |
 | [`docs/architecture/deviations.md`](docs/architecture/deviations.md) | Changes from the designed architecture |
 | [`docs/decisions/`](docs/decisions/) | Design decision records |
+| [`docs/decisions.md`](docs/decisions.md) | Running log of implementation decisions |
 | [`docs/work-distribution.md`](docs/work-distribution.md) | Who owns what, parallel tracks, sync points |
 | [`docs/implementation-plan-zain.md`](docs/implementation-plan-zain.md) | Zain's phases (Ahmad's: `docs/implementation-plan-ahmad.md`) |
 | [`docs/workflow.md`](docs/workflow.md) | Spec-driven workflow, branches, PRs, headless sessions |
