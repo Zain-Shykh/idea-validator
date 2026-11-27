@@ -32,9 +32,16 @@ _REJECTED = frozenset({400, 413, 422})
 log = logging.getLogger("common.trace")
 
 
+_last_step_id = 0
+
+
 def new_step_id() -> int:
-    """Time-ordered and unique across pods without a shared counter; below 2**53 for the UI."""
-    return (time.time_ns() // 1_000_000) * 4096 + secrets.randbelow(4096)
+    """Time-ordered, below 2**53 for the UI. Strictly increasing within a process; across pods
+    the random part makes a collision unlikely, without a shared counter."""
+    global _last_step_id
+    candidate = (time.time_ns() // 1_000_000) * 4096 + secrets.randbelow(4096)
+    _last_step_id = max(candidate, _last_step_id + 1)
+    return _last_step_id
 
 
 def _digest(text: str | None) -> str | None:

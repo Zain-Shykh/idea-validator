@@ -4,7 +4,7 @@ and resume are accepted and ignored.
 
 from typing import Annotated
 
-from fastapi import APIRouter, BackgroundTasks, Depends, Request, Response
+from fastapi import APIRouter, BackgroundTasks, Depends, Path, Request, Response
 from fastapi.responses import JSONResponse
 
 from common.contracts.core import Compute, Goal, StudentProfile, Verdict
@@ -32,6 +32,8 @@ def get_runner(request: Request) -> StubRunner:
 
 
 Runner = Annotated[StubRunner, Depends(get_runner)]
+# a blank id would start a run that cannot build its VerdictRequest
+IdeaId = Annotated[str, Path(pattern=r"^[A-Za-z0-9._:-]{1,128}$")]
 
 
 def _placeholder_profile() -> StudentProfile:
@@ -88,7 +90,9 @@ async def _verdict_now(runner: StubRunner, idea_id: str, version: int) -> Verdic
 
 
 @router.post("/ideas/{idea_id}/challenge")
-async def challenge(idea_id: str, request: ChallengeRequest, runner: Runner) -> ChallengeResponse:
+async def challenge(
+    idea_id: IdeaId, request: ChallengeRequest, runner: Runner
+) -> ChallengeResponse:
     return ChallengeResponse(
         outcome="removed",
         rationale="stub: no claim can be defended before the critic exists (Z6)",
@@ -102,7 +106,7 @@ async def challenge(idea_id: str, request: ChallengeRequest, runner: Runner) -> 
     responses={202: {"model": WhatIfApplyResponse}},
 )
 async def whatif(
-    idea_id: str, request: WhatIfRunRequest, background: BackgroundTasks, runner: Runner
+    idea_id: IdeaId, request: WhatIfRunRequest, background: BackgroundTasks, runner: Runner
 ) -> WhatIfProposalsResponse | JSONResponse:
     if request.apply is None:
         return WhatIfProposalsResponse(proposals=[])

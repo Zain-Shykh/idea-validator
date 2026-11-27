@@ -79,3 +79,32 @@ def test_kustomization_lists_every_service_and_tags_every_image() -> None:
     images = docs("k8s/overlays/dev/kustomization.yaml")[0]["images"]
     assert {i["name"].rsplit("-", 1)[1] for i in images} == set(SERVICES)
     assert all(re.fullmatch(r"[0-9a-f]{7,40}", i["newTag"]) for i in images)
+
+
+@pytest.mark.parametrize("service", SERVICES)
+def test_dockerfile_ships_its_own_service_and_checks_readiness(service: str) -> None:
+    text = (ROOT / f"services/{service}/Dockerfile").read_text()
+    assert set(re.findall(r"services/(\w+)/(?:src|requirements\.txt) ", text)) == {service}
+    assert "HEALTHCHECK" in text and "http://127.0.0.1:8000/ready" in text
+    spec = docs(f"services/{service}/compose.yaml")[0]["services"][service]
+    assert spec["build"] == {"context": "../..", "dockerfile": f"services/{service}/Dockerfile"}
+
+
+def test_configured_urls_of_deployed_services_resolve() -> None:
+    """Each edge Z1 uses must point at a Service that is rendered, on its port."""
+    base = docs("k8s/base/kustomization.yaml")[0]
+    config = dict(item.split("=", 1) for item in base["configMapGenerator"][0]["literals"])
+    manifests = [f"k8s/base/{s}.yaml" for s in SERVICES] + ["k8s/overlays/dev/redis.yaml"]
+    ports = {
+        d["metadata"]["name"]: d["spec"]["ports"][0]["port"]
+        for path in manifests
+        for d in docs(path)
+        if d["kind"] == "Service"
+    }
+    for service in SERVICES:
+        assert config[f"{service.upper()}_URL"] == f"http://{service}:{ports[service]}"
+    assert (config["REDIS_HOST"], int(config["REDIS_PORT"])) == ("redis", ports["redis"])
+    env = docs("services/orchestrator/compose.yaml")[0]["services"]["orchestrator"]["environment"]
+    assert env["VERDICT_URL"] == "http://verdict:8000"
+    assert env["AGENTOPS_URL"] == "http://agentops:8000"
+    assert env["REDIS_HOST"] == "redis"

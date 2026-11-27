@@ -6,6 +6,8 @@ import httpx
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 from redis.asyncio import Redis
+from redis.asyncio.retry import Retry
+from redis.backoff import NoBackoff
 from redis.exceptions import RedisError
 
 from common.http import ServiceClient
@@ -34,6 +36,9 @@ def build_app(
         password=password or None,
         socket_timeout=REDIS_TIMEOUT_S,
         socket_connect_timeout=REDIS_TIMEOUT_S,
+        # redis-py retries 10 times by default: a slow Redis would hold requests for ~40 s,
+        # and a replayed XADD duplicates an event
+        retry=Retry(NoBackoff(), 0),
     )
     verdict = (
         ServiceClient(settings.verdict_url, transport=verdict_transport)

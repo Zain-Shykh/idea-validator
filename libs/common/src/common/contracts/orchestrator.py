@@ -11,7 +11,7 @@ from common.contracts.core import StudentProfile, Verdict, WhatWouldMakeGo, Work
 class StartRunRequest(ContractModel):
     workflow: Workflow
     user_id: NonEmptyStr
-    idea_version_id: str | None = None
+    idea_version_id: NonEmptyStr | None = None
     niche_wish: str | None = Field(default=None, max_length=500)
     max_ideas: int | None = Field(default=None, ge=1, le=10)
     profile: StudentProfile

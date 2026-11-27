@@ -21,11 +21,12 @@ class EventStream:
 
     async def append(self, event: RunEvent) -> None:
         key = stream_key(event.run_id)
-        await self._redis.xadd(
-            key, {FIELD: event.model_dump_json()}, maxlen=MAX_EVENTS, approximate=True
-        )
-        # renewed on every event: 24 h after the last one, and no stream ever lives forever
-        await self._redis.expire(key, TTL_SECONDS)
+        # one transaction: a stream is never left without an expiry, which is renewed on every
+        # event (24 h after the last one)
+        async with self._redis.pipeline(transaction=True) as pipe:
+            pipe.xadd(key, {FIELD: event.model_dump_json()}, maxlen=MAX_EVENTS, approximate=True)
+            pipe.expire(key, TTL_SECONDS)
+            await pipe.execute()
 
     async def exists(self, run_id: str) -> bool:
         return bool(await self._redis.exists(stream_key(run_id)))

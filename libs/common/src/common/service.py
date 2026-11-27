@@ -110,7 +110,7 @@ def configure_logging(service: str, level: str = "INFO") -> None:
     handler = _JsonHandler(sys.stdout)
     handler.setFormatter(JsonFormatter(service))
     root.addHandler(handler)
-    root.setLevel(level.upper())
+    root.setLevel(level.upper() or "INFO")  # LOG_LEVEL= means the default
     for name in ("uvicorn", "uvicorn.error", "uvicorn.access"):
         uvicorn_logger = logging.getLogger(name)
         uvicorn_logger.handlers = []
