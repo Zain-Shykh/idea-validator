@@ -51,6 +51,7 @@ pythonpath = [
     "services/validators/tests/unit",  # test builders (validator_factories)
     "services/critic/tests/unit",  # test builders (critic_factories)
     "services/orchestrator/tests/unit",  # test builders (orchestrator_factories)
+    "eval/behaviour",  # behaviour_stack, shared by the behaviour tests
 ]
 addopts = "--import-mode=importlib -m 'not integration and not cluster'"
 asyncio_mode = "auto"
