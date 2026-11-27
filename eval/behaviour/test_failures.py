@@ -165,7 +165,9 @@ async def test_a_tool_that_stays_unavailable_is_tried_three_times_then_abstains(
     assert stack.paths("validators").count("/score/risk") == 3
     risk = next(s for s in card.scores if s.dimension is Dimension.RISK)
     assert risk.score is None and risk.reason.startswith("scoring failed")
-    assert card.verdict is VerdictLabel.INSUFFICIENT_EVIDENCE and not stack.cache
+    # M11 counts the abstained dimension as 0: never a GO, and the card says what is missing
+    assert card.verdict is not VerdictLabel.GO and "risk" in " ".join(card.missing)
+    assert not stack.cache
 
 
 @pytest.mark.parametrize("failures, status", [(2, "COMPLETED"), (99, "FAILED")])
