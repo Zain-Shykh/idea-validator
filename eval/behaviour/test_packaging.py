@@ -3,6 +3,7 @@ Building the images and deploying them are manual checks (spec Z1, C3).
 """
 
 import re
+import subprocess
 from pathlib import Path
 from typing import Any
 
@@ -56,23 +57,30 @@ def test_compose_fragment_is_included_and_has_its_port(service: str) -> None:
     + ["k8s/overlays/dev/redis.yaml", "k8s/overlays/dev/postgres.yaml"],
 )
 def test_manifest_workload_standards(path: str) -> None:
-    deployment, service = [d for d in docs(path) if d["kind"] != "PersistentVolumeClaim"]
+    extra = ("PersistentVolumeClaim", "Job")
+    deployment, service = [d for d in docs(path) if d["kind"] not in extra]
     assert (deployment["kind"], service["kind"]) == ("Deployment", "Service")
     pod = deployment["spec"]["template"]["spec"]
     assert pod["securityContext"]["runAsNonRoot"] is True
     assert pod["enableServiceLinks"] is False
-    (container,) = pod["containers"]
-    assert not container["image"].endswith(":latest") and ":" in container["image"]
-    assert container["securityContext"]["allowPrivilegeEscalation"] is False
-    for kind in ("requests", "limits"):
-        assert set(container["resources"][kind]) == {"cpu", "memory"}
-    assert "readinessProbe" in container and "livenessProbe" in container
+    for container in pod["containers"]:
+        assert_hardened(container)
+    container, *sidecars = pod["containers"]
+    assert sidecars == [] or deployment["metadata"]["name"] == "scorer"
     if "base" in path:
         assert container["readinessProbe"]["httpGet"]["path"] == "/ready"
         assert container["livenessProbe"]["httpGet"]["path"] == "/health"
         assert deployment["spec"]["strategy"]["rollingUpdate"]["maxUnavailable"] == 0
         assert deployment["metadata"]["labels"]["tier"] == "backend"
         assert {"configMapRef": {"name": "app-config"}} in container["envFrom"]
+
+
+def assert_hardened(container: dict[str, Any], *, probes: bool = True) -> None:
+    assert not container["image"].endswith(":latest") and ":" in container["image"]
+    assert container["securityContext"]["allowPrivilegeEscalation"] is False
+    for kind in ("requests", "limits"):
+        assert set(container["resources"][kind]) == {"cpu", "memory"}
+    assert not probes or ("readinessProbe" in container and "livenessProbe" in container)
 
 
 def test_kustomization_lists_every_service_and_tags_every_image() -> None:
@@ -195,3 +203,57 @@ def test_database_password_comes_only_from_a_hand_made_secret() -> None:
     claim = docs("k8s/base/agentops.yaml")[1]["spec"]
     assert claim["accessModes"] == ["ReadWriteOnce"]
     assert claim["resources"]["requests"]["storage"] == "1Gi"
+
+
+def test_scorer_pod_serves_the_model_from_the_pvc() -> None:
+    """FT-7, K8S-1: the Job fills the PVC the sidecar reads; the wrapper talks to it over the
+    pod's loopback; llama.cpp is pinned by digest and not reachable from outside the pod."""
+    deployment, _, claim, job = docs("k8s/base/scorer.yaml")
+    assert (claim["kind"], claim["metadata"]["name"], job["kind"]) == (
+        "PersistentVolumeClaim", "models", "Job"
+    )  # fmt: skip
+    pod = deployment["spec"]["template"]["spec"]
+    wrapper, llama = pod["containers"]
+    (wait,) = pod["initContainers"]
+    (importer,) = job["spec"]["template"]["spec"]["containers"]
+    for container in (wait, importer):
+        assert_hardened(container, probes=False)
+    assert "startupProbe" in llama and wait["image"] == llama["image"]
+    assert re.fullmatch(
+        r"ghcr\.io/ggml-org/llama\.cpp:server-\S+@sha256:[0-9a-f]{64}", llama["image"]
+    )
+
+    args = dict(zip(llama["args"][::2], llama["args"][1::2], strict=True))
+    model_file = args["--model"]
+    assert model_file in importer["command"][-1] and model_file in wait["command"][-1]
+    env = {e["name"]: e["value"] for e in wrapper["env"]}
+    assert env["SCORER_BACKEND"] == "llamacpp"
+    assert env["SCORER_MODEL_URL"] == f"http://{args['--host']}:{args['--port']}"
+    assert args["--host"] == "127.0.0.1" and "ports" not in llama
+    assert int(args["--threads"]) == int(llama["resources"]["limits"]["cpu"])
+    for spec in (pod, job["spec"]["template"]["spec"]):
+        claims = [v for v in spec["volumes"] if "persistentVolumeClaim" in v]
+        assert claims == [{"name": "models", "persistentVolumeClaim": {"claimName": "models"}}]
+    version = model_file.rsplit("-", 2)[-2] + "-" + model_file.rsplit("-", 1)[-1].split(".")[0]
+    assert importer["image"].endswith(f"-scorer-model:{version}")
+    assert job["metadata"]["name"] == f"model-import-{version}"
+    # the Service must not select the Job's pods
+    assert job["spec"]["template"]["metadata"]["labels"]["app"] != "scorer"
+
+    mounts = {m["name"]: m["mountPath"] for m in wrapper["volumeMounts"]}
+    dockerfile = (ROOT / "services/scorer/Dockerfile").read_text()
+    for volume, variable in (("rubrics", "RUBRICS"), ("prompts", "PROMPTS")):
+        assert f"SCORER_{variable}_DIR={mounts[volume]}" in dockerfile
+
+
+def test_no_model_weights_are_tracked_and_the_model_image_is_pinned() -> None:
+    """M10-5: weights never enter git; the model image copies one GGUF and runs as non-root."""
+    tracked = subprocess.run(
+        ["git", "ls-files", "*.gguf", "*.safetensors", "*.bin"],
+        cwd=ROOT, capture_output=True, text=True, check=True,
+    )  # fmt: skip
+    assert tracked.stdout == ""
+    text = (ROOT / "jobs/finetune/model-image/Dockerfile").read_text()
+    bases = re.findall(r"^FROM (\S+)", text, re.MULTILINE)
+    assert bases and all("@sha256:" in base for base in bases)
+    assert re.findall(r"^USER (\S+)", text, re.MULTILINE) == ["10001"]

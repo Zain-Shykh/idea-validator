@@ -1,4 +1,6 @@
 # Local development only (LOC-2); included by the root docker-compose.yml.
+# The model runs in Ollama on the host (`ollama pull qwen2.5:1.5b`), which must listen on an
+# address containers can reach (docs/setup.md §7).
 services:
   scorer:
     build:
@@ -9,3 +11,14 @@ services:
       - "127.0.0.1:8010:8000"
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      SCORER_BACKEND: ${SCORER_BACKEND:-ollama}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      # hosted fallback: needs M5 (TOOLS_URL); without it a failed local score abstains
+      LLM_BACKEND: gateway
+      TOOLS_URL: ${TOOLS_URL:-}
+      AGENTOPS_URL: http://agentops:8000
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    volumes:
+      - ../../rubrics:/etc/rubrics:ro
+      - ../../prompts:/etc/prompts:ro
