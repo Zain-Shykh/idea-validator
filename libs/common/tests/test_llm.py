@@ -31,9 +31,7 @@ GOOD = '{"score": 3}'
 MESSAGES = [ChatMessage(role="user", content="score it")]
 
 
-def fake_client(
-    *replies: str, out: io.StringIO | None = None, sink: Any = None
-) -> LLMClient:
+def fake_client(*replies: str, out: io.StringIO | None = None, sink: Any = None) -> LLMClient:
     return LLMClient(
         LlmSettings(backend="fake"),
         cassette=Cassette([{"content": r, "tokens_in": 10, "tokens_out": 2} for r in replies]),
