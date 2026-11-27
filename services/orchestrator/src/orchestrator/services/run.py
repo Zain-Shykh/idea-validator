@@ -32,7 +32,7 @@ from common.contracts.profile import RunUpdate
 from common.http import ServiceError
 from common.trace import TraceClient, new_step_id
 from orchestrator.repositories.events import EventStream
-from orchestrator.repositories.memo import ActiveRuns, StepMemo
+from orchestrator.repositories.memo import ActiveRuns, Proposals, StepMemo
 from orchestrator.repositories.profile import ProfileStore
 from orchestrator.services import budget
 from orchestrator.services.downstream import Peers
@@ -95,6 +95,7 @@ class Deps:
     store: ProfileStore
     events: EventStream
     memo: StepMemo
+    proposals: Proposals
     active: ActiveRuns
     trace: TraceClient
     clock: Callable[[], datetime] = lambda: datetime.now(UTC)

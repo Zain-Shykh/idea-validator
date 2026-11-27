@@ -49,7 +49,7 @@ Generate ideas that fit a student's profile from data gaps through a bounded, ev
 | 13 | VE-12 | In every card M3 stores, the only verdict source is an M11 reply; challenge removal changes M11's **input** only | `O/test_challenge.py::test_stored_verdict_is_m11s_reply`, `O/test_verdict_guard.py` |
 | 14 | U1 (Description) | The same idea with 200 team hours and with 20 solo hours: real M9 and M11 give different verdicts (the 20 h one is NO-GO on the feasibility gate) | `eval/behaviour/test_discover.py::test_profile_changes_the_verdict` |
 | 15 | Z7 follow-up, U5, U7 | However long the idea, appended clarification answers and what-if changes survive shortening: they are in the text M9 sends to M10, in M10's prompt, in M3's search query and in the stored idea text (5000) | `libs/common/tests/test_idea_text.py`, `services/validators/tests/unit/test_scoring.py::test_amendments_reach_the_scoring_model` |
-| 16 | Z7-21 | Challenge and what-if need `X-User-Id` (422 without); another user's idea is 404; a child or unknown version is refused | `O/test_challenge.py::test_ownership`, `O/test_whatif.py::test_ownership` |
+| 16 | Z7-21 | Challenge and what-if need `X-User-Id` (422 without); another user's idea and an unknown version are 404; a child run cannot be driven by itself (409, row 10). Ideas made by Discover can be challenged like any other | `O/test_challenge.py::test_ownership`, `O/test_whatif.py::test_ownership` |
 
 ### A5. Interfaces and contracts
 **No shared contract changes.** `VerdictStore` is reused as the reply of the proposed verdict read.

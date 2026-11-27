@@ -1,4 +1,4 @@
-"""M3 API (architecture §7.2). Challenge and what-if arrive with the Discover phase (Z8)."""
+"""M3 API (architecture §7.2)."""
 
 from typing import Annotated
 
@@ -18,6 +18,7 @@ from common.contracts.orchestrator import (
     WhatIfRunRequest,
 )
 from common.service import ApiError
+from orchestrator.services import revise
 from orchestrator.services.runner import Runner
 
 router = APIRouter()
@@ -70,15 +71,23 @@ async def resume(run_id: RunId, user_id: UserId, runner: Service) -> Response:
     return Response(status_code=202)
 
 
-def _later() -> ApiError:
-    return ApiError(501, "NOT_IMPLEMENTED", "challenge and what-if arrive with phase Z8")
+@router.post("/ideas/{idea_id}/challenge")
+async def challenge(
+    idea_id: IdeaId, user_id: UserId, body: ChallengeRequest, runner: Service
+) -> ChallengeResponse:
+    return await revise.challenge(runner, idea_id, user_id, body)
 
 
-@router.post("/ideas/{idea_id}/challenge", responses={501: {}})
-async def challenge(idea_id: IdeaId, body: ChallengeRequest) -> ChallengeResponse:
-    raise _later()
-
-
-@router.post("/ideas/{idea_id}/whatif", responses={501: {}, 202: {"model": WhatIfApplyResponse}})
-async def whatif(idea_id: IdeaId, body: WhatIfRunRequest) -> WhatIfProposalsResponse:
-    raise _later()
+@router.post("/ideas/{idea_id}/whatif", responses={202: {"model": WhatIfApplyResponse}})
+async def whatif(
+    idea_id: IdeaId,
+    user_id: UserId,
+    body: WhatIfRunRequest,
+    response: Response,
+    runner: Service,
+) -> WhatIfProposalsResponse | WhatIfApplyResponse:
+    """Without ``apply``: the proposals. With it: a Validate run on the next version (202)."""
+    if body.apply is None:
+        return await revise.proposals(runner, idea_id, user_id, body.version)
+    response.status_code = 202
+    return await revise.apply(runner, idea_id, user_id, body.version, body.apply)

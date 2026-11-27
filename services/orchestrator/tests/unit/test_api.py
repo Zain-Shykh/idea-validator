@@ -128,15 +128,3 @@ async def test_redis_failing_mid_run_does_not_stop_it() -> None:
     stack.overrides[("kb", "/search")] = break_redis
     m3 = Orchestrator(stack)
     assert m3.status(await m3.run()) == "COMPLETED"
-
-
-@pytest.mark.parametrize(
-    ("action", "body"),
-    [("challenge", {"version": 1, "claim_id": "c1"}), ("whatif", {"version": 1})],
-)
-async def test_challenge_and_whatif_are_not_here_yet(action: str, body: dict) -> None:
-    """The Z1 stub reported a claim as removed without checking it."""
-    m3 = Orchestrator(Stack())
-    response = await m3.client.post(f"/ideas/idea_1/{action}", json=body)
-    assert code(response) == (501, "NOT_IMPLEMENTED")
-    assert not m3.stack.calls

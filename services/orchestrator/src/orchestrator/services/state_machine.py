@@ -176,6 +176,8 @@ class Checkpoint(BaseCheckpoint):
     parent_run_id: str | None = None
     # a cache hit: the run whose checkpoint holds the engine input of this verdict
     source_run_id: str | None = None
+    # set on the run a challenge made by removing a claim: the Critic's reason
+    challenge_rationale: str | None = None
 
     engine_version: str | None = None
     weights_version: str | None = None

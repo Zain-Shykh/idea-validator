@@ -1,4 +1,4 @@
-"""M3 orchestrator: the Validate workflow as a checkpointed state machine."""
+"""M3 orchestrator: the Discover and Validate workflows as checkpointed state machines."""
 
 import asyncio
 import contextlib
@@ -19,7 +19,7 @@ from common.service import create_app, error_response
 from common.trace import TraceClient
 from orchestrator.api.routes import router
 from orchestrator.repositories.events import EventStream
-from orchestrator.repositories.memo import ActiveRuns, StepMemo
+from orchestrator.repositories.memo import ActiveRuns, Proposals, StepMemo
 from orchestrator.repositories.profile import ProfileStore
 from orchestrator.services.downstream import PEERS, Peers
 from orchestrator.services.rules import Rules, load_rules
@@ -115,6 +115,7 @@ def build_app(
                 store=ProfileStore(peers),
                 events=EventStream(store),
                 memo=StepMemo(store),
+                proposals=Proposals(store),
                 active=ActiveRuns(store),
                 trace=trace,
             )

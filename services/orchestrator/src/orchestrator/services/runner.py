@@ -104,7 +104,7 @@ class Runner:
         # an entry disappears once nobody holds or waits for the lock
         self._locks: WeakValueDictionary[str, asyncio.Lock] = WeakValueDictionary()
 
-    def _lock(self, run_id: str) -> asyncio.Lock:
+    def lock(self, run_id: str) -> asyncio.Lock:
         lock = self._locks.get(run_id)
         if lock is None:
             self._locks[run_id] = lock = asyncio.Lock()
@@ -263,7 +263,7 @@ class Runner:
     async def approve(self, run_id: str, user_id: str, request: ApproveRequest) -> None:
         token = context.run_id_var.set(run_id)
         try:
-            async with self._lock(run_id):
+            async with self.lock(run_id):
                 r, pending = await self._waiting(run_id, user_id, RunState.AWAITING_APPROVAL)
                 approval = pending.approval
                 assert approval is not None
@@ -297,7 +297,7 @@ class Runner:
     async def answer(self, run_id: str, user_id: str, request: AnswerRequest) -> None:
         token = context.run_id_var.set(run_id)
         try:
-            async with self._lock(run_id):
+            async with self.lock(run_id):
                 r, pending = await self._waiting(run_id, user_id, RunState.AWAITING_INPUT)
                 await self._apply_answers(r, pending, request)
                 await self._continue(r)
@@ -371,7 +371,7 @@ class Runner:
 
     async def resume(self, run_id: str, user_id: str) -> None:
         """Pick up a run whose process stopped. A waiting run needs its answer instead."""
-        async with self._lock(run_id):
+        async with self.lock(run_id):
             r = await self._owned(run_id, user_id)
             _not_a_child(r.cp)
             if r.cp.status in TERMINAL:
