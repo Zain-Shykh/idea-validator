@@ -13,7 +13,7 @@
 | Z0 | Shared contracts, `libs/common`, repo tooling | In review | [Z0](specs/Z0-contracts-common.md) | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) | 2026-11-27 07:47 | — |
 | Z1 | Walking skeleton of Zain's services | In review | [Z1](specs/Z1-walking-skeleton.md) | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) | 2026-11-27 08:09 | — |
 | Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | — |
-| Z3 | Rubrics, prompts registry, M13 AgenticOps core | In review | [Z3](specs/Z3-rubrics-agentops.md) | — | 2026-11-27 10:04 | — |
+| Z3 | Rubrics, prompts registry, M13 AgenticOps core | In review | [Z3](specs/Z3-rubrics-agentops.md) | [#9](https://github.com/Zain-Shykh/idea-validator/pull/9) | 2026-11-27 10:04 | — |
 | Z4 | M10 Scorer serving (base model + fallback) | Not started | — | — | — | — |
 | Z5 | M9 Validation agents (4 scorers) | Not started | — | — | — | — |
 | Z6 | M12 Critic and Guardrails | Not started | — | — | — | — |
@@ -210,6 +210,7 @@ flowchart LR
 | 2026-11-27 10:18 | Implementation pushed | up to `18af52e` |
 | 2026-11-27 10:32 | Tests and fixes pushed | testing subagent; `b181715`, `9d8410a` |
 | 2026-11-27 10:36 | Image checked on compose and minikube | tag `9d8410a` |
+| 2026-11-27 10:40 | PR opened | [#9](https://github.com/Zain-Shykh/idea-validator/pull/9), issue #8, base `feat/z2-verdict-engine` |
 
 ---
 

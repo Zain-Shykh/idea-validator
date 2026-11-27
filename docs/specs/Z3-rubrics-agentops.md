@@ -10,7 +10,7 @@
 | Requirement IDs | DATA-8, VE-2, AO-1 (store + read), AO-2 (budgets config), AO-3, AO-6 (summary API), M13-1..3, M13-6, M2-5 (cache-hit aggregation), API-I6, K8S-12 |
 | Architecture refs | `architecture.md` §7.2, §8.3, §8.5, §12.2, §12.4, §15, §17; D-002, D-003 |
 | Depends on | Z0 (contracts, `common.trace`), Z1 (agentops stub), Z2 (`config/verdict.yaml`) |
-| Issue / PR | — |
+| Issue / PR | #8 / #9 |
 
 ---
 
