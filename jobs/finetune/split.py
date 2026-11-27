@@ -218,7 +218,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     args = parser.parse_args(argv)
     # the required numbers can only be changed away from the real data folder
     relaxed = args.min_checked < MIN_CHECKED or args.quota is not None
-    if relaxed and args.data.resolve() == DATA_DIR.resolve():
+    if relaxed and args.data.resolve().is_relative_to(DATA_DIR):
         print(
             "error: --min-checked and --quota are for try-outs, not the real data", file=sys.stderr
         )

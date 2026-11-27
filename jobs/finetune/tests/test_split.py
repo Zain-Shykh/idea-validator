@@ -119,7 +119,7 @@ def test_near_copies_stay_together(tmp_path: Path) -> None:
                     "idea_title": words,
                     "idea_text": extra,
                 }
-            )  # fmt: skip
+            )
         )
     write_dataset(tmp_path, [*rows, *twins])
     write_checks(tmp_path / "checked.csv", [check(twins[0], "T")])

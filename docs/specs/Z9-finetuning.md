@@ -159,10 +159,10 @@ nothing about training or model quality.
 ### B1. Task breakdown
 | # | Task | Files | Verification | Done |
 |---|------|-------|--------------|------|
-| 1 | Shared formats, ids, grouping, labelled set, fake guard; sampling and assembly | `dataset.py`, `build_dataset.py`, tests, `pyproject.toml` paths | `pytest jobs/finetune` | [ ] |
-| 2 | Teacher drafts | `draft_labels.py`, tests | same | [ ] |
-| 3 | Terminal review | `review.py`, tests | same | [ ] |
-| 4 | Split with leakage assertions | `split.py`, tests incl. committed-data test | same | [ ] |
+| 1 | Shared formats, ids, grouping, labelled set, fake guard; sampling and assembly | `dataset.py`, `build_dataset.py`, tests, `pyproject.toml` paths | `pytest jobs/finetune` | [x] |
+| 2 | Teacher drafts | `draft_labels.py`, tests | same | [x] |
+| 3 | Terminal review | `review.py`, tests | same | [x] |
+| 4 | Split with leakage assertions | `split.py`, tests incl. committed-data test | same | [x] |
 | 5 | Training config and notebook | `train_config.yaml`, `train.ipynb`, stub-library test | same | [ ] |
 | 6 | Comparison | `evaluate.py`, tests, pipeline test | same | [ ] |
 | 7 | Export and packaging: GGUF steps, model image `v1`, scorer component, weights check | `export_gguf.md`, `model-image/README.md`, `k8s-lora/`, tests | `kubectl kustomize`, `kubeconform`, docker build with a stand-in | [ ] |
