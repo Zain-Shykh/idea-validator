@@ -50,11 +50,9 @@ class RawItem(ContractModel):
     fetched_at: datetime
 
 
-class IngestRequest(ContractModel):
-    items: list[RawItem]
-
-
 class IngestResponse(ContractModel):
+    """``POST /ingest`` takes a JSON array of ``RawItem`` (§7.2)."""
+
     added: Count
     duplicates: Count
     dropped: Count

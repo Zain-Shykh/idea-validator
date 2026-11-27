@@ -1,5 +1,6 @@
 {
   "additionalProperties": false,
+  "description": "``POST /ingest`` takes a JSON array of ``RawItem`` (\u00a77.2).",
   "properties": {
     "added": {
       "minimum": 0,

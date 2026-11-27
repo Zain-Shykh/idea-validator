@@ -5,7 +5,13 @@ from typing import Any, Literal, Self
 from pydantic import Field, model_validator
 
 from common.contracts.base import ContractModel, Score
-from common.contracts.core import Dimension, Verdict, VerdictRequest, Versions, WhatWouldMakeGo
+from common.contracts.core import (
+    Dimension,
+    Verdict,
+    VerdictRequest,
+    Versions,
+    WhatWouldMakeGo,
+)
 
 
 class ScoreChange(ContractModel):
@@ -13,10 +19,10 @@ class ScoreChange(ContractModel):
     to: Score
 
 
-class WhatIfRequest(ContractModel):
-    """``search`` looks for the smallest changes to GO; ``apply`` evaluates given changes."""
+class WhatIfRequest(VerdictRequest):
+    """``VerdictRequest`` plus a mode (§7.2): ``search`` looks for the smallest changes to GO;
+    ``apply`` evaluates the given changes."""
 
-    request: VerdictRequest
     mode: Literal["search", "apply"]
     changes: list[ScoreChange] = Field(default_factory=list)
 

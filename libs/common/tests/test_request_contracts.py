@@ -33,7 +33,13 @@ def test_verdict_request_rejects(
 
 def test_whatif_apply_needs_changes(verdict_request: dict[str, Any]) -> None:
     with pytest.raises(ValidationError):
-        WhatIfRequest.model_validate({"request": verdict_request, "mode": "apply"})
+        WhatIfRequest.model_validate({**verdict_request, "mode": "apply"})
+
+
+def test_whatif_is_a_flat_verdict_request(verdict_request: dict[str, Any]) -> None:
+    assert WhatIfRequest.model_validate({**verdict_request, "mode": "search"}).mode == "search"
+    with pytest.raises(ValidationError):  # the inherited rules still apply
+        WhatIfRequest.model_validate({**verdict_request, "mode": "search", "scores": []})
 
 
 def test_validate_run_needs_idea_version(profile: dict[str, Any]) -> None:

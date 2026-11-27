@@ -22,9 +22,12 @@ from typing import TextIO
 
 from common import context
 from common.contracts.core import TraceKind, TraceRecord
-from common.http import ServiceClient
+from common.http import ServiceClient, ServiceError
 
 Sink = Callable[[list[TraceRecord]], Awaitable[None]]
+
+# M13 will never accept such a batch, so keeping it would block all later records
+_REJECTED = frozenset({400, 413, 422})
 
 log = logging.getLogger("common.trace")
 
@@ -108,7 +111,9 @@ class TraceClient:
             task.add_done_callback(self._tasks.discard)
 
     async def flush(self) -> None:
-        """Send everything buffered. On failure the batch is kept for the next flush."""
+        """Send everything buffered. A batch that was not delivered (failure or cancellation)
+        is kept for the next flush, so M13 may see a record twice: ``(run_id, step_id)``
+        identifies it. A batch M13 rejects as invalid is dropped."""
         if self._sink is None:
             return
         async with self._lock:
@@ -117,13 +122,25 @@ class TraceClient:
                 batch = [self._buffer.popleft() for _ in range(size)]
                 try:
                     await self._sink(batch)
+                except ServiceError as exc:
+                    if exc.status not in _REJECTED:
+                        log.warning("trace delivery failed (%d records)", len(batch), exc_info=True)
+                        self._requeue(batch)
+                        return
+                    log.error("M13 rejected %d trace records, dropped", len(batch), exc_info=True)
                 except Exception:
                     log.warning("trace delivery failed (%d records)", len(batch), exc_info=True)
-                    # put back in order; if the buffer filled meanwhile, drop the oldest
-                    room = (self._buffer.maxlen or 0) - len(self._buffer)
-                    if room > 0:
-                        self._buffer.extendleft(reversed(batch[-room:]))
+                    self._requeue(batch)
                     return
+                except BaseException:  # cancelled mid-send, e.g. at shutdown
+                    self._requeue(batch)
+                    raise
+
+    def _requeue(self, batch: list[TraceRecord]) -> None:
+        """Put a batch back in order; if the buffer filled meanwhile, drop the oldest."""
+        room = (self._buffer.maxlen or 0) - len(self._buffer)
+        if room > 0:
+            self._buffer.extendleft(reversed(batch[-room:]))
 
     async def run_periodic_flush(self, interval_s: float = 2.0) -> None:
         """Run as a background task in a service's lifespan; cancel it, then ``aclose()``."""

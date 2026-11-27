@@ -368,97 +368,47 @@
       ],
       "title": "StudentProfile",
       "type": "object"
-    },
-    "VerdictRequest": {
-      "additionalProperties": false,
-      "description": "Input of M11. ``accepted_objections`` are those the critic found evidence-backed.",
-      "properties": {
-        "accepted_objections": {
-          "items": {
-            "$ref": "#/$defs/Objection"
-          },
-          "title": "Accepted Objections",
-          "type": "array"
-        },
-        "gate_inputs": {
-          "$ref": "#/$defs/GateInputs"
-        },
-        "goal": {
-          "$ref": "#/$defs/Goal"
-        },
-        "idea_id": {
-          "minLength": 1,
-          "title": "Idea Id",
-          "type": "string"
-        },
-        "kb_version": {
-          "anyOf": [
-            {
-              "type": "string"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null,
-          "title": "Kb Version"
-        },
-        "profile": {
-          "$ref": "#/$defs/StudentProfile"
-        },
-        "prompt_versions": {
-          "additionalProperties": {
-            "type": "string"
-          },
-          "title": "Prompt Versions",
-          "type": "object"
-        },
-        "rubric_set": {
-          "minLength": 1,
-          "title": "Rubric Set",
-          "type": "string"
-        },
-        "run_id": {
-          "minLength": 1,
-          "title": "Run Id",
-          "type": "string"
-        },
-        "scores": {
-          "items": {
-            "$ref": "#/$defs/DimensionScore"
-          },
-          "title": "Scores",
-          "type": "array"
-        },
-        "version": {
-          "minimum": 1,
-          "title": "Version",
-          "type": "integer"
-        }
-      },
-      "required": [
-        "idea_id",
-        "version",
-        "run_id",
-        "goal",
-        "profile",
-        "scores",
-        "gate_inputs",
-        "rubric_set"
-      ],
-      "title": "VerdictRequest",
-      "type": "object"
     }
   },
   "additionalProperties": false,
-  "description": "``search`` looks for the smallest changes to GO; ``apply`` evaluates given changes.",
+  "description": "``VerdictRequest`` plus a mode (\u00a77.2): ``search`` looks for the smallest changes to GO;\n``apply`` evaluates the given changes.",
   "properties": {
+    "accepted_objections": {
+      "items": {
+        "$ref": "#/$defs/Objection"
+      },
+      "title": "Accepted Objections",
+      "type": "array"
+    },
     "changes": {
       "items": {
         "$ref": "#/$defs/ScoreChange"
       },
       "title": "Changes",
       "type": "array"
+    },
+    "gate_inputs": {
+      "$ref": "#/$defs/GateInputs"
+    },
+    "goal": {
+      "$ref": "#/$defs/Goal"
+    },
+    "idea_id": {
+      "minLength": 1,
+      "title": "Idea Id",
+      "type": "string"
+    },
+    "kb_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Kb Version"
     },
     "mode": {
       "enum": [
@@ -468,12 +418,48 @@
       "title": "Mode",
       "type": "string"
     },
-    "request": {
-      "$ref": "#/$defs/VerdictRequest"
+    "profile": {
+      "$ref": "#/$defs/StudentProfile"
+    },
+    "prompt_versions": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Prompt Versions",
+      "type": "object"
+    },
+    "rubric_set": {
+      "minLength": 1,
+      "title": "Rubric Set",
+      "type": "string"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "scores": {
+      "items": {
+        "$ref": "#/$defs/DimensionScore"
+      },
+      "title": "Scores",
+      "type": "array"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
     }
   },
   "required": [
-    "request",
+    "idea_id",
+    "version",
+    "run_id",
+    "goal",
+    "profile",
+    "scores",
+    "gate_inputs",
+    "rubric_set",
     "mode"
   ],
   "title": "WhatIfRequest",

@@ -7,12 +7,13 @@
 .claude
 .claude-runs
 .vscode
-.env
-*.env
-*.pem
-*.key
-kubeconfig*
-secrets
+# a bare pattern only matches at the context root, so secrets are excluded at any depth
+**/.env
+**/*.env
+**/*.pem
+**/*.key
+**/kubeconfig*
+**/secrets
 **/__pycache__
 **/*.py[cod]
 **/*.egg-info

@@ -64,15 +64,18 @@ class Cassette:
     ``alias`` (when the line has them) match."""
 
     def __init__(self, entries: Sequence[dict[str, Any]]) -> None:
+        if not all(isinstance(e, dict) and isinstance(e.get("content"), str) for e in entries):
+            raise LLMCassetteMissError("every cassette line needs a string 'content'")
         self._entries = list(entries)
 
     @classmethod
     def load(cls, path: str | Path) -> "Cassette":
         try:
             lines = Path(path).read_text(encoding="utf-8").splitlines()
-            return cls([json.loads(line) for line in lines if line.strip()])
+            entries = [json.loads(line) for line in lines if line.strip()]
         except (OSError, ValueError) as exc:
             raise LLMCassetteMissError(f"cannot read cassette {path}: {exc}") from exc
+        return cls(entries)
 
     def next(self, alias: str, agent: str) -> dict[str, Any]:
         for index, entry in enumerate(self._entries):
@@ -259,6 +262,7 @@ class LLMClient:
                 num_retries=2,
                 **kwargs,
             )
+            content = response.choices[0].message.content or ""
         except Exception as exc:  # LiteLLM raises many provider-specific types
             raise LLMUnavailableError(f"{model}: {type(exc).__name__}") from exc
         try:
@@ -267,7 +271,7 @@ class LLMClient:
             cost = 0.0
         usage = getattr(response, "usage", None)
         return LlmChatResponse(
-            content=response.choices[0].message.content or "",
+            content=content,
             model=model,
             tokens_in=getattr(usage, "prompt_tokens", 0) or 0,
             tokens_out=getattr(usage, "completion_tokens", 0) or 0,
