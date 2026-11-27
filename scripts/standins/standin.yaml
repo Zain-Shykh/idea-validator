@@ -78,7 +78,7 @@ apiVersion: v1
 kind: Service
 metadata:
   name: profile
-  labels: &service-labels
+  labels:
     idea-validator/stand-in: "true"
 spec:
   selector:
@@ -91,7 +91,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: kb
-  labels: *service-labels
+  labels:
+    idea-validator/stand-in: "true"
 spec:
   selector:
     app: standin
@@ -103,7 +104,8 @@ apiVersion: v1
 kind: Service
 metadata:
   name: tools
-  labels: *service-labels
+  labels:
+    idea-validator/stand-in: "true"
 spec:
   selector:
     app: standin

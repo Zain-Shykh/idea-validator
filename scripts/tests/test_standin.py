@@ -5,6 +5,7 @@ from pathlib import Path
 
 import httpx
 import pytest
+import yaml
 
 from common.contracts.agents import ConcretizeResponse, IntakeResponse
 from common.contracts.kb import KbStats, SearchResponse
@@ -93,3 +94,11 @@ async def test_knowledge_base(client: httpx.AsyncClient) -> None:
     assert (await client.get("/cards/card_ffffffff")).status_code == 404
     asked = {"ids": [found.results[0].evidence_id]}
     assert (await client.post("/evidence", json=asked)).json()["missing"] == []
+
+
+def test_every_object_of_the_manifest_parses_and_says_it_is_a_stand_in() -> None:
+    text = (Path(__file__).resolve().parents[1] / "standins/standin.yaml").read_text()
+    objects = list(yaml.safe_load_all(text))
+    assert sorted(o["metadata"]["name"] for o in objects) == ["kb", "profile", "standin", "tools"]
+    # run.sh removes by this label
+    assert all(o["metadata"]["labels"]["idea-validator/stand-in"] == "true" for o in objects)
