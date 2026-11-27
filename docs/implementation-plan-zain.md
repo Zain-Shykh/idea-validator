@@ -18,8 +18,8 @@
 | Z5 | M9 Validation agents (4 scorers) | In review | [Z5](specs/Z5-validators.md) | [#13](https://github.com/Zain-Shykh/idea-validator/pull/13) | 2026-11-27 11:46 | — |
 | Z6 | M12 Critic and Guardrails | In review | [Z6](specs/Z6-critic-guardrails.md) | [#15](https://github.com/Zain-Shykh/idea-validator/pull/15) | 2026-11-27 12:25 | — |
 | Z7 | M3 Orchestrator: run lifecycle + Validate | In review | [Z7](specs/Z7-orchestrator-validate.md) | [#17](https://github.com/Zain-Shykh/idea-validator/pull/17) | 2026-11-27 15:55 | — |
-| Z8 | M8 Ideation + Discover + challenge / what-if | Not started | — | — | — | — |
-| Z9 | M10t Fine-tuning pipeline + model comparison | Not started | — | — | — | — |
+| Z8 | M8 Ideation + Discover + challenge / what-if | In review | [Z8](specs/Z8-ideation-discover.md) | [#19](https://github.com/Zain-Shykh/idea-validator/pull/19) | 2026-11-27 | — |
+| Z9 | M10t Fine-tuning pipeline + model comparison | In progress | [Z9](specs/Z9-finetuning.md) | — | 2026-11-27 | — |
 | Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | Not started | — | — | — | — |
 | Z11 | Cluster integration, measurements, end-to-end acceptance | Not started | — | — | — | — |
 | Z12 | Report and submission (shared with Ahmad) | Not started | — | — | — | — |
@@ -402,7 +402,7 @@ flowchart LR
 
 ## Z9 — M10t Fine-tuning pipeline + model comparison
 
-- **Status:** Not started · **Spec:** `docs/specs/Z9-finetuning.md` · **Branch:** `feat/z9-finetuning`
+- **Status:** In progress · **Spec:** `docs/specs/Z9-finetuning.md` · **Branch:** `feat/z9-finetuning`
 - **Requirements:** M10t-1, M10t-2, FT-1..8, M10-1, M10-4, M10-5, DATA-7, SUB-2e, SS-18
 - **Depends on:** Z5 (features/evidence code), **S3** (real KB with ≥ 1,500 cards). Ahmad checks ≥ 20 labels (shared task). **Unblocks:** S6.
 
@@ -431,7 +431,7 @@ flowchart LR
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 21:55 | Start | Branch `feat/z9-finetuning` from `feat/z8-ideation-discover` (PR #19 unmerged). Real KB, GPU, Gemini key and hand checks unavailable |
 
 ---
 
