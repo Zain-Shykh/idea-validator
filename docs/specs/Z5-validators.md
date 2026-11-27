@@ -136,3 +136,34 @@ Coverage target: ≥ 80 % of `validators` business logic. No test calls a real m
 | Disk (4.4 GB free) | build only the validators image, remove it afterwards; no minikube, no model runs |
 
 ---
+
+## Part B — Plan
+
+### B1. Task breakdown
+
+| # | Task | Files | Verification | Done |
+|---|------|-------|--------------|------|
+| 1 | `FakeKB`, `FakeAnalyst`, `VALIDATOR_TIMEOUT` | `libs/common/src/common/{fakes/,http.py}`, tests | `pytest libs` | [ ] |
+| 2 | Effort prompt in the registry | `prompts/effort@v1.md`, `prompts/kustomization.yaml`, `config/registry.lock.json` | `check_registry.py`, registry tests | [ ] |
+| 3 | Pure features and keyword rules | `validators/services/features.py` | `test_features.py` | [ ] |
+| 4 | Settings, tool clients, effort estimate, shared engine | `validators/{settings.py,services/{tools,effort,engine}.py}` | `test_tools.py`, `test_scoring.py` | [ ] |
+| 5 | Four scorers, routes, app | `validators/{scorers/,api/routes.py,main.py}` | `test_api.py`, `test_gate_inputs.py` | [ ] |
+| 6 | Fixtures and behaviour tests | `eval/fixtures/validator_*.jsonl`, `eval/behaviour/{test_validators.py,cassettes/validators_*.jsonl}` | `pytest eval/behaviour` | [ ] |
+| 7 | Image, compose, manifest, env names | `services/validators/{Dockerfile,requirements.txt,compose.yaml}`, `k8s/base/validators.yaml`, `.env.example` | docker build + container check; kubeconform | [ ] |
+| 8 | Testing subagent, fixes, docs, PR | — | full suite green | [ ] |
+
+### B2. Commit plan
+1. `docs(spec): add Z5 spec` · 2. `docs(plan): add Z5 plan`
+3. `feat(common): add FakeKB, FakeAnalyst and the validator timeout`
+4. `feat(prompts): add the effort estimate prompt`
+5. `feat(validators): four scorers with computed features, grounding and gate inputs`
+6. `test(validators): behaviour tests for abstention, grounding, profile and parallel use`
+7. `feat(validators): image, compose and manifest`
+8. `test…` / `fix…` (testing subagent) · 9. `docs(Z5): update spec report, checklist, plan, logs`
+
+### B3. Definition of Done (phase)
+- [ ] All A4 criteria pass, or are left unticked with the reason.
+- [ ] ruff + mypy clean; coverage target met.
+- [ ] Dockerfile builds, non-root; manifest validates (kubeconform).
+- [ ] Checklist rows, plan progress log, deviations, AI log, decisions updated.
+- [ ] PR opened against `feat/z4-scorer-serving`; reviewer = Ahmad.
