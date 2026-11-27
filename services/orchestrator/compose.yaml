@@ -1,0 +1,20 @@
+# Local development only (LOC-2); included by the root docker-compose.yml.
+services:
+  orchestrator:
+    build:
+      context: ../..
+      dockerfile: services/orchestrator/Dockerfile
+    image: idea-validator-orchestrator:${IMAGE_TAG:-dev}
+    ports:
+      - "127.0.0.1:8003:8000"
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      VERDICT_URL: http://verdict:8000
+      AGENTOPS_URL: http://agentops:8000
+      REDIS_HOST: redis
+      REDIS_PASSWORD: ${REDIS_PASSWORD:-}
+    depends_on:
+      redis:
+        condition: service_healthy
+      verdict:
+        condition: service_started

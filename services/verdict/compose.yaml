@@ -1,0 +1,11 @@
+# Local development only (LOC-2); included by the root docker-compose.yml.
+services:
+  verdict:
+    build:
+      context: ../..
+      dockerfile: services/verdict/Dockerfile
+    image: idea-validator-verdict:${IMAGE_TAG:-dev}
+    ports:
+      - "127.0.0.1:8011:8000"
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}

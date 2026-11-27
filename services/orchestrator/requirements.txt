@@ -1,0 +1,9 @@
+# Pins match requirements-dev.txt and libs/common/pyproject.toml.
+fastapi==0.165.0
+pydantic==2.14.4
+pydantic-settings==2.16.3
+httpx==0.29.0
+tenacity==9.2.1
+prometheus-client==0.26.0
+uvicorn==0.54.0
+redis==8.2.0

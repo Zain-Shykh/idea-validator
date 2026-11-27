@@ -1,0 +1,45 @@
+# Local development only (LOC-2); the deployment target is Kubernetes.
+# Minimal version created in Z1; Ahmad takes this file over in A0.
+# Each service lives in its own fragment: add one include line per service.
+name: idea-validator
+
+include:
+  - services/orchestrator/compose.yaml
+  - services/ideation/compose.yaml
+  - services/validators/compose.yaml
+  - services/scorer/compose.yaml
+  - services/verdict/compose.yaml
+  - services/critic/compose.yaml
+  - services/agentops/compose.yaml
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16@sha256:484e838076e04939d27d3e176e91c86eea96236126023be8d3059761122e579f
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-ideaval}
+      # development default only; set POSTGRES_PASSWORD in .env
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localdev}
+    ports:
+      - "127.0.0.1:${POSTGRES_HOST_PORT:-5432}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 5s
+      retries: 10
+
+  redis:
+    image: redis:7-alpine@sha256:520775a41a63e77e06c73e35d2fd9cc15921a609516818796b4ecbb813078bc7
+    # an empty password means no password
+    command: ["redis-server", "--requirepass", "${REDIS_PASSWORD:-}"]
+    environment:
+      REDISCLI_AUTH: ${REDIS_PASSWORD:-}
+    ports:
+      - "127.0.0.1:${REDIS_HOST_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      retries: 10
+
+volumes:
+  pgdata:
