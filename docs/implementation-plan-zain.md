@@ -14,7 +14,7 @@
 | Z1 | Walking skeleton of Zain's services | In review | [Z1](specs/Z1-walking-skeleton.md) | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) | 2026-11-27 08:09 | — |
 | Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | In review | [Z3](specs/Z3-rubrics-agentops.md) | [#9](https://github.com/Zain-Shykh/idea-validator/pull/9) | 2026-11-27 10:04 | — |
-| Z4 | M10 Scorer serving (base model + fallback) | Not started | — | — | — | — |
+| Z4 | M10 Scorer serving (base model + fallback) | In progress | [Z4](specs/Z4-scorer-serving.md) | — | 2026-11-27 10:43 | — |
 | Z5 | M9 Validation agents (4 scorers) | Not started | — | — | — | — |
 | Z6 | M12 Critic and Guardrails | Not started | — | — | — | — |
 | Z7 | M3 Orchestrator: run lifecycle + Validate | Not started | — | — | — | — |
@@ -216,7 +216,7 @@ flowchart LR
 
 ## Z4 — M10 Scorer serving (base model + fallback)
 
-- **Status:** Not started · **Spec:** `docs/specs/Z4-scorer-serving.md` · **Branch:** `feat/z4-scorer-serving`
+- **Status:** In progress · **Spec:** `docs/specs/Z4-scorer-serving.md` · **Branch:** `feat/z4-scorer-serving`
 - **Requirements:** M10-1 (container; fine-tuned weights arrive in Z9), M10-2, M10-3, M10-5, FT-7, API-I3, AO-1, AO-6 (fallback metric)
 - **Depends on:** Z3 (rubrics, prompts, trace). M5 not required (`LLM_BACKEND=direct` until A2). **Unblocks:** Z5.
 
@@ -240,7 +240,7 @@ flowchart LR
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 10:43 | Started | Branch `feat/z4-scorer-serving` from `feat/z3-rubrics-agentops` (PR #9 unmerged) |
 
 ---
 
