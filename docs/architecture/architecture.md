@@ -219,7 +219,7 @@ All Python services listen on **container port 8000**, the UI on **8080**. In-cl
 | M10t Fine-tuning | `jobs/finetune` | **Zain** | offline (Colab/Kaggle) + `model-import` Job | GitHub Release / GHCR model image | M6, M5 (label drafting) | CLI scripts |
 | M11 Verdict Engine | `services/verdict` | **Zain** | Deployment (2 replicas) | ConfigMap `verdict-config` | — | `/verdict`, `/whatif`, `/config` |
 | M12 Critic & Guardrails | `services/critic` | **Zain** | Deployment | — | M6, M5 (LLM) | `/check`, `/rail/input`, `/scan`, `/policy/approval` |
-| M13 AgenticOps | `services/agentops` + `jobs/evaluation` | **Zain** | Deployment + Jobs/CronJob | Postgres `ops`, PVC `traces` | M6 (stats), M2 (verdict distribution) | `/trace`, `/runs/{id}/trace`, `/summary`, `/registry`, `/drift`, `/eval/results` |
+| M13 AgenticOps | `services/agentops` + `jobs/evaluation` | **Zain** | Deployment + Jobs/CronJob | Postgres `ops`, PVC `traces` | M6 (stats), M2 (verdict distribution) | `/trace`, `/runs/{id}/trace`, `/summary`, `/registry`, `/drift/latest`, `/eval/latest` |
 | M14 Platform | `.github/`, `Jenkinsfile`, `k8s/`, `scripts/` | Ahmad (each owner writes own Dockerfile + manifest) | — | — | — | — |
 
 ---
@@ -1336,7 +1336,7 @@ idea-validator/
 Each Python service follows the same internal layout:
 ```text
 services/<svc>/
-├── Dockerfile  requirements.txt  compose.yaml  .dockerignore
+├── Dockerfile  requirements.txt  compose.yaml     # the single .dockerignore is at the repo root
 ├── src/<pkg>/{main.py, api/ (routes), services/ (logic), repositories/ (DB, if any), settings.py}
 └── tests/{unit/, integration/}
 ```

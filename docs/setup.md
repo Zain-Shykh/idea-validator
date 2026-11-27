@@ -88,6 +88,8 @@ docker compose ps                               # health status
 curl -s localhost:8011/health                   # e.g. verdict service
 docker compose down                             # stop (add -v to drop volumes)
 ```
+If a host port is taken (for example a local Postgres on 5432), set `POSTGRES_HOST_PORT` / `REDIS_HOST_PORT`. Tag images with the commit: `IMAGE_TAG=$(git rev-parse --short HEAD) docker compose up --build`. Integration tests read `REDIS_HOST_PORT` and `REDIS_PASSWORD` from the shell: `pytest -m integration`.
+
 Host ports: see `docs/architecture/architecture.md` §19 (gateway 8001 … agentops 8013, UI 5173). Compose is for development only; the deployment target is Kubernetes.
 
 ## 6. Kubernetes (minikube + Calico)
@@ -112,7 +114,14 @@ minikube -p idea-validator ip                    # ingress address (add to /etc/
 ```
 Deploy (*after A0/Z1*): `kubectl apply -k k8s/overlays/dev` · status: `kubectl get pods -n idea-validator`.
 
-Images are pulled from GHCR (`ghcr.io/zain-shykh/idea-validator-<svc>:<sha>`, public). For a quick local test without pushing: `minikube -p idea-validator image load <svc>:<tag>`.
+Images are named `ghcr.io/zain-shykh/idea-validator-<svc>:<sha>` (public GHCR, after A0). Until they are pushed, build and load them, then set the same tag in `k8s/overlays/dev/kustomization.yaml` (`newTag`):
+```bash
+TAG=$(git rev-parse --short HEAD)
+SVCS="orchestrator ideation validators scorer verdict critic agentops"
+for s in $SVCS; do docker build -f services/$s/Dockerfile -t ghcr.io/zain-shykh/idea-validator-$s:$TAG . ; done
+docker save $(for s in $SVCS; do echo ghcr.io/zain-shykh/idea-validator-$s:$TAG; done) | minikube -p idea-validator image load -
+```
+Add `--keep-context` to `minikube start` and `--context idea-validator` to `kubectl` if you do not want to switch your current context.
 
 ## 7. Local LLM (Ollama)
 

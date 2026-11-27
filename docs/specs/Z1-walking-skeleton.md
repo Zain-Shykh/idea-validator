@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session (`scripts/run-phase.sh`) |
 | Branch | `feat/z1-walking-skeleton` (from `feat/z0-contracts-common`, PR #3) |
-| Status | Plan ready |
+| Status | In review |
 | Requirement IDs | GEN-6, GEN-8, DOCK-1..3, K8S-1, K8S-5 (probes), K8S-11, AVOID-8 |
 | Architecture refs | `architecture.md` §5, §6.1, §6.7, §7.2, §17, §19, §20, §21; ADR-004 |
 | Depends on | Z0 (`libs/common`). A0 does not exist: minimal compose, kustomization and dev overlay are created here |
@@ -139,26 +139,80 @@ Coverage target: ≥ 80 % of `services/*/src`.
 
 | # | Task | Files | Verification | Done |
 |---|------|-------|--------------|------|
-| 1 | Verdict stub, test paths for pytest and mypy | `services/verdict/**`, `pyproject.toml` | `pytest services/verdict` | [ ] |
-| 2 | Ideation, validators, scorer, critic, agentops stubs | `services/{ideation,validators,scorer,critic,agentops}/{src,tests}` | `pytest services` | [ ] |
-| 3 | Orchestrator stub: event repository, stub run, routes | `services/orchestrator/{src,tests}` | unit + integration tests | [ ] |
-| 4 | Dockerfiles, requirements, compose fragments, root compose | `services/*/{Dockerfile,requirements.txt,compose.yaml}`, `docker-compose.yml` | build, `id -u`, `docker compose up --wait`, smoke | [ ] |
-| 5 | Manifests, kustomization, dev overlay, packaging tests | `k8s/**`, `eval/behaviour/test_packaging.py` | kubeconform, deploy on minikube, smoke | [ ] |
-| 6 | Testing subagent, fixes | tests | all green | [ ] |
-| 7 | Docs and PR | `docs/**`, `README.md`, `.env.example` | review | [ ] |
+| 1 | Verdict stub, test paths for pytest and mypy | `services/verdict/**`, `pyproject.toml` | `pytest services/verdict` | [x] |
+| 2 | Ideation, validators, scorer, critic, agentops stubs | `services/{ideation,validators,scorer,critic,agentops}/{src,tests}` | `pytest services` | [x] |
+| 3 | Orchestrator stub: event repository, stub run, routes | `services/orchestrator/{src,tests}` | unit + integration tests | [x] |
+| 4 | Dockerfiles, requirements, compose fragments, root compose | `services/*/{Dockerfile,requirements.txt,compose.yaml}`, `docker-compose.yml` | build, `id -u`, `docker compose up --wait`, smoke | [x] |
+| 5 | Manifests, kustomization, dev overlay, packaging tests | `k8s/**`, `eval/behaviour/test_packaging.py` | kubeconform, deploy on minikube, smoke | [x] |
+| 6 | Testing subagent, fixes | tests | all green | [x] |
+| 7 | Docs and PR | `docs/**`, `README.md`, `.env.example` | review | [x] |
 
 ### B2. Commit plan
 1. `docs(spec): add Z1 spec` · 2. `docs(plan): add Z1 plan` · 3. `feat(services): stub APIs for six agent services` · 4. `feat(orchestrator): stub run with Redis event stream` · 5. `chore(docker): images and compose` · 6. `chore(k8s): manifests and dev overlay` · 7. tests and fixes · 8. `docs(Z1): update spec report, checklist, plan, logs`
 
 ### B3. Definition of Done (phase)
-- [ ] All A4 criteria pass.
-- [ ] ruff, `ruff format --check`, `mypy libs services` clean; coverage ≥ 80 %.
-- [ ] Images build and run non-root; manifests pass kubeconform; pods Ready.
-- [ ] Checklist, plan, decisions, deviations, AI-usage log, README, setup updated.
-- [ ] PR opened against `feat/z0-contracts-common`.
+- [x] All A4 criteria pass.
+- [x] ruff, `ruff format --check`, `mypy libs services` clean; coverage ≥ 80 %.
+- [x] Images build and run non-root; manifests pass kubeconform; pods Ready.
+- [x] Checklist, plan, decisions, deviations, AI-usage log, README, setup updated.
+- [x] PR opened against `feat/z0-contracts-common`.
 
 ---
 
 ## Part C — Implementation and test report
 
-*(filled during and after implementation)*
+### C1. What was built
+- `services/{verdict,ideation,validators,scorer,critic,agentops}`: stub routes for the §7.2 APIs.
+- `services/orchestrator`: stub run (`services/stub_run.py`), event stream (`repositories/events.py`), M3 routes, settings.
+- Per service: Dockerfile, `requirements.txt`, `compose.yaml`, tests, `k8s/base/<svc>.yaml`.
+- Temporary until A0: `docker-compose.yml`, `k8s/base/{namespace,kustomization}.yaml`, `k8s/overlays/dev` (with a dev Redis).
+- `eval/behaviour/{test_packaging,test_stub_contracts}.py`; `pyproject.toml` paths for the service packages.
+- `libs/common`: `idea_version_id` rejects blank values, `new_step_id` strictly increasing, empty `LOG_LEVEL` tolerated.
+
+### C2. Deviations from spec / architecture
+| What | Why | Logged in deviations.md as |
+|------|-----|---------------------------|
+| One root `.dockerignore` instead of one per service | Docker ignores per-service files with a root context | D-004 |
+| §5 catalogue paths for M13 reports corrected to §7.2 | the two sections disagreed | D-005 |
+| A5 said no contract files change; `StartRunRequest.idea_version_id` was tightened to `NonEmptyStr \| None` | bug found in testing | decision Z1-15 (the architecture does not fix this) |
+
+### C3. Test report (from the testing subagent)
+**Subagent run** (on code `282bcbe`, before fixes): ruff and mypy clean; `pytest -q` 244 passed before its tests and 357 passed / 4 failed with them; unit + integration over `services eval` 198 passed / 5 failed (the 5 = the two bugs); `services/*/src` coverage 100 % (308/308 lines); kubeconform 18/18; images run as uid 10001; cluster pods Ready, run wrote 18 events. It added tests to `test_run.py`, `test_packaging.py`, `test_stub_contracts.py` and `test_app_with_redis.py`. It did not run the compose smoke test (done by the main session below).
+
+| Found | Fix |
+|-------|-----|
+| Bug: blank `idea_version_id` / path `idea_id` passed validation, then the background run crashed and its stream never finished (500 on challenge) | contract and path constraints (Z1-15) |
+| Bug: redis-py 8 default of 10 retries: ~38 s to answer 503 on a silent Redis; a lost `XADD` reply duplicated an event | no client retries (Z1-14) |
+| `XADD` and `EXPIRE` not atomic | one transaction (Z1-14) |
+| Empty `LOG_LEVEL` crashed services at import | defaults to `INFO` (Z1-16) |
+| Existing Z0 test `test_step_ids_are_unique_and_js_safe` flaky (~3 %) | ids strictly increasing in a process (Z1-16) |
+
+All fixes are in `11276f4`.
+
+**After the fixes** (main session):
+| Command | Result |
+|---------|--------|
+| `ruff check .`, `ruff format --check .`, `mypy libs services`, `common.contracts.export --check` | clean |
+| `pytest -q` | 363 passed; 8 further runs all passed |
+| `pytest -m integration` (compose Redis) | 3 passed |
+| `pytest --cov=services --cov=libs/common/src` | 97 % overall |
+| `docker build` ×7 at `11276f4`; `docker run --rm <img> id -u` | all built; all 10001 |
+| `docker compose up -d --wait` (`POSTGRES_HOST_PORT=5433`) | 7 services + Postgres + Redis healthy; `/health` and `/ready` 200 on 8003, 8008–8013; run wrote 18 events, verdict `INSUFFICIENT_EVIDENCE` |
+| Redis healthcheck with and without a password; Redis stopped | healthy in both; orchestrator `/ready` 503, `/health` 200, routes 503 (run on `282bcbe`) |
+| `kubectl kustomize k8s/overlays/dev \| kubeconform -strict -summary` | 18 valid, 0 invalid |
+| `kubectl apply -k`, then rolling update from `282bcbe` to `11276f4` | 7 services (verdict ×2) + Redis Running/Ready |
+| In-cluster smoke from the orchestrator pod | 7 × `/health`, `/ready` 200; run → 202; 18 contract-valid events, TTL 86400, verdict from `m11@stub`; trace batch accepted by agentops (202) |
+
+Not fixed: nothing from the report that is a defect. Its two timing observations are in C5.
+
+### C4. Measurements
+| What | Value |
+|------|-------|
+| Image size (`docker images`) | 207 MB each; orchestrator 217 MB; six share the 23 MB venv layer |
+| Idle memory in the cluster (`kubectl top pods`, just after start) | 41–52 MiB per service, Redis 5 MiB. CPU readings were startup values, so requests/limits stay at the §17.2 plan until Z11 |
+
+### C5. Follow-ups
+- Ahmad (A0): take over `docker-compose.yml`, `k8s/base/{namespace,kustomization}.yaml`, `k8s/overlays/dev`; replace the dev Redis; add the `redis` Secret.
+- Ahmad (A8): read `run:{id}:events`, one field `event` per entry.
+- Z7: bound the total time of the verdict call (3 × 30 s today) and of the final trace flush (a hanging agentops could exceed the 30 s Kubernetes grace period).
+- Z7: readiness only checks that `VERDICT_URL` is set, not that it is well formed or reachable.

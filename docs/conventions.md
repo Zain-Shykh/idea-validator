@@ -49,7 +49,7 @@ React 18 + Vite + TypeScript (`strict`). ESLint + `tsc --noEmit`. API client in 
 
 ## 5. Docker
 
-Guide §4.4 pattern: multi-stage, `python:3.12-slim` pinned by digest or exact tag, `useradd -m app` + `USER app`, `EXPOSE 8000`, `CMD uvicorn <pkg>.main:app --host 0.0.0.0 --port 8000`. Build context = repo root: `docker build -f services/<svc>/Dockerfile -t <svc>:$(git rev-parse --short HEAD) .`. Each service has a `.dockerignore`. Never bake secrets or `localhost` URLs into images. Tags: short commit SHA (never only `latest`).
+Guide §4.4 pattern: multi-stage, `python:3.12-slim` pinned by digest or exact tag, `useradd -m app` + `USER app`, `EXPOSE 8000`, `CMD uvicorn <pkg>.main:app --host 0.0.0.0 --port 8000`. Build context = repo root: `docker build -f services/<svc>/Dockerfile -t <svc>:$(git rev-parse --short HEAD) .`. One root `.dockerignore` serves all builds (a service may add `Dockerfile.dockerignore`, D-004). Never bake secrets or `localhost` URLs into images. Tags: short commit SHA (never only `latest`).
 
 ## 6. Kubernetes
 

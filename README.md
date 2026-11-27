@@ -9,7 +9,7 @@ An interactive **multi-agent system that helps a student choose a project**. It 
 
 Semester project for **CS4032 Software Construction and Development** (FAST-NUCES) by **Zain** and **Ahmad**.
 
-**Status:** shared contracts and `libs/common` (phase Z0) built; services come next. Progress: [`docs/checklist.md`](docs/checklist.md).
+**Status:** shared contracts (Z0) and a walking skeleton of the seven AI-core services (Z1: stub responses only, every verdict is `INSUFFICIENT_EVIDENCE`) are built. Progress: [`docs/checklist.md`](docs/checklist.md).
 
 ---
 
@@ -54,18 +54,19 @@ pip install -e libs/common      # shared contracts package
 cp .env.example .env            # add GEMINI_API_KEY, GITHUB_TOKEN, passwords
 
 # 2. Local development (Docker Compose)
-docker compose up --build       # UI: http://localhost:5173 · API: http://localhost:8001
+docker compose up --build       # today: orchestrator :8003, ideation..agentops :8008-8013 (UI :5173 and API :8001 after A1)
 
 # 3. Kubernetes
 minikube start -p idea-validator --cni=calico --cpus=6 --memory=7g
 minikube -p idea-validator addons enable ingress && minikube -p idea-validator addons enable metrics-server
-scripts/create_secrets.sh       # from .env
+# scripts/create_secrets.sh     # from .env (after A0)
+# until images are on GHCR, build and load them first: docs/setup.md §6
 kubectl apply -k k8s/overlays/dev
 kubectl get pods -n idea-validator
-# open http://$(minikube -p idea-validator ip)/
+# open http://$(minikube -p idea-validator ip)/   (after A0/A1: Ingress and UI)
 ```
 
-Checks: `ruff check . && ruff format --check . && mypy libs` (add `services` once it has code) · after a contract change `python -m common.contracts.export`, verified by `--check`.
+Checks: `ruff check . && ruff format --check . && mypy libs services` · after a contract change `python -m common.contracts.export`, verified by `--check`.
 
 Tests: `pytest -q` (unit + contract) · `pytest -m integration` (needs `docker compose up -d postgres redis`) · UI: `cd services/ui && npm test`.
 
