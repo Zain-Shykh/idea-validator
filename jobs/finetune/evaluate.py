@@ -12,6 +12,7 @@ import argparse
 import asyncio
 import hashlib
 import json
+import math
 import os
 import statistics
 import sys
@@ -83,6 +84,15 @@ def load_test_set(folder: Path) -> tuple[list[Row], dict[str, Any]]:
     examples = read_jsonl(path, FineTuneExample)
     if not examples:
         raise DataError(f"{path}: no test rows")
+    report = folder / "split-report.json"
+    try:
+        written = json.loads(report.read_text(encoding="utf-8"))["sha256"]["test"]
+    except (OSError, ValueError, KeyError, TypeError) as exc:
+        raise DataError(f"{report}: cannot read the hash of the test set: run split.py") from exc
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    if digest != written:
+        # otherwise rows could be dropped until the table looks better
+        raise DataError(f"{path} is not the file split.py wrote: run split.py again")
     items = keyed(read_jsonl(folder / "items.jsonl", Item), folder / "items.jsonl")
     checks = read_checks(folder / "checked.csv")
     rows: dict[str, Row] = {}
@@ -103,7 +113,7 @@ def load_test_set(folder: Path) -> tuple[list[Row], dict[str, Any]]:
     used = [checks[k] for k in rows]
     info = {
         "rows": len(rows),
-        "sha256": hashlib.sha256(path.read_bytes()).hexdigest(),
+        "sha256": digest,
         "checked_by": {
             n: sum(c.checked_by == n for c in used) for n in sorted({c.checked_by for c in used})
         },
@@ -419,7 +429,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--rpm", type=float, default=10.0, help="hosted calls per minute")
     parser.add_argument("--force", action="store_true", help="replace an existing report")
     args = parser.parse_args(argv)
-    if args.rpm <= 0 or args.timeout_s <= 0:
+    if not (0 < args.rpm < math.inf and 0 < args.timeout_s < math.inf):
         parser.error("--rpm and --timeout-s must be positive")
     try:
         report = asyncio.run(_run(args))

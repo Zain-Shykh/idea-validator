@@ -26,7 +26,9 @@ pytestmark = pytest.mark.skipif(
 def test_committed_dataset() -> None:
     rows = read_jsonl(DATA_DIR / "all.jsonl", FineTuneExample)
     items = {i.item_id: i for i in read_jsonl(DATA_DIR / "items.jsonl", Item)}
-    assert len(rows) >= 300 and not any(i.fake for i in items.values())
+    rejected = {k for k, c in read_checks(DATA_DIR / "checked.csv").items() if c.label is None}
+    assert len({example_id(r) for r in rows} - rejected) >= 300
+    assert not any(i.fake for i in items.values())
     assert {i.dimension for i in items.values()} == set(Dimension)
     assert {level(label_of(r).score) for r in rows} == set(range(6))
 

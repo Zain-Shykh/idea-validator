@@ -8,6 +8,7 @@ Uses the existing LLM settings: ``LLM_BACKEND=direct`` with ``GEMINI_API_KEY``, 
 import argparse
 import asyncio
 import logging
+import math
 import os
 import sys
 from collections.abc import Awaitable, Callable, Sequence
@@ -166,7 +167,7 @@ def main(argv: Sequence[str] | None = None) -> int:
     parser.add_argument("--rpm", type=float, default=10.0, help="calls per minute")
     parser.add_argument("--max-calls", type=int, default=600, help="budget of this run")
     args = parser.parse_args(argv)
-    if args.rpm <= 0 or args.max_calls < 1:
+    if not 0 < args.rpm < math.inf or args.max_calls < 1:
         parser.error("--rpm and --max-calls must be positive")
     try:
         summary = asyncio.run(_run(args))

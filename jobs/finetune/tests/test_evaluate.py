@@ -221,6 +221,30 @@ def test_only_a_hand_checked_test_set_is_accepted(tmp_path: Path, case: str) -> 
         ev.load_test_set(tmp_path)
 
 
+def test_a_pruned_test_set_is_refused(tmp_path: Path) -> None:
+    """Every row left is hand-checked, but one was dropped after the split."""
+    make_test_set(tmp_path)
+    path = tmp_path / "test.jsonl"
+    path.write_text("".join(path.read_text().splitlines(keepends=True)[1:]))
+    with pytest.raises(DataError, match="not the file split"):
+        ev.load_test_set(tmp_path)
+    (tmp_path / "split-report.json").unlink()
+    with pytest.raises(DataError, match="run split"):
+        ev.load_test_set(tmp_path)
+
+
+@pytest.mark.parametrize("value", ["nan", "inf", "0"])
+def test_rate_limit_must_be_a_real_number(tmp_path: Path, value: str) -> None:
+    from draft_labels import main as draft_main
+
+    for call in (
+        lambda: command(tmp_path, tmp_path, "--rpm", value),
+        lambda: draft_main(["--rpm", value]),
+    ):
+        with pytest.raises(SystemExit):
+            call()
+
+
 def test_local_ask_is_one_unconstrained_call_unless_asked() -> None:
     bodies: list[dict[str, Any]] = []
 

@@ -88,8 +88,9 @@ def assert_no_leakage(
 
 
 def _checked(checks: Mapping[str, Check], items: Mapping[str, Item]) -> dict[str, Check]:
-    """The usable checks. A hand-edited ``checked.csv`` meets the same rules as the tool."""
-    if unknown := sorted(set(checks) - set(items)):
+    """The usable checks. A hand-edited ``checked.csv`` meets the same rules as the tool.
+    A rejected row may be gone from the dataset: ``assemble`` replaces it."""
+    if unknown := sorted(k for k, c in checks.items() if c.label and k not in items):
         raise DataError(f"checked.csv names {len(unknown)} unknown rows, e.g. {unknown[0]}")
     kept = {}
     for key, check in checks.items():
@@ -170,6 +171,10 @@ def split(
     train_share = (len(every) - len(test_groups) - len(val_groups)) / len(every)
     tested = Counter(items[example_id(r)].dimension.value for r in parts["test"])
     warnings = []
+    if stale := sum(k in items and c.label is None for k, c in checks.items()):
+        warnings.append(
+            f"all.jsonl still holds {stale} rejected rows: run assemble again to replace them"
+        )
     if train_share < 0.7:
         warnings.append(f"only {train_share:.0%} of the idea groups train (FT-4: about 80/20)")
     if len(tested) < 6:

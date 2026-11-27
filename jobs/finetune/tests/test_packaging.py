@@ -67,6 +67,11 @@ def test_lora_component() -> None:
     assert job["image"] == "ghcr.io/zain-shykh/idea-validator-scorer-model:v1"
     # only the file name differs from the tested base script
     assert job["command"][-1] == old["command"][-1].replace("scorer-base-v1", "scorer-lora-v1")
+    # apart from name, image and script the Job is the base one (volumes, security, resources)
+    new_job, old_job = lora["Job", jobs[0]], base["Job", "model-import-base-v1"]
+    assert {**job, "image": None, "command": None} == {**old, "image": None, "command": None}
+    pod, old_pod = new_job["spec"]["template"]["spec"], old_job["spec"]["template"]["spec"]
+    assert {**pod, "containers": None} == {**old_pod, "containers": None}
     scorer = lora["Deployment", "scorer"]
     before = base["Deployment", "scorer"]
     for key, name in (("containers", "llama"), ("initContainers", "wait-for-model")):

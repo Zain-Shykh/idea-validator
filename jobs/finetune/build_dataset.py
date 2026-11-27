@@ -68,6 +68,8 @@ from validators.settings import ValidatorSettings
 
 log = logging.getLogger("finetune")
 
+MIN_ROWS = 300  # FT-2
+
 # M6 has no "list cards" endpoint: cards are found by searching for these topics
 TOPICS = (
     "study tool for students", "flashcards and revision", "lecture notes", "course planning",
@@ -311,20 +313,24 @@ def assemble(
 ) -> tuple[bool, dict[str, Any]]:
     candidates = keyed(read_jsonl(candidates_path, Candidate), candidates_path)
     drafts = keyed(read_jsonl(drafts_path, Draft), drafts_path)
+    checks = read_checks(out / "checked.csv")
+    # a row a person rejected is used nowhere, so it must not count towards the 300 either
+    rejected = {key for key, check in checks.items() if check.label is None}
     usable = {
         key: (candidate, drafts[key])
         for key, candidate in candidates.items()
         if key in drafts
+        and key not in rejected
         and drafts[key].label is not None
         and not is_labelled(candidate.idea_title, candidate.idea_text, labelled)
     }
-    checks = read_checks(out / "checked.csv")
-    if lost := sorted(set(checks) - set(usable)):
+    kept = [key for key in checks if key not in rejected]
+    if lost := sorted(set(kept) - set(usable)):
         raise DataError(
             f"{len(lost)} hand-checked rows are not usable any more (e.g. {lost[0]}): use the "
             "candidates and drafts they came from, or remove their ideas from checked.csv"
         )
-    keys = select(usable, target, pinned=list(checks))
+    keys = select(usable, target, pinned=kept)
     fake = any(usable[k][0].fake or usable[k][1].fake for k in keys)
     guard_output(out / "all.jsonl", fake)
 
@@ -392,7 +398,7 @@ def _parser() -> argparse.ArgumentParser:
     second.add_argument("--labelled", type=Path, default=LABELLED)
     second.add_argument("--out", type=Path, default=DATA_DIR, help="folder")
     second.add_argument("--target", type=int, default=360)
-    second.add_argument("--min-rows", type=int, default=300)
+    second.add_argument("--min-rows", type=int, default=MIN_ROWS)
     return parser
 
 
@@ -436,7 +442,17 @@ async def _sample(args: argparse.Namespace) -> None:
 
 def main(argv: Sequence[str] | None = None) -> int:
     logging.basicConfig(level=logging.WARNING, format="%(levelname)s %(message)s")
-    args = _parser().parse_args(argv)
+    parser = _parser()
+    args = parser.parse_args(argv)
+    if args.command == "sample" and args.max_ideas < 0:
+        parser.error("--max-ideas cannot be negative")
+    if args.command == "assemble":
+        if args.target < 1 or args.min_rows < 1:
+            parser.error("--target and --min-rows must be positive")
+        # as in split.py: the required number can only be lowered away from the real data
+        if args.min_rows < MIN_ROWS and args.out.resolve().is_relative_to(DATA_DIR):
+            print("error: a lower --min-rows is for try-outs, not the real data", file=sys.stderr)
+            return 1
     try:
         if args.command == "sample":
             asyncio.run(_sample(args))
@@ -451,7 +467,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         print(json.dumps(report, indent=2))
         return 0 if passed else 1
-    except DataError as exc:
+    except (DataError, OSError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
 

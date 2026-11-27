@@ -7,6 +7,7 @@ checks), both keyed by ``item_id``, a hash of the system and user messages.
 
 import csv
 import hashlib
+import html
 import json
 import os
 import re
@@ -149,11 +150,11 @@ def prompt_ids(user: str) -> list[str]:
 
 
 def idea_block(user: str) -> str:
-    """The idea as the model sees it."""
+    """The idea of a prompt, unescaped: "&amp;" would add the word "amp" to a comparison."""
     match = _IDEA_BLOCK.search(user)
     if match is None:
         raise DataError("a prompt without an <idea> block")
-    return match.group(1)
+    return html.unescape(match.group(1))
 
 
 def grounded_label(reply: str, allowed: Sequence[str]) -> ScorerOutput:
@@ -283,20 +284,39 @@ def write_text(path: Path, text: str) -> None:
     os.replace(temporary, path)
 
 
+def _open_ended(path: Path) -> bool:
+    """True when the last line has no end: cut off while writing, or edited by hand."""
+    if not path.exists() or not path.stat().st_size:
+        return False
+    with path.open("rb") as handle:
+        handle.seek(-1, os.SEEK_END)
+        return handle.read(1) != b"\n"
+
+
 def write_jsonl(path: Path, rows: Iterable[BaseModel]) -> None:
     write_text(path, "".join(row.model_dump_json() + "\n" for row in rows))
 
 
 def append_jsonl(path: Path, row: BaseModel) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
+    start = "\n" if _open_ended(path) else ""
     with path.open("a", encoding="utf-8") as handle:
-        handle.write(row.model_dump_json() + "\n")
+        handle.write(start + row.model_dump_json() + "\n")
+
+
+def _whole(path: Path) -> None:
+    """A cut check can still read as a shorter, valid one, so it is not guessed at."""
+    if _open_ended(path):
+        raise DataError(
+            f"{path}: the last line has no end; check that it is complete, then add a newline"
+        )
 
 
 def read_checks(path: Path) -> dict[str, Check]:
     """``checked.csv``; empty when there is none yet."""
     if not path.exists():
         return {}
+    _whole(path)
     checks: dict[str, Check] = {}
     try:
         with path.open(encoding="utf-8", newline="") as handle:
@@ -304,6 +324,9 @@ def read_checks(path: Path) -> dict[str, Check]:
             if tuple(reader.fieldnames or ()) != CHECK_COLUMNS:
                 raise DataError(f"{path}: columns must be {','.join(CHECK_COLUMNS)}")
             for row in reader:
+                # DictReader keeps surplus cells under None: an unquoted comma in a hand edit
+                if None in row or None in row.values():
+                    raise DataError(f"{path}: line {reader.line_num} has the wrong number of cells")
                 label = None
                 if row["action"] != "reject":
                     label = ScorerOutput(
@@ -324,7 +347,8 @@ def read_checks(path: Path) -> dict[str, Check]:
 
 
 def append_check(path: Path, check: Check) -> None:
-    new = not path.exists()
+    _whole(path)
+    new = not path.exists() or not path.stat().st_size
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8", newline="") as handle:
         writer = csv.writer(handle, lineterminator="\n")
