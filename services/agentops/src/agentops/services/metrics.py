@@ -4,7 +4,7 @@ import re
 
 from prometheus_client import Counter, Histogram
 
-from common.metrics import SCORER_FALLBACKS
+from common.metrics import INJECTIONS_BLOCKED, SCORER_FALLBACKS
 
 RUNS = Counter("ideaval_runs_total", "Finished runs", ["workflow", "status"])
 VERDICT_COST = Histogram(
@@ -22,7 +22,7 @@ TOKENS = Counter("ideaval_llm_tokens_total", "Model tokens", ["model", "directio
 CACHE = Counter("ideaval_cache_requests_total", "Cacheable calls (M2-5)", ["cache", "result"])
 FALLBACKS = SCORER_FALLBACKS
 APPROVALS = Counter("ideaval_approvals_total", "Approval events", ["decision"])
-INJECTIONS = Counter("ideaval_injections_blocked_total", "Blocked injections", ["stage"])
+INJECTIONS = INJECTIONS_BLOCKED
 BUDGET_STOPS = Counter("ideaval_budget_stops_total", "Runs stopped by their budget")
 REJECTED = Counter("ideaval_trace_rejected_total", "Trace records rejected as invalid")
 BAD_EVENTS = Counter("ideaval_trace_bad_events_total", "Ops events with an unusable payload")
