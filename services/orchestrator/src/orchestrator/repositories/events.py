@@ -28,5 +28,13 @@ class EventStream:
             pipe.expire(key, TTL_SECONDS)
             await pipe.execute()
 
-    async def exists(self, run_id: str) -> bool:
-        return bool(await self._redis.exists(stream_key(run_id)))
+    async def next_seq(self, run_id: str) -> int:
+        """One after the last stored event, so a resumed run continues the numbering."""
+        last = await self._redis.xrevrange(stream_key(run_id), count=1)
+        if not last:
+            return 0
+        _, fields = last[0]
+        raw = (fields or {}).get(FIELD.encode(), (fields or {}).get(FIELD))
+        if raw is None:
+            raise ValueError(f"unreadable event in {stream_key(run_id)}")
+        return RunEvent.model_validate_json(raw).seq + 1
