@@ -84,11 +84,20 @@ class LocalModel:
             if not isinstance(content, str):
                 raise TypeError("content is not text")
             return LocalReply(
-                content=content,
+                # a lone surrogate cannot be sent on (repair retry, traces)
+                content=content.encode("utf-8", "replace").decode(),
                 tokens_in=max(0, int(usage.get("prompt_tokens") or 0)),
                 tokens_out=max(0, int(usage.get("completion_tokens") or 0)),
             )
         except ServiceError as exc:
             raise LocalModelError(str(exc)) from exc
-        except (KeyError, IndexError, TypeError, ValueError, AttributeError) as exc:
+        except (
+            KeyError,
+            IndexError,
+            TypeError,
+            ValueError,
+            AttributeError,
+            OverflowError,
+            RecursionError,
+        ) as exc:
             raise LocalModelError(f"unexpected reply shape: {type(exc).__name__}") from exc

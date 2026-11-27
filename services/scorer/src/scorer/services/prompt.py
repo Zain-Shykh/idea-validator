@@ -12,10 +12,14 @@ from common.contracts.core import EvidenceItem
 from common.contracts.tools import ChatMessage
 from common.registry import Prompt, RegistryError
 
-# the model's context is 4096 tokens: these bounds leave room for the reply and one repair
+# the model's context is 4096 tokens: these bounds (on the text after escaping) leave room for
+# the reply and one repair in English. Denser scripts can still overflow, which ends in the
+# fallback.
 MAX_EVIDENCE = 12
 MAX_QUOTE_CHARS = 500
-MAX_FEATURE_CHARS = 2000
+MAX_EVIDENCE_CHARS = 4800  # shared by all quotes
+MAX_IDEA_CHARS = 3000
+MAX_FEATURE_CHARS = 1000
 
 # everything before this line is the system message (instructions and rubric)
 _SPLIT = "\n<idea>\n"
@@ -55,15 +59,16 @@ def build_messages(
     prompt: Prompt, rubric: Rubric, request: ScoreRequest, evidence: Sequence[EvidenceItem]
 ) -> list[ChatMessage]:
     features = json.dumps(request.features, sort_keys=True, default=str)
+    quote_chars = min(MAX_QUOTE_CHARS, MAX_EVIDENCE_CHARS // max(1, len(evidence)))
     values = {
         "dimension": rubric.dimension.value,
         "rubric_version": request.rubric_id,
         "rubric": render_rubric(rubric),
-        "idea": _text(f"{request.idea.title}\n{request.idea.text}"),
-        "features": _text(features[:MAX_FEATURE_CHARS]),
+        "idea": _text(f"{request.idea.title}\n{request.idea.text}")[:MAX_IDEA_CHARS],
+        "features": _text(features)[:MAX_FEATURE_CHARS],
         "evidence": "\n".join(
             f'<evidence id="{item.evidence_id}" source="{html.escape(item.source[:80])}">'
-            f"{_text(item.quote[:MAX_QUOTE_CHARS])}</evidence>"
+            f"{_text(item.quote)[:quote_chars]}</evidence>"
             for item in evidence
         ),
     }

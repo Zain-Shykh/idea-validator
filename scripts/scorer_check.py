@@ -78,7 +78,7 @@ async def run(args: argparse.Namespace) -> int:
     else:
         client = httpx.AsyncClient(base_url=args.url, timeout=120)
 
-    latencies, rows, bad = [], [], 0
+    latencies, rows, failed, invalid = [], [], 0, 0
     for current, request in enumerate(load_requests()):
         start = time.perf_counter()
         if client is None:
@@ -87,13 +87,13 @@ async def run(args: argparse.Namespace) -> int:
             response = await client.post("/score", json=request.model_dump(mode="json"))
             if response.status_code != 200:
                 print(f"{current} {request.rubric_id}: HTTP {response.status_code}")
-                bad += 1
+                failed += 1
                 continue
             result = DimensionScore.model_validate_json(response.text)
         seconds = time.perf_counter() - start
         latencies.append(seconds)
         problems = check(request, result)
-        bad += bool(problems)
+        invalid += bool(problems)
         rows.append(result)
         print(
             f"{current} {request.rubric_id:20} score={result.score} conf={result.confidence} "
@@ -111,11 +111,11 @@ async def run(args: argparse.Namespace) -> int:
         ordered = sorted(latencies)
         scored = sum(r.score is not None for r in rows)
         print(
-            f"valid responses {len(rows) - bad}/10, scored {scored},"
+            f"valid responses {len(rows) - invalid}/10, scored {scored},"
             f" models {sorted({r.model for r in rows})}\n"
             f"latency s: p50={statistics.median(ordered):.2f} max={ordered[-1]:.2f}"
         )
-    return 1 if bad or len(rows) != 10 else 0
+    return 1 if failed or invalid or len(rows) != 10 else 0
 
 
 def main() -> int:

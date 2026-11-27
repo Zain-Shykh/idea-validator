@@ -1,8 +1,10 @@
-from typing import Literal
+from typing import Literal, Self
 
-from pydantic import Field
+from pydantic import Field, model_validator
 from pydantic_settings import SettingsConfigDict
 
+from common.contracts.base import NonEmptyStr
+from common.http import SCORER_TIMEOUT
 from common.settings import ServiceSettings
 
 ScorerBackend = Literal["llamacpp", "ollama", "hosted"]
@@ -19,7 +21,7 @@ class ScorerSettings(ServiceSettings):
     # model name in the request; llama.cpp serves one model and ignores it
     local_model: str = "qwen2.5:1.5b"
     # recorded as DimensionScore.model for local scores
-    model_id: str = Field(default="scorer-base@v1", min_length=1)
+    model_id: NonEmptyStr = "scorer-base@v1"
     # one deadline for both local attempts, one for the fallback; the sum stays under the
     # caller's 90 s (§21.4)
     local_timeout_s: float = Field(default=60.0, gt=0)
@@ -29,6 +31,13 @@ class ScorerSettings(ServiceSettings):
     # relative to the repo root for local runs; the image sets the ConfigMap paths
     rubrics_dir: str = "rubrics"
     prompts_dir: str = "prompts"
+
+    @model_validator(mode="after")
+    def _within_the_callers_timeout(self) -> Self:
+        limit = SCORER_TIMEOUT.read or 0
+        if not self.local_timeout_s + self.hosted_timeout_s < limit:
+            raise ValueError(f"the two scorer deadlines must add up to less than {limit:.0f} s")
+        return self
 
     def local_url(self) -> str | None:
         return self.ollama_base_url if self.backend == "ollama" else self.model_url

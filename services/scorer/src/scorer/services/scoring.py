@@ -17,7 +17,7 @@ from common.contracts.agents import Rubric, ScoreRequest, ScorerOutput
 from common.contracts.core import Dimension, DimensionScore, EvidenceItem, TraceKind
 from common.contracts.ops import OpsEvent, ScorerFallbackEvent
 from common.contracts.tools import ChatMessage
-from common.llm import LLMClient, LLMError, strip_fence
+from common.llm import LLMClient, LLMError, describe_errors, strip_fence
 from common.metrics import SCORER_FALLBACKS
 from common.registry import Prompt
 from common.trace import TraceClient
@@ -33,7 +33,7 @@ FAILED_PREFIX = "scoring failed"
 MAX_TOKENS = 300
 HOSTED_MAX_TOKENS = 400
 _REPAIR_ECHO_CHARS = 400
-_ID_IN_TEXT = re.compile(r"card_[A-Za-z0-9]+(?:#c\d+)?")
+_ID_IN_TEXT = re.compile(r"\bcard_[a-z0-9]+(?:#c\d+)?", re.IGNORECASE)
 
 
 class UnknownRubricError(Exception):
@@ -100,7 +100,8 @@ class Scorer:
         with self.tracer.step(AGENT, TraceKind.DECISION, tool="score", run_id=run_id) as step:
             result = await self._score(request, rubric, evidence, messages, run_id)
             step.model = result.model
-            step.output = result.model_dump_json(exclude={"features"})
+            # decision records are printed in full: the model-written reason stays out
+            step.output = result.model_dump_json(exclude={"features", "reason"})
         return result
 
     async def _score(
@@ -158,11 +159,7 @@ class Scorer:
             try:
                 return ModelReply.model_validate_json(strip_fence(reply.content))
             except ValidationError as exc:
-                # location and message only: no model text reaches logs through this
-                problem = "; ".join(
-                    f"{'.'.join(map(str, e['loc'])) or '(root)'}: {e['msg']}"
-                    for e in exc.errors()[:3]
-                )[:300]
+                problem = describe_errors(exc, 3)[:300]  # no model text: this is logged
                 log.warning("invalid local reply (attempt %d): %s", attempt + 1, problem)
                 attempt_messages = [
                     *messages,

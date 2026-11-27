@@ -3,9 +3,10 @@
 Owner: Zain.
 """
 
+import json
 from typing import Any, Literal, Self
 
-from pydantic import Field, model_validator
+from pydantic import Field, field_validator, model_validator
 
 from common.contracts.base import (
     Amount,
@@ -164,6 +165,8 @@ class ScorerResponse(ContractModel):
 
 # --- M10 scoring model, rubrics, fine-tuning ---------------------------------------------------
 
+MAX_FEATURE_DEPTH = 10
+
 
 class ScoreRequest(ContractModel):
     """API-I3: rubric, idea, evidence in; ``DimensionScore`` out."""
@@ -172,6 +175,25 @@ class ScoreRequest(ContractModel):
     idea: IdeaInput
     evidence: list[EvidenceItem]
     features: dict[str, Any] = Field(default_factory=dict)
+
+    @field_validator("features")
+    @classmethod
+    def _plain_json(cls, value: dict[str, Any]) -> dict[str, Any]:
+        """``Any`` is not checked by itself, and these are sent on to a model and echoed back."""
+        if _too_deep(value, MAX_FEATURE_DEPTH):
+            raise ValueError(f"features nest deeper than {MAX_FEATURE_DEPTH} levels")
+        try:
+            json.dumps(value, allow_nan=False, ensure_ascii=False).encode()
+        except (TypeError, ValueError) as exc:  # NaN, a lone surrogate, a non-JSON type
+            raise ValueError("features must be plain JSON") from exc
+        return value
+
+
+def _too_deep(value: object, levels: int) -> bool:
+    if not isinstance(value, dict | list | tuple):
+        return False
+    items = value.values() if isinstance(value, dict) else value
+    return levels == 0 or any(_too_deep(item, levels - 1) for item in items)
 
 
 class ScorerOutput(ContractModel):

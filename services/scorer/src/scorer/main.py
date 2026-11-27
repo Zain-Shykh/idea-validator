@@ -7,6 +7,7 @@ from collections.abc import AsyncIterator
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI
 
 from common.contracts.tools import ChatMessage
@@ -33,7 +34,11 @@ def build_scorer(settings: ScorerSettings, llm: LlmSettings | None = None) -> Sc
         if not url:
             log.error("no model address: set SCORER_MODEL_URL (llamacpp) or OLLAMA_BASE_URL")
             return None
-        local = LocalModel(url, settings.local_model, timeout_s=settings.local_timeout_s)
+        try:
+            local = LocalModel(url, settings.local_model, timeout_s=settings.local_timeout_s)
+        except (httpx.InvalidURL, ValueError):
+            log.error("the model address is not a valid URL")
+            return None
     tracer = TraceClient(settings.agentops_url)
     hosted: LLMClient | None = None
     try:

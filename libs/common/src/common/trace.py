@@ -58,6 +58,17 @@ def _stdout_view(record: TraceRecord) -> TraceRecord:
     )
 
 
+def _encodable(record: TraceRecord) -> TraceRecord:
+    """A lone surrogate (from a model or a page) cannot be encoded: left in, its batch would
+    fail on every delivery and block all later records."""
+    cleaned = {
+        name: value.encode("utf-8", "replace").decode()
+        for name in ("tool", "input", "output", "model", "error")
+        if (value := getattr(record, name)) is not None
+    }
+    return record.model_copy(update=cleaned)
+
+
 @dataclass
 class Step:
     """What the body of ``TraceClient.step()`` can fill in."""
@@ -100,6 +111,7 @@ class TraceClient:
         await self._client.post("/trace", batch)
 
     def emit(self, record: TraceRecord) -> None:
+        record = _encodable(record)
         stream = self._stream or sys.stdout
         try:
             stream.write(_stdout_view(record).model_dump_json() + "\n")
