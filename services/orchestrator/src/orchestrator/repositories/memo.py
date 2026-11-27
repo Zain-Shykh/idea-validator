@@ -24,8 +24,9 @@ class StepMemo:
         try:
             raw = await self._redis.get(key)
             return None if raw is None else model.model_validate_json(raw)
-        except (RedisError, ValueError):  # ValueError: an entry from another contract version
-            log.warning("step memo read failed", exc_info=True)
+        except (RedisError, ValueError) as exc:  # ValueError: from another contract version
+            # not the message: a validation error quotes the entry
+            log.warning("step memo read failed: %s", type(exc).__name__)
             return None
 
     async def put(self, key: str, value: ContractModel) -> None:

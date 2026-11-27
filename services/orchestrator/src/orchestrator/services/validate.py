@@ -78,7 +78,6 @@ from orchestrator.services.run import (
     AGENT,
     RunContext,
     RunFailedError,
-    new_id,
     stored,
 )
 from orchestrator.services.state_machine import Step
@@ -101,6 +100,7 @@ MAX_CONCRETIZE = 3
 MAX_SUGGESTION_CHARS = 300
 MAX_QUERY_CHARS = 2000
 MAX_IDEA_CHARS = 5000
+MAX_QUESTION_CHARS = 200
 DEEP_SEARCH_ACTION = "deep_search"
 CHECK_UNAVAILABLE_PREFIX = "claim check unavailable"
 
@@ -310,6 +310,7 @@ async def _ask_for_deep_search(r: RunContext) -> Step | None:
     estimate = budget.deep_search_estimate(
         settings.deep_search_pages, settings.deep_search_page_cost_usd
     )
+    r.cp.deep_search_pages = estimate.pages
     await r.sync_spend()
     left = budget.remaining(r.cp.spend, r.cp.budget)
     try:
@@ -332,7 +333,8 @@ async def _ask_for_deep_search(r: RunContext) -> Step | None:
         return Step.DEEP_SEARCH
 
     request = ApprovalRequest(
-        approval_id=new_id("appr"),
+        # one deep search per run: asking again after a lost checkpoint is the same approval
+        approval_id=f"appr_{r.run_id.removeprefix('run_')}",
         action=DEEP_SEARCH_ACTION,
         estimated_cost_usd=estimate.cost_usd,
         estimated_pages=estimate.pages,
@@ -340,26 +342,31 @@ async def _ask_for_deep_search(r: RunContext) -> Step | None:
     await stored(r.deps.store.create_approval(ApprovalCreate(run_id=r.run_id, request=request)))
     r.cp.deep_search = "asked"
     r.pause(RunState.AWAITING_APPROVAL, PendingInput(kind="approval", approval=request))
-    r.ops(OpsEvent.APPROVAL, ApprovalEvent(approval_id=request.approval_id, decision="pending"))
+    pending = ApprovalEvent(approval_id=request.approval_id, decision="pending")
     message = (
         f"A deep search will read up to {estimate.pages} pages and cost about "
         f"${estimate.cost_usd:.4f}, which is over this run's budget. Approve?"
     )
     data = {**request.model_dump(), "reason": why}
-    r.after_save.append(
-        lambda: r.emit(
+
+    async def announce() -> None:
+        r.ops(OpsEvent.APPROVAL, pending)
+        await r.emit(
             RunEventType.APPROVAL_REQUIRED, message, agent=AGENT, step=r.cp.step, data=data
         )
-    )
+
+    r.after_save.append(announce)
     return None
 
 
 async def deep_search(r: RunContext) -> Step | None:
     cp = r.cp
     if cp.deep_search == "approved":
-        pages = r.deps.settings.deep_search_pages
+        pages = cp.deep_search_pages
+        # tokens or cost may be used up although the search itself was within budget
+        await r.spend_steps(1)
         cp.deep_search = "started"
-        r.add_spend(steps=1, pages=pages)
+        r.add_spend(pages=pages)
         # stored before the call: after a crash the search is not bought a second time
         await r.save()
         idea = _agent_idea(r)
@@ -576,11 +583,12 @@ async def scoring(r: RunContext) -> Step | None:
                 task.cancel()
             await asyncio.gather(*tasks, return_exceptions=True)
             raise
-        replies = await _only_known_evidence(r, dict(zip(todo, answered, strict=True)))
-        for name, reply in replies.items():
+        raw = dict(zip(todo, answered, strict=True))
+        for name, reply in (await _only_known_evidence(r, raw)).items():
             cp.scorer_results[name] = reply
             key = todo[name][1]
-            if key is not None and trustworthy(r, reply):
+            # a stripped reply would come back from the memo without its degraded mark
+            if key is not None and reply == raw[name] and trustworthy(r, reply):
                 await r.deps.memo.put(key, reply)
         await r.sync_spend()
     return Step.PRELIM_VERDICT
@@ -733,10 +741,12 @@ def affected_scorers(questions: list[CandidateQuestion]) -> set[str]:
 
 
 def with_clarifications(text: str, pairs: list[tuple[str, str]]) -> str:
-    """The idea text with the answers appended. When the whole is too long the old text is
-    cut, not the new answers."""
-    block = "\n\nClarifications:" + "".join(f"\n- {q}\n  {a}" for q, a in pairs)
-    block = block[: MAX_IDEA_CHARS - 1]
+    """The idea text with the answers appended. The answers get at least half of the room
+    when the whole is too long, never more unless the idea is short, in equal shares."""
+    header = "\n\nClarifications:"
+    room = max(MAX_IDEA_CHARS - len(text), MAX_IDEA_CHARS // 2)
+    share = (room - len(header)) // len(pairs)
+    block = header + "".join(f"\n- {q[:MAX_QUESTION_CHARS]}\n  {a}"[:share] for q, a in pairs)
     return text[: MAX_IDEA_CHARS - len(block)] + block
 
 
@@ -944,16 +954,15 @@ async def card(r: RunContext) -> Step | None:
             except ServiceError:
                 reasons = ["the cache is not available"]
         r.decision("cache", {"stored": not reasons, "why_not": reasons})
-    r.ops(
-        OpsEvent.VERDICT,
-        VerdictEvent(
-            idea_id=result.idea_id, version=result.version, verdict=result.verdict,
-            versions=result.versions,
-        ),
-    )  # fmt: skip
     r.set_status(RunState.COMPLETED)
 
+    done = VerdictEvent(
+        idea_id=result.idea_id, version=result.version, verdict=result.verdict,
+        versions=result.versions,
+    )  # fmt: skip
+
     async def announce() -> None:
+        r.ops(OpsEvent.VERDICT, done)
         await r.emit(
             RunEventType.VERDICT, result.verdict.value, agent="verdict", step=Step.CARD,
             data={"verdict": result.model_dump(mode="json", by_alias=True)},

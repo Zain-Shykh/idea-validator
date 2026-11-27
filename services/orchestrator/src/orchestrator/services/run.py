@@ -10,6 +10,7 @@ from collections.abc import Awaitable, Callable, Mapping
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Any
+from weakref import WeakValueDictionary
 
 import httpx
 from redis.exceptions import RedisError
@@ -75,7 +76,8 @@ async def stored[T](call: Awaitable[T]) -> T:
     try:
         return await call
     except ServiceError as exc:
-        raise StoreUnavailableError(exc.summary) from exc
+        # not chained: M2's message may echo the checkpoint, which holds student text
+        raise StoreUnavailableError(exc.summary) from None
 
 
 @dataclass
@@ -91,7 +93,7 @@ class Deps:
     clock: Callable[[], datetime] = lambda: datetime.now(UTC)
     # pause before a repeated scorer call
     retry_wait_s: float = 0.5
-    event_locks: dict[str, asyncio.Lock] = field(default_factory=dict)
+    event_locks: WeakValueDictionary[str, asyncio.Lock] = field(default_factory=WeakValueDictionary)
 
 
 class RunContext:
@@ -101,6 +103,7 @@ class RunContext:
         self.deps = deps
         # events that must only be seen once the state they announce is stored
         self.after_save: list[Callable[[], Awaitable[None]]] = []
+        self.stored_status = cp.status
 
     async def save(self) -> None:
         """Checkpoint to M2 (§6.1)."""
@@ -120,6 +123,10 @@ class RunContext:
                 ),
             )
         )
+        # M13 only hears of states that M2 has
+        if cp.status is not self.stored_status:
+            self.stored_status = cp.status
+            self.ops(OpsEvent.RUN_STATUS, RunStatusEvent(status=cp.status))
 
     # --- events ----------------------------------------------------------------------------
 
@@ -135,7 +142,9 @@ class RunContext:
     ) -> None:
         """Best effort unless ``required``: a run goes on when Redis does not."""
         # parallel scorers must not take the same sequence number
-        lock = self.deps.event_locks.setdefault(self.run_id, asyncio.Lock())
+        lock = self.deps.event_locks.get(self.run_id)
+        if lock is None:
+            self.deps.event_locks[self.run_id] = lock = asyncio.Lock()
         try:
             async with lock:
                 await self.deps.events.append(
@@ -151,10 +160,13 @@ class RunContext:
                         spend=self.cp.spend,
                     )
                 )
-        except (RedisError, ValueError):
+        except (RedisError, ValueError) as exc:
             if required:
                 raise
-            log.error("could not write a run event", exc_info=True, extra={"run_id": self.run_id})
+            log.error(
+                "could not write a run event: %s", exc.__class__.__name__,
+                extra={"run_id": self.run_id},
+            )  # fmt: skip
 
     # --- trace records ---------------------------------------------------------------------
 
@@ -277,7 +289,6 @@ class RunContext:
     def set_status(self, status: RunState) -> None:
         check_run_transition(self.cp.status, status)
         self.cp.status = status
-        self.ops(OpsEvent.RUN_STATUS, RunStatusEvent(status=status))
 
     def pause(self, status: RunState, pending: PendingInput) -> None:
         self.set_status(status)

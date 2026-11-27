@@ -125,6 +125,8 @@ class Checkpoint(ContractModel):
     objections: list[Objection] = Field(default_factory=list)
     clarified: bool = False
     deep_search: DeepSearch = "no"
+    # what the estimate said, and so what is bought, even if the setting changes meanwhile
+    deep_search_pages: Count = 0
     evidence: list[EvidenceItem] = Field(default_factory=list)
     available_hours: Count = 0
     # the idea each scorer was given: unchanged for scorers a clarify answer does not affect

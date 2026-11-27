@@ -11,12 +11,15 @@ process can pick a run up.
 import asyncio
 import contextlib
 import logging
+import traceback
 from typing import Any
+from weakref import WeakValueDictionary
 
 from pydantic import ValidationError
 from redis.exceptions import RedisError
 
 from common import context
+from common.cache_keys import digest
 from common.contracts.core import (
     IdeaInput,
     PendingInput,
@@ -63,6 +66,12 @@ def _conflict(message: str) -> ApiError:
     return ApiError(409, "CONFLICT", message)
 
 
+def _log_crash(what: str, error: BaseException, run_id: str) -> None:
+    """Type and frames only: a message (a validation error's input) can hold student text."""
+    frames = "".join(traceback.format_tb(error.__traceback__))
+    log.error("%s: %s\n%s", what, type(error).__name__, frames, extra={"run_id": run_id})
+
+
 def _checkpoint_of(record: RunRecord) -> Checkpoint:
     try:
         return Checkpoint.model_validate(record.state)
@@ -74,10 +83,14 @@ class Runner:
     def __init__(self, deps: Deps) -> None:
         self.deps = deps
         self.tasks: dict[str, asyncio.Task[None]] = {}
-        self._locks: dict[str, asyncio.Lock] = {}
+        # an entry disappears once nobody holds or waits for the lock
+        self._locks: WeakValueDictionary[str, asyncio.Lock] = WeakValueDictionary()
 
     def _lock(self, run_id: str) -> asyncio.Lock:
-        return self._locks.setdefault(run_id, asyncio.Lock())
+        lock = self._locks.get(run_id)
+        if lock is None:
+            self._locks[run_id] = lock = asyncio.Lock()
+        return lock
 
     # --- reading ---------------------------------------------------------------------------
 
@@ -202,7 +215,8 @@ class Runner:
             return
         r.set_status(RunState.CANCELLED)
         r.cp.pending = None
-        await self._finish(r, "Run cancelled: no reply in time", "WAIT_TIMEOUT")
+        if not await self._finish(r, "Run cancelled: no reply in time", "WAIT_TIMEOUT"):
+            raise _unavailable("the run store")
         raise _conflict("the run was cancelled: it waited too long")
 
     async def approve(self, run_id: str, user_id: str, request: ApproveRequest) -> None:
@@ -231,11 +245,11 @@ class Runner:
                 else:
                     r.cp.deep_search = "declined"
                     r.cp.degrade("deep search declined")
+                await self._continue(r)
                 r.ops(
                     OpsEvent.APPROVAL,
                     ApprovalEvent(approval_id=approval.approval_id, decision=decision),
                 )
-                await self._continue(r)
         finally:
             context.run_id_var.reset(token)
 
@@ -280,7 +294,8 @@ class Runner:
                 IdeaVersionCreate(
                     text=text, origin="clarify", parent_version_id=cp.idea_version_id
                 ),
-                key=f"{r.run_id}:clarify",
+                # the text is part of the key: other answers after a failed save are not a retry
+                key=f"{r.run_id}:clarify:{digest(text)[:16]}",
             )
         except ServiceError as exc:
             raise _unavailable("the idea store") from exc
@@ -344,7 +359,7 @@ class Runner:
                         continue
                     if status in TERMINAL:
                         await self.deps.active.remove(run_id)
-                    elif status not in WAITING and not self._busy(run_id):
+                    elif status not in WAITING and not self._handled(run_id):
                         log.info("resuming run", extra={"run_id": run_id})
                         self._spawn(run_id)
                 if not left:
@@ -359,12 +374,19 @@ class Runner:
         task = self.tasks.get(run_id)
         return task is not None and not task.done()
 
+    def _handled(self, run_id: str) -> bool:
+        """Driven already, or a request holds the run and will start the driver itself."""
+        lock = self._locks.get(run_id)
+        return self._busy(run_id) or (lock is not None and lock.locked())
+
     async def _settle(self, run_id: str) -> None:
         task = self.tasks.get(run_id)
         if task is not None:
             await asyncio.wait({task})
 
     def _spawn(self, run_id: str) -> None:
+        if self._busy(run_id):  # one driver per run
+            return
         task = asyncio.create_task(self._drive(run_id))
         self.tasks[run_id] = task
 
@@ -383,11 +405,11 @@ class Runner:
             await self._steps(r)
         except asyncio.CancelledError:
             raise
-        except (ApiError, StoreUnavailableError):
+        except (ApiError, StoreUnavailableError) as exc:
             # no checkpoint, no progress: the run stays resumable
-            log.error("run paused: the store is unavailable", exc_info=True)
-        except Exception:
-            log.exception("run crashed", extra={"run_id": run_id})
+            log.error("run paused: %s", exc, extra={"run_id": run_id})
+        except Exception as exc:
+            _log_crash("run crashed", exc, run_id)
 
     async def _steps(self, r: RunContext) -> None:
         cp = r.cp
@@ -411,12 +433,9 @@ class Runner:
                 for announce in announcements:
                     await announce()
             if cp.status in TERMINAL:
-                await self._forget(r.run_id)
+                await self.deps.active.remove(r.run_id)
         except StoreUnavailableError:
-            await r.emit(
-                RunEventType.ERROR, "The run store is unavailable; the run can be resumed",
-                data={"code": "STORE_UNAVAILABLE"},
-            )  # fmt: skip
+            await self._paused(r)
             raise
         except BudgetStoppedError as exc:
             await self._stop(
@@ -430,7 +449,7 @@ class Runner:
         if isinstance(error, RunFailedError):
             await self._stop(r, RunState.FAILED, error.code, error.message, error.data)
             return
-        log.error("run failed", exc_info=error, extra={"run_id": r.run_id})
+        _log_crash("run failed", error, r.run_id)
         await self._stop(r, RunState.FAILED, "INTERNAL_ERROR", "Run failed", {})
 
     async def _stop(
@@ -444,23 +463,28 @@ class Runner:
 
     async def _finish(
         self, r: RunContext, message: str, code: str, data: dict[str, Any] | None = None
-    ) -> None:
+    ) -> bool:
+        """Store the end of a run and announce it. False when it could not be stored: then
+        the run is still what M2 says it is, stays resumable and has not ended."""
         r.cp.error_code = code
         try:
             await r.save()
         except StoreUnavailableError:
             log.error("could not store the final state", extra={"run_id": r.run_id})
-        else:
-            await self._forget(r.run_id)
+            await self._paused(r)
+            return False
         await r.emit(
             RunEventType.ERROR, message, step=r.cp.step, data={"code": code, **(data or {})}
         )
         await r.emit(RunEventType.RUN_FINISHED, f"Run {r.cp.status.lower().replace('_', ' ')}")
+        await self.deps.active.remove(r.run_id)
+        return True
 
-    async def _forget(self, run_id: str) -> None:
-        await self.deps.active.remove(run_id)
-        self._locks.pop(run_id, None)
-        self.deps.event_locks.pop(run_id, None)
+    async def _paused(self, r: RunContext) -> None:
+        await r.emit(
+            RunEventType.ERROR, "The run store is unavailable; the run can be resumed",
+            data={"code": "STORE_UNAVAILABLE"},
+        )  # fmt: skip
 
     # --- shutdown --------------------------------------------------------------------------
 

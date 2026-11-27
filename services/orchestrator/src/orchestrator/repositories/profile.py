@@ -20,10 +20,13 @@ from common.contracts.profile import (
     VerdictStore,
     VerdictStored,
 )
+from common.http import ServiceError
 from orchestrator.services.downstream import Peers
 
 
 def _seg(value: str) -> str:
+    if not value.strip("."):  # "." and ".." survive quoting and change the path
+        raise ServiceError("NOT_FOUND", "not an id", 404)
     return quote(value, safe="")
 
 
