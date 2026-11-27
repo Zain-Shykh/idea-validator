@@ -200,13 +200,17 @@ async def niches(r: DiscoverContext) -> DiscoverStep | None:
     gaps = gaps[:MAX_GAPS]
     known = await _known_evidence(r, [i for g in gaps for i in g.evidence_ids[:MAX_GAP_EVIDENCE]])
     usable = {i.evidence_id: i for i in await _usable(r, list(known.values()))}
+    # M7 builds names and statements from scraped text, and they go into a prompt too (ETH-5)
     cp.niches = [
-        NicheContext(niche_id=n.niche_id, name=n.name, trend_label=n.trend_label) for n in chosen
+        NicheContext(niche_id=n.niche_id, name=n.name, trend_label=n.trend_label)
+        for n in chosen
+        if not scan_text(n.name)
     ]
     cp.gaps = [
         GapContext(niche_id=g.niche_id, statement=g.statement, evidence=evidence)
         for g in gaps
-        if (evidence := [usable[i] for i in g.evidence_ids[:MAX_GAP_EVIDENCE] if i in usable])
+        if not scan_text(g.statement)
+        and (evidence := [usable[i] for i in g.evidence_ids[:MAX_GAP_EVIDENCE] if i in usable])
     ]
     r.decision("niches", {"niches": [n.niche_id for n in cp.niches], "gaps": len(cp.gaps)})
     if not cp.gaps:
