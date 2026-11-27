@@ -176,3 +176,30 @@ Coverage target: ≥ 90 % of `services/orchestrator/src`.
 | M2's real API differs from the proposal | all M2 calls are in one file with one protocol |
 | Clarify answers appended to a long idea are cut off by M9's 1200-character bound | recorded as a follow-up for M9 tuning (Z10) |
 | A run takes minutes on the CPU model | scorer limit 600 s, memo, resume |
+
+---
+
+## Part B — Plan
+
+### B1. Task breakdown
+| # | Task | Files | Verification | Done |
+|---|------|-------|--------------|------|
+| 1 | Transition tables, checkpoint, budget arithmetic, rules loader | `services/{state_machine,budget,rules}.py`, `settings.py`, tests | `pytest services/orchestrator/tests/unit/test_state_machine.py` | [ ] |
+| 2 | M2 client, event stream sequence, memo, downstream clients | `repositories/*`, `services/downstream.py` | mypy | [ ] |
+| 3 | Run context, Validate steps, runner | `services/{run,validate,runner}.py` | happy path test | [ ] |
+| 4 | Routes, app wiring, readiness, shutdown; remove the Z1 stub | `api/routes.py`, `main.py` | API and lifecycle tests | [ ] |
+| 5 | Fake stack and workflow tests (budget, clarify, cache, scoring, resume, guard) | `tests/unit/*`, `tests/integration/*` | `pytest services/orchestrator` | [ ] |
+| 6 | Behaviour tests with real M9, M11, M12, M13 and cassettes | `eval/behaviour/test_orchestrator.py`, cassettes | `pytest eval/behaviour` | [ ] |
+| 7 | Image, compose, manifest, `.env.example` | `Dockerfile`, `compose.yaml`, `requirements.txt`, `k8s/base/orchestrator.yaml` | build, container run against fakes, kubeconform | [ ] |
+| 8 | Testing subagent, fixes | tests | full suite | [ ] |
+| 9 | Docs and PR | `docs/**`, README | — | [ ] |
+
+### B2. Commit plan
+1. `docs(spec)`, 2. `docs(plan)`, 3. `feat(orchestrator): state machine, budget and rules`, 4. `feat(orchestrator): validate workflow and run API`, 5. `test(orchestrator): …`, 6. `build(orchestrator): …`, 7. `fix(orchestrator): …` (from the test report), 8. `docs(Z7): …`.
+
+### B3. Definition of Done (phase)
+- [ ] All A4 criteria pass.
+- [ ] ruff, ruff format and mypy clean; coverage target met.
+- [ ] Orchestrator image builds and runs non-root; manifests validate; image removed afterwards.
+- [ ] Checklist, plan, decisions, deviations, AI log updated.
+- [ ] PR opened against `feat/z6-critic-guardrails`; never merged.
