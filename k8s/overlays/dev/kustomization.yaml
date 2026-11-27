@@ -20,6 +20,6 @@ images:
   - name: ghcr.io/zain-shykh/idea-validator-verdict
     newTag: "bedf5d8"
   - name: ghcr.io/zain-shykh/idea-validator-critic
-    newTag: "11276f4"
+    newTag: "854ad34"
   - name: ghcr.io/zain-shykh/idea-validator-agentops
     newTag: "9d8410a"
