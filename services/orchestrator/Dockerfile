@@ -17,4 +17,7 @@ USER 10001
 EXPOSE 8000
 HEALTHCHECK --interval=10s --timeout=3s --start-period=10s \
   CMD ["python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=2)"]
-CMD ["uvicorn", "orchestrator.main:app", "--host", "0.0.0.0", "--port", "8000"]
+# 10 s for open requests; with 5 s to stop run tasks and 8 s of trace flush this fits the 30 s
+# Kubernetes gives (orchestrator.main)
+CMD ["uvicorn", "orchestrator.main:app", "--host", "0.0.0.0", "--port", "8000", \
+     "--timeout-graceful-shutdown", "10"]

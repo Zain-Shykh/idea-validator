@@ -821,7 +821,7 @@ async def challenge(r: RunContext) -> Step | None:
 
 
 async def verdict(r: RunContext) -> Step | None:
-    await _decide(r, r.cp.objections, "verdict")
+    await _decide(r, r.cp.objections, "final_verdict")
     return Step.STABILITY
 
 
