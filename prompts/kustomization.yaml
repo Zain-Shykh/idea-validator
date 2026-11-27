@@ -8,6 +8,7 @@ configMapGenerator:
     files:
       - concretizer.md=concretizer@v1.md
       - critic_check.md=critic_check@v1.md
+      - effort.md=effort@v1.md
       - gap_analyst.md=gap_analyst@v1.md
       - ideator.md=ideator@v1.md
       - intake.md=intake@v1.md
