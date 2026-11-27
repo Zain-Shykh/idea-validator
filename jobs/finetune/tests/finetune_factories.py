@@ -99,6 +99,22 @@ def check(row: Candidate, who: str, score: float = 3.0, action: str = "accept") 
     )
 
 
+def write_dataset(folder: Path, rows: list[Candidate]) -> None:
+    """``all.jsonl`` and ``items.jsonl`` for ``rows``, scores running through 0..5."""
+    from dataset import Item, make_example
+
+    drafts = [draft(r, float((i + i // 6) % 6)) for i, r in enumerate(rows)]
+    write_jsonl(
+        folder / "all.jsonl",
+        [make_example(r.system, r.user, d.label) for r, d in zip(rows, drafts, strict=True)],
+    )
+    keep = set(Item.model_fields) - {"teacher_model", "fake"}
+    write_jsonl(
+        folder / "items.jsonl",
+        [Item(**r.model_dump(include=keep), teacher_model="fake", fake=True) for r in rows],
+    )
+
+
 def write_checks(path: Path, checks: list[Check]) -> None:
     for entry in checks:
         append_check(path, entry)
