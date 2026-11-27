@@ -20,7 +20,7 @@
 | Z7 | M3 Orchestrator: run lifecycle + Validate | In review | [Z7](specs/Z7-orchestrator-validate.md) | [#17](https://github.com/Zain-Shykh/idea-validator/pull/17) | 2026-11-27 15:55 | — |
 | Z8 | M8 Ideation + Discover + challenge / what-if | In review | [Z8](specs/Z8-ideation-discover.md) | [#19](https://github.com/Zain-Shykh/idea-validator/pull/19) | 2026-11-27 | — |
 | Z9 | M10t Fine-tuning pipeline + model comparison | Blocked | [Z9](specs/Z9-finetuning.md) | [#21](https://github.com/Zain-Shykh/idea-validator/pull/21) | 2026-11-27 | — |
-| Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | Not started | — | — | — | — |
+| Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | In progress | — | — | — | — |
 | Z11 | Cluster integration, measurements, end-to-end acceptance | Not started | — | — | — | — |
 | Z12 | Report and submission (shared with Ahmad) | Not started | — | — | — | — |
 
@@ -444,7 +444,7 @@ flowchart LR
 
 ## Z10 — Evaluation harness, behaviour tests, replay, drift, verdict tuning
 
-- **Status:** Not started · **Spec:** `docs/specs/Z10-evaluation-tuning.md` · **Branch:** `feat/z10-evaluation-tuning`
+- **Status:** In progress · **Spec:** `docs/specs/Z10-evaluation-tuning.md` · **Branch:** `feat/z10-evaluation-tuning`
 - **Requirements:** AO-1 (replay), AO-4, AO-5, AO-7, M13-4, M13-5, EVAL-1..4, VE-10, JEN-1 (nightly eval stage content), SUB-2c, SUB-2f, SS-14, SS-15, SS-16
 - **Depends on:** Z8, Z9 (or base scorer), S4 cluster. Shared labelling with Ahmad. **Unblocks:** Jenkins nightly eval (A10), S6.
 
@@ -472,7 +472,7 @@ flowchart LR
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-28 01:40 | Started | Branch `feat/z10-evaluation-tuning` from `feat/z9-finetuning` (unmerged draft PR #21) |
 
 ---
 
