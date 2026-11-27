@@ -45,6 +45,7 @@ pythonpath = [
     "services/verdict/src",
     "services/critic/src",
     "services/agentops/src",
+    "services/verdict/tests/unit",  # test builders (verdict_factories)
 ]
 addopts = "--import-mode=importlib -m 'not integration and not cluster'"
 asyncio_mode = "auto"
