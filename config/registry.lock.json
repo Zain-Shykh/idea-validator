@@ -14,8 +14,8 @@
     "version": "v1"
   },
   "prompt/critic_check": {
-    "sha256": "cb32b3e124c20c78797f14b095052ffc655cf15ea62ac09f87b347da152ae4a8",
-    "version": "v1"
+    "sha256": "dc014703757570937e05f4717b817c82ad5de1d43e06f9c6023231f11b4d37f9",
+    "version": "v2"
   },
   "prompt/effort": {
     "sha256": "91e421a13c9bef929f3c35a7e8d8ca1ce1d5f813f993caae06c76d860ad97ff9",
