@@ -1003,6 +1003,8 @@ flowchart TD
 ```
 
 Precise rules:
+- **Unknown effort (D-006):** with `est_effort_hours` null the feasibility gate is `not_checked`; the risk and duplicate gates still run and can say NO-GO, otherwise the verdict is INSUFFICIENT_EVIDENCE.
+- **Output:** `score` is null for gate-decided and INSUFFICIENT_EVIDENCE verdicts; `scores` are those after challenge penalties (originals in `features.challenge`); what-if refers to them. What-if lists every qualifying (dimension, step), also for a BORDERLINE GO. Least-confident ties use the weakest-dimension tie rule. Comparisons ignore float noise (9 decimals). In VE-16 the competition +20 % and learning −20 % runs flip too and are listed with the feasibility run.
 - **Abstained dimensions:** score treated as `0` in the weighted sum and confidence `0` (abstention lowers confidence → likely INSUFFICIENT EVIDENCE); listed in `missing`.
 - **Floor breach** with score ≥ T_go → PIVOT; floor breach with score < T_no → NO-GO (Fig. 4 order).
 - **Weakest dimension** = lowest score among the six; ties broken by higher weight, then fixed dimension order.

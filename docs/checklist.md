@@ -12,7 +12,7 @@
 | Both | 54 | 0 | 12 |
 | **Total** | **220** | **7** | **17** |
 
-_Last updated: 2026-11-27 (Z0, Z1 in review)._
+_Last updated: 2026-11-27 (Z0, Z1, Z2 in review)._
 
 ## Phase completion
 
@@ -184,11 +184,11 @@ _Last updated: 2026-11-27 (Z0, Z1 in review)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | M11-1 | Fixed rules, plain code, no LLM | Zain | Z2 | |
-| [ ] | M11-2 | Deterministic | Zain | Z2 | |
-| [ ] | M11-3 | Rules in a ConfigMap | Zain | Z2 | |
-| [ ] | M11-4 | Unit tests: every gate, threshold edge, sensitivity, what-if | Zain | Z2 | |
-| [ ] | M11-5 | POST /verdict, /whatif | Zain | Z2 | |
+| [x] | M11-1 | Fixed rules, plain code, no LLM | Zain | Z2 | `test_purity.py` |
+| [x] | M11-2 | Deterministic | Zain | Z2 | `test_properties.py`, `test_edge_cases.py` |
+| [x] | M11-3 | Rules in a ConfigMap | Zain | Z2 | `test_api.py::test_changing_the_file_changes_behaviour`; cluster check, spec Z2 C3 |
+| [x] | M11-4 | Unit tests: every gate, threshold edge, sensitivity, what-if | Zain | Z2 | `services/verdict/tests/unit/` (100 % coverage) |
+| [x] | M11-5 | POST /verdict, /whatif | Zain | Z2 | `test_api.py` |
 
 ## M12 Critic and Guardrails
 
@@ -249,7 +249,7 @@ _Last updated: 2026-11-27 (Z0, Z1 in review)._
 | [ ] | API-I1 | M5 POST /fetch | Ahmad | A2 | |
 | [ ] | API-I2 | M6 POST /search | Ahmad | A4 | |
 | [ ] | API-I3 | M10 POST /score | Zain | Z4 | |
-| [ ] | API-I4 | M11 POST /verdict, /whatif | Zain | Z2 | |
+| [x] | API-I4 | M11 POST /verdict, /whatif | Zain | Z2 | `test_api.py` |
 | [ ] | API-I5 | M12 POST /check | Zain | Z6 | |
 | [ ] | API-I6 | M13 POST /trace, GET /runs/{id}/trace | Zain | Z3 | |
 | [~] | API-I7 | /health, /ready everywhere | Both | Z1, A1 | Z0: `/health`, `/ready` in `create_app`; services in Z1, A1 |
@@ -261,22 +261,22 @@ _Last updated: 2026-11-27 (Z0, Z1 in review)._
 | [ ] | VE-1 | LLM never decides the verdict | Zain | Z2, Z7 | |
 | [ ] | VE-2 | Six dimensions 0–5 + confidence + evidence ids, versioned rubric | Zain | Z3, Z5 | |
 | [ ] | VE-3 | Dimension definitions in rubrics | Zain | Z3 | |
-| [ ] | VE-4a | Evidence gate (≥3 sources, ≥2 platforms) → IE | Zain | Z2 | |
-| [ ] | VE-4b | Feasibility gate → NO-GO with hours gap | Zain | Z2 | |
-| [ ] | VE-4c | Risk gate → NO-GO with blocker named | Zain | Z2 | |
-| [ ] | VE-4d | Duplicate gate (unless Differentiation ≥ 3) → NO-GO with product named | Zain | Z2 | |
-| [ ] | VE-5 | Weighted score Σ w·s / 5, weights sum 100 | Zain | Z2 | |
-| [ ] | VE-6 | Goal weight presets | Zain | Z2 | |
-| [ ] | VE-7 | GO rule (≥ T_go, no floor breach on first five) | Zain | Z2 | |
-| [ ] | VE-8 | PIVOT rule naming weakest dimension | Zain | Z2 | |
-| [ ] | VE-9 | NO-GO below T_no | Zain | Z2 | |
+| [x] | VE-4a | Evidence gate (≥3 sources, ≥2 platforms) → IE | Zain | Z2 | `test_gates.py` |
+| [x] | VE-4b | Feasibility gate → NO-GO with hours gap | Zain | Z2 | `test_gates.py` |
+| [x] | VE-4c | Risk gate → NO-GO with blocker named | Zain | Z2 | `test_gates.py` |
+| [x] | VE-4d | Duplicate gate (unless Differentiation ≥ 3) → NO-GO with product named | Zain | Z2 | `test_gates.py` |
+| [x] | VE-5 | Weighted score Σ w·s / 5, weights sum 100 | Zain | Z2 | `test_worked_example.py`, `test_oracle.py` |
+| [x] | VE-6 | Goal weight presets | Zain | Z2 | `test_config.py` |
+| [x] | VE-7 | GO rule (≥ T_go, no floor breach on first five) | Zain | Z2 | `test_scoring.py` |
+| [x] | VE-8 | PIVOT rule naming weakest dimension | Zain | Z2 | `test_scoring.py` |
+| [x] | VE-9 | NO-GO below T_no | Zain | Z2 | `test_scoring.py` |
 | [ ] | VE-10 | T_go 70, T_no 50, floor 1.5 then tuned | Zain | Z2, Z10 | |
-| [ ] | VE-11 | Confidence formula, < 0.5 → IE | Zain | Z2 | |
+| [x] | VE-11 | Confidence formula, < 0.5 → IE | Zain | Z2 | `test_scoring.py::test_confidence_*` |
 | [ ] | VE-12 | Challenge penalties (−0.5 each, max −1.0, conf −0.1) | Zain | Z2, Z7 | |
-| [ ] | VE-13 | Sensitivity (±20 % weights, ±1 least-confident) → BORDERLINE | Zain | Z2 | |
+| [x] | VE-13 | Sensitivity (±20 % weights, ±1 least-confident) → BORDERLINE | Zain | Z2 | `test_sensitivity.py` |
 | [ ] | VE-14 | What would make this GO (smallest change, re-run → new version) | Zain | Z2, Z8 | |
-| [ ] | VE-15 | Decision order per Fig. 4 | Zain | Z2 | |
-| [ ] | VE-16 | Worked example as unit test | Zain | Z2 | |
+| [x] | VE-15 | Decision order per Fig. 4 | Zain | Z2 | `test_gates.py::test_first_failing_gate_decides` |
+| [x] | VE-16 | Worked example as unit test | Zain | Z2 | `test_worked_example.py`, `test_whatif.py` |
 
 ## Fine-tuning
 
