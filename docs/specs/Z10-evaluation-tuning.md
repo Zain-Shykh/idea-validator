@@ -118,3 +118,28 @@ Coverage target: ≥ 90 % for `jobs/evaluation` and `agentops.replay`.
 | 40 ideas are too few to tune on | CV variance reported; "keep" is the default |
 
 ---
+
+## Part B — Plan
+
+### B1. Task breakdown
+
+| # | Task | Files | Verification | Done |
+|---|------|-------|--------------|------|
+| 1 | Candidate ideas, label formats and validation | `eval/labelled/**`, `jobs/evaluation/labelled.py`, `pyproject.toml` | `test_labelled.py` | [ ] |
+| 2 | Trace what replay needs | `contracts/core.py`, `common/trace.py`, M3 `run.py`, `runner.py`, `validate.py`, schemas | `test_trace.py`, M3 tests | [ ] |
+| 3 | Replay | `agentops/replay.py` | `test_replay.py` | [ ] |
+| 4 | Metrics, behaviour checks, comparison | `eval_metrics.py`, `reports.py` | `test_eval_metrics.py` | [ ] |
+| 5 | `run_eval.py` and `check_eval.sh` | + `scripts/check_eval.sh`, fake fixtures | `test_run_eval.py`, `test_check_eval.py` | [ ] |
+| 6 | `tune.py` | + `verdict.engine` public label function | `test_tune.py` | [ ] |
+| 7 | `eval_runs`, report endpoints, `drift.py` | agentops migration 0002, repository, routes; `drift.py` | `test_api.py`, `test_drift.py`, integration | [ ] |
+| 8 | Four behaviour tests | `eval/behaviour/test_failures.py`, cassettes | pytest | [ ] |
+| 9 | Image, Job, CronJob | `jobs/evaluation/Dockerfile*`, `k8s/base/*.yaml`, overlay tag | packaging tests, kubeconform, docker build | [ ] |
+| 10 | Testing subagent, fixes, docs, draft PR | tests, docs | full suite | [ ] |
+
+### B2. Commit plan
+`docs(spec)`, `docs(plan)`, `feat(eval): candidate ideas and label checks`, `feat(trace): record what replay needs`, `feat(agentops): replay`, `feat(eval): metrics, run_eval, check_eval`, `feat(eval): tuning`, `feat(agentops): eval_runs and drift`, `test(behaviour): four failure cases`, `build(eval): image and manifests`, `fix(...)`, `docs(Z10)`.
+
+### B3. Definition of Done (phase)
+As the template. Criteria 2, 7, 12 and 14 (and the real part of 11) stay open: they need people, the real KB, the UI and the cluster.
+
+---
