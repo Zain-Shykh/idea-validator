@@ -101,3 +101,53 @@ def test_missing_lock_and_invalid_file_fail(tree: Path) -> None:
     (tree / check.LOCK).unlink()
     assert run(tree) == 1
     assert run(tree, "--update") == 0
+
+
+@pytest.mark.parametrize("lock", ["not json", '{"rubric/risk": {}}'])
+def test_unreadable_lock_fails(tree: Path, lock: str) -> None:
+    (tree / check.LOCK).write_text(lock)
+    if lock.startswith("{"):
+        assert run(tree) == 1  # other entries are "not in the lock yet"
+        assert run(tree, "--update") == 1
+    else:
+        assert run(tree) == 1
+
+
+def test_whitespace_and_line_ending_changes_are_noticed(tree: Path) -> None:
+    for name in ("prompts/intake@v1.md", "rubrics/learning.yaml", "config/budgets.yaml"):
+        original = (tree / name).read_bytes()
+        for changed in (original + b"\n", original.replace(b"\n", b"\r\n")):
+            (tree / name).write_bytes(changed)
+            assert run(tree) == 1, name
+            assert run(tree, "--update") == 1, name
+        (tree / name).write_bytes(original)
+    assert run(tree) == 0
+
+
+def test_a_padded_version_number_is_not_a_bump(tree: Path) -> None:
+    edit(tree, "config/budgets.yaml", "max_pages: 20", "max_pages: 25")
+    edit(tree, "config/budgets.yaml", "version: v1", "version: v01")
+    assert run(tree, "--update") == 1
+
+
+@pytest.mark.parametrize("value", ["weights_version: 2", "weights_version: heavy"])
+def test_malformed_weights_version_fails(tree: Path, value: str) -> None:
+    edit(tree, "config/verdict.yaml", "weights_version: w1", value)
+    edit(tree, "config/verdict.yaml", "version: v1 ", "version: v2 ")
+    assert run(tree, "--update") == 1
+
+
+def test_a_new_unrecorded_prompt_and_a_removed_one_fail(tree: Path) -> None:
+    extra = tree / "prompts/extra@v1.md"
+    extra.write_text((tree / "prompts/intake@v1.md").read_text().replace("intake", "extra", 1))
+    assert run(tree) == 1
+    extra.unlink()
+    (tree / "prompts/intake@v1.md").unlink()
+    assert run(tree) == 1
+
+
+def test_a_removed_file_cannot_be_recorded_and_re_added_under_its_old_version(tree: Path) -> None:
+    (tree / "prompts/skeptic@v1.md").unlink()
+    lock = (tree / check.LOCK).read_text()
+    assert run(tree, "--update") == 1
+    assert (tree / check.LOCK).read_text() == lock

@@ -93,3 +93,68 @@ def test_ingest_and_summary_on_postgres(url: URL, tmp_path: Path) -> None:
     assert summary.verdicts_total == 3 and summary.blocked_injections == 4
     assert index.ping()
     index.dispose()
+
+
+def test_hostile_but_accepted_values_never_wedge_postgres(url: URL, tmp_path: Path) -> None:
+    """Anything /trace accepts must be storable, or the client retries a 503 forever."""
+    upgrade(url)
+    index = IndexRepository(url)
+    service = TraceService(TraceFiles(tmp_path), index)
+    base = {"agent": "a \U0001f600", "kind": "decision", "ts": "2099-12-31T23:59:59Z"}
+    surrogate = '{"workflow": "validate", "user_id": "\\ud800"}'
+    nul_versions = json.dumps(
+        {
+            "idea_id": "i",
+            "version": 10**40,
+            "verdict": "GO",
+            "versions": {
+                "engine": "e",
+                "rubrics": "r1",
+                "profile_weights": "w1",
+                "prompts": {"a\u0000": "b"},
+            },
+        }
+    )
+    big_version = nul_versions.replace('"a\\u0000": "b"', '"\\uffff": "' + "x" * 100_000 + '"')
+    records = [
+        base | {"run_id": "r" * 128, "step_id": 2**53, "tool": "run_started", "output": surrogate},
+        base | {"run_id": "nul", "step_id": 1, "tool": "verdict", "output": nul_versions},
+        base | {"run_id": "big", "step_id": 1, "tool": "verdict", "output": big_version},
+        base
+        | {
+            "run_id": "max",
+            "step_id": 1,
+            "kind": "llm_call",
+            "agent": "n" * 10_000,
+            "input": "a\u0000b",
+            "tokens_in": 10**12,
+            "tokens_out": 10**12,
+            "latency_ms": 10**12,
+            "cost_usd": 1e12,
+        },
+        base
+        | {
+            "run_id": "user",
+            "step_id": 1,
+            "tool": "run_started",
+            "output": json.dumps({"workflow": "validate", "user_id": "u'; DROP TABLE x;--‮"}),
+        },
+    ]
+    service.ingest(parse_batch(json.dumps(records).encode()))
+    assert len(index.all()) == 5
+    assert summarise(index.all(), index.all()[0].finished_at).runs_total == 5
+    index.dispose()
+
+
+def test_concurrent_ingest_on_postgres(url: URL, tmp_path: Path) -> None:
+    from concurrent.futures import ThreadPoolExecutor
+
+    upgrade(url)
+    index = IndexRepository(url)
+    service = TraceService(TraceFiles(tmp_path), index)
+    records = thousand_records()
+    batches = [records[start : start + 100] for start in range(0, 1000, 100)]
+    with ThreadPoolExecutor(max_workers=8) as pool:
+        list(pool.map(service.ingest, batches * 2))
+    assert {(row.steps, row.tokens_in) for row in index.all()} == {(100, 1000)}
+    index.dispose()

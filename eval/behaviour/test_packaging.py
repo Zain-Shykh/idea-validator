@@ -162,3 +162,36 @@ def test_registry_files_reach_agentops_through_configmaps() -> None:
     ):
         assert f"AGENTOPS_{variable}_DIR={mounts[volume]}" in dockerfile
     assert all("value" in e or "secretKeyRef" in e["valueFrom"] for e in container["env"])
+
+
+def test_agentops_compose_mounts_match_the_image_and_migrates_first() -> None:
+    """LOC-2: the same folders as in the cluster; the service waits for the migration."""
+    services = docs("services/agentops/compose.yaml")[0]["services"]
+    dockerfile = (ROOT / "services/agentops/Dockerfile").read_text()
+    mounts = dict(v.split(":")[:2] for v in services["agentops"]["volumes"])
+    for source, variable in (
+        ("traces", "TRACES"),
+        ("../../rubrics", "RUBRICS"),
+        ("../../prompts", "PROMPTS"),
+        ("../../config", "CONFIG"),
+    ):
+        assert f"AGENTOPS_{variable}_DIR={mounts[source]}" in dockerfile
+    assert services["agentops-migrate"]["command"] == ["python", "-m", "agentops.migrate"]
+    waits = services["agentops"]["depends_on"]["agentops-migrate"]["condition"]
+    assert waits == "service_completed_successfully"
+
+
+def test_database_password_comes_only_from_a_hand_made_secret() -> None:
+    """GEN-4: no Secret is committed and no manifest holds a literal password."""
+    assert "postgres.yaml" in docs("k8s/overlays/dev/kustomization.yaml")[0]["resources"]
+    assert not [p for p in (ROOT / "k8s").rglob("*.yaml") for d in yaml.safe_load_all(p.read_text())
+                if d and d.get("kind") == "Secret"]  # fmt: skip
+    for path in ("k8s/base/agentops.yaml", "k8s/overlays/dev/postgres.yaml"):
+        pod = docs(path)[0]["spec"]["template"]["spec"]
+        for container in pod.get("initContainers", []) + pod["containers"]:
+            env = {e["name"]: e for e in container["env"]}
+            reference = env["POSTGRES_PASSWORD"]["valueFrom"]["secretKeyRef"]
+            assert reference == {"name": "db", "key": "POSTGRES_PASSWORD"}
+    claim = docs("k8s/base/agentops.yaml")[1]["spec"]
+    assert claim["accessModes"] == ["ReadWriteOnce"]
+    assert claim["resources"]["requests"]["storage"] == "1Gi"
