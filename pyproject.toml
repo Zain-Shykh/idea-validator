@@ -11,7 +11,7 @@ ignore = ["ASYNC109"]  # per-request httpx timeouts are passed as arguments on p
 known-first-party = [
     "common", "orchestrator", "ideation", "validators", "scorer", "verdict", "critic", "agentops",
     "dataset", "build_dataset", "draft_labels", "review", "split", "evaluate",
-    "labelled", "eval_metrics", "reports", "run_eval", "tune", "drift",
+    "labelled", "eval_metrics", "eval_paths", "reports", "run_eval", "tune", "drift",
 ]
 
 [tool.ruff.lint.flake8-bugbear]

@@ -1,10 +1,12 @@
 import json
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
 
 from agentops.main import build_app
+from agentops.repositories.index import IndexRepository
 from agentops.settings import AgentOpsSettings
 from common.contracts.ops import OpsSummary, RegistryResponse, Report
 
@@ -20,8 +22,26 @@ def test_empty_reads_match_contracts(client: TestClient) -> None:
     assert client.get("/runs/run_1/trace").json() == []
     summary = OpsSummary.model_validate_json(client.get("/summary").text)
     assert (summary.runs_total, summary.cost_per_verdict_usd, summary.cache_hit_rate) == (0, 0, 0)
-    for path, kind in (("/drift/latest", "drift"), ("/eval/latest", "eval")):
-        assert Report.model_validate_json(client.get(path).text).kind == kind
+    for path in ("/drift/latest", "/eval/latest"):
+        response = client.get(path)
+        assert (response.status_code, response.json()["error"]["code"]) == (404, "NOT_FOUND")
+
+
+def test_latest_report_of_each_kind(client: TestClient, settings: AgentOpsSettings) -> None:
+    url = settings.db_url()
+    assert url is not None
+    index = IndexRepository(url)
+    now = datetime(2026, 11, 28, 12, 0, tzinfo=UTC)
+    # stored out of order: the newest wins, and each kind has its own
+    for kind, sha, age in (("drift", "new", 0), ("drift", "old", 2), ("eval", "ev", 1)):
+        index.add_report(
+            Report(kind=kind, git_sha=sha, created_at=now - timedelta(days=age),
+                   metrics={"n": age}, path=f"{sha}.json")
+        )  # fmt: skip
+    index.dispose()
+    drift = Report.model_validate_json(client.get("/drift/latest").text)
+    assert (drift.git_sha, drift.metrics, drift.created_at) == ("new", {"n": 0}, now)
+    assert Report.model_validate_json(client.get("/eval/latest").text).path == "ev.json"
 
 
 def test_registry_matches_lock(client: TestClient) -> None:

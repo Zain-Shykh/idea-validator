@@ -24,6 +24,7 @@ from typing import Any
 from pydantic import ValidationError
 
 import eval_metrics
+import eval_paths  # noqa: F401  (must come before the service imports)
 import labelled
 import reports
 from common.contracts.core import Dimension, VerdictLabel, VerdictRequest

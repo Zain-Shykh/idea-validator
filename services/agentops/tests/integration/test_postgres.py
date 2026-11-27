@@ -5,6 +5,7 @@
 import json
 import os
 from collections.abc import Iterator
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
@@ -18,6 +19,7 @@ from agentops.repositories.index import IndexRepository
 from agentops.services.aggregate import summarise
 from agentops.services.ingest import TraceService, parse_batch
 from common.contracts.core import TraceRecord
+from common.contracts.ops import Report
 
 pytestmark = pytest.mark.integration
 
@@ -51,7 +53,7 @@ def tables(url: URL) -> set[str]:
 
 def test_migration_up_down(url: URL) -> None:
     upgrade(url)  # also creates the database
-    assert "traces_index" in tables(url)
+    assert {"traces_index", "eval_runs"} <= tables(url)
     upgrade(url)  # idempotent: the init container runs on every pod start
     downgrade(url)
     assert "traces_index" not in tables(url)
@@ -70,6 +72,20 @@ def test_model_matches_the_migration(url: URL) -> None:
     with engine.connect() as connection:
         assert compare_metadata(MigrationContext.configure(connection), Base.metadata) == []
     engine.dispose()
+
+
+def test_reports_on_postgres(url: URL) -> None:
+    upgrade(url, "0001")
+    upgrade(url)  # an existing database gets eval_runs
+    index = IndexRepository(url)
+    assert index.latest_report("drift") is None
+    older = datetime(2026, 11, 27, tzinfo=UTC)
+    for sha, when in (("b", older.replace(day=28)), ("a", older)):
+        index.add_report(Report(kind="drift", git_sha=sha, created_at=when, metrics={"psi": None}))
+    latest = index.latest_report("drift")
+    assert latest is not None and latest.git_sha == "b" and latest.metrics == {"psi": None}
+    assert latest.created_at == older.replace(day=28) and index.latest_report("eval") is None
+    index.dispose()
 
 
 def test_ingest_and_summary_on_postgres(url: URL, tmp_path: Path) -> None:

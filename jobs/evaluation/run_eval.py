@@ -289,6 +289,7 @@ def main(argv: Sequence[str] | None = None, harness: Harness | None = None) -> i
     parser.add_argument("--out", type=Path, default=reports.RESULTS_DIR)
     parser.add_argument("--compare", type=Path, help="fail when worse than this report")
     parser.add_argument("--results", type=Path, help="compare this report; run nothing")
+    parser.add_argument("--store", action="store_true", help="keep the metrics in eval_runs")
     parser.add_argument("--print-report", action="store_true", help="the report on one line")
     parser.add_argument("--fake", action="store_true", help="the services or labels are made up")
     parser.add_argument("--idea-timeout", type=float, default=900)
@@ -317,7 +318,15 @@ def main(argv: Sequence[str] | None = None, harness: Harness | None = None) -> i
             print(REPORT_LINE + json.dumps(report, sort_keys=True))
         if report["labels"] is None:
             print("no resolved.csv: agreement, confusion matrix and false GO are not measured")
-        return compare_files(report, args.compare) if args.compare else 0
+        stored = True
+        if args.store:
+            try:
+                reports.store(report, path)
+            except reports.OutputError as exc:  # the comparison still has to be made
+                print(f"error: {exc}", file=sys.stderr)
+                stored = False
+        worse = compare_files(report, args.compare) if args.compare else 0
+        return worse or (0 if stored else 2)
     except (labelled.LabelError, reports.OutputError, eval_metrics.ReportError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

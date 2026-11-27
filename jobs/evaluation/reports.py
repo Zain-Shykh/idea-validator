@@ -5,8 +5,16 @@ import os
 import re
 import subprocess
 from collections.abc import Mapping
+from datetime import datetime
 from pathlib import Path
 from typing import Any
+
+from sqlalchemy.exc import SQLAlchemyError
+
+import eval_paths  # noqa: F401  (must come before the service imports)
+from agentops.repositories.index import IndexRepository
+from agentops.settings import AgentOpsSettings
+from common.contracts.ops import Report
 
 ROOT = Path(__file__).resolve().parents[2]
 RESULTS_DIR = ROOT / "eval/results"
@@ -72,3 +80,33 @@ def read_report(path: Path) -> dict[str, Any]:
     if not isinstance(report, dict):
         raise OutputError(f"{path}: not a report")
     return report
+
+
+def database() -> IndexRepository:
+    """The ``ops`` database, from the same environment M13 reads."""
+    url = AgentOpsSettings().db_url()
+    if url is None:
+        raise OutputError("no database configured (POSTGRES_HOST or AGENTOPS_DATABASE_URL)")
+    return IndexRepository(url)
+
+
+def store(report: Mapping[str, Any], path: Path) -> None:
+    """Into ``eval_runs``, where M13 reads the latest one. Fake reports are never stored."""
+    if report["fake"]:
+        raise OutputError("a fake report is not stored in eval_runs")
+    index = database()
+    try:
+        index.add_report(
+            Report(
+                kind=report["kind"],
+                git_sha=report["git_sha"],
+                created_at=datetime.fromisoformat(report["created_at"]),
+                metrics=report["metrics"],
+                path=path.name,
+            )
+        )
+    except SQLAlchemyError as exc:
+        # the type only: database errors quote the values they were given
+        raise OutputError(f"cannot store the report: {type(exc).__name__}") from exc
+    finally:
+        index.dispose()

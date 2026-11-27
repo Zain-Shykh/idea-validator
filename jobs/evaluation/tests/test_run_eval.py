@@ -179,3 +179,17 @@ def test_without_service_urls_the_command_stops(
         monkeypatch.delenv(name, raising=False)
     assert run_eval.main(["--out", str(tmp_path)]) == 2
     assert "ORCHESTRATOR_URL is not set" in capsys.readouterr().err
+
+
+def test_a_report_that_cannot_be_stored_fails_but_is_still_compared(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
+) -> None:
+    folder = labelled_set(tmp_path / "set", ["GO"], count=1)
+    monkeypatch.delenv("AGENTOPS_DATABASE_URL", raising=False)
+    monkeypatch.delenv("POSTGRES_HOST", raising=False)
+    args = ["--labelled", str(folder), "--out", str(tmp_path / "out"), "--fake"]
+    code = run_eval.main([*args, "--store", "--print-report"], harness(Orchestrator(Stack())))
+    printed = capsys.readouterr()
+    assert code == 2 and "fake report is not stored" in printed.err
+    (line,) = [x for x in printed.out.split("\n") if x.startswith(run_eval.REPORT_LINE)]
+    assert json.loads(line.removeprefix(run_eval.REPORT_LINE))["metrics"]["n_ideas"] == 1
