@@ -92,8 +92,15 @@ class Runner:
     async def load(self, run_id: str) -> RunContext:
         return RunContext(run_id, _checkpoint_of(await self._record(run_id)), self.deps)
 
-    async def status(self, run_id: str) -> RunStatus:
-        cp = (await self.load(run_id)).cp
+    async def _owned(self, run_id: str, user_id: str) -> RunContext:
+        """The run, if it is this user's. Another user's run looks like no run at all."""
+        r = await self.load(run_id)
+        if r.cp.user_id != user_id:
+            raise ApiError(404, "NOT_FOUND", "unknown run")
+        return r
+
+    async def status(self, run_id: str, user_id: str) -> RunStatus:
+        cp = (await self._owned(run_id, user_id)).cp
         done = cp.status is RunState.COMPLETED and cp.verdict is not None
         return RunStatus(
             run_id=run_id,
@@ -174,9 +181,11 @@ class Runner:
 
     # --- the student's side ----------------------------------------------------------------
 
-    async def _waiting(self, run_id: str, state: RunState) -> tuple[RunContext, PendingInput]:
-        """The run, if it waits for exactly this. Call with the run's lock held."""
-        r = await self.load(run_id)
+    async def _waiting(
+        self, run_id: str, user_id: str, state: RunState
+    ) -> tuple[RunContext, PendingInput]:
+        """The user's run, if it waits for exactly this. Call with the run's lock held."""
+        r = await self._owned(run_id, user_id)
         if r.cp.status is not state:
             raise _conflict(f"the run is {r.cp.status}, not {state}")
         # the task that paused it may still be sending its last events
@@ -196,11 +205,11 @@ class Runner:
         await self._finish(r, "Run cancelled: no reply in time", "WAIT_TIMEOUT")
         raise _conflict("the run was cancelled: it waited too long")
 
-    async def approve(self, run_id: str, request: ApproveRequest) -> None:
+    async def approve(self, run_id: str, user_id: str, request: ApproveRequest) -> None:
         token = context.run_id_var.set(run_id)
         try:
             async with self._lock(run_id):
-                r, pending = await self._waiting(run_id, RunState.AWAITING_APPROVAL)
+                r, pending = await self._waiting(run_id, user_id, RunState.AWAITING_APPROVAL)
                 approval = pending.approval
                 assert approval is not None
                 if approval.approval_id != request.approval_id:
@@ -230,11 +239,11 @@ class Runner:
         finally:
             context.run_id_var.reset(token)
 
-    async def answer(self, run_id: str, request: AnswerRequest) -> None:
+    async def answer(self, run_id: str, user_id: str, request: AnswerRequest) -> None:
         token = context.run_id_var.set(run_id)
         try:
             async with self._lock(run_id):
-                r, pending = await self._waiting(run_id, RunState.AWAITING_INPUT)
+                r, pending = await self._waiting(run_id, user_id, RunState.AWAITING_INPUT)
                 await self._apply_answers(r, pending, request)
                 await self._continue(r)
         finally:
@@ -304,10 +313,10 @@ class Runner:
         await self.deps.active.add(r.run_id)
         self._spawn(r.run_id)
 
-    async def resume(self, run_id: str) -> None:
+    async def resume(self, run_id: str, user_id: str) -> None:
         """Pick up a run whose process stopped. A waiting run needs its answer instead."""
         async with self._lock(run_id):
-            r = await self.load(run_id)
+            r = await self._owned(run_id, user_id)
             if r.cp.status in TERMINAL:
                 raise _conflict(f"the run is already {r.cp.status}")
             if r.cp.status in WAITING:

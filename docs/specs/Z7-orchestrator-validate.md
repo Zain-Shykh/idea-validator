@@ -65,6 +65,8 @@ Test files are under `services/orchestrator/tests/unit/` unless a path is given.
 | `POST /runs/{id}/resume` | 202 | 404; 409 terminal or waiting for the student |
 | `POST /ideas/{id}/challenge`, `/whatif` | — | 501 until Z8 |
 
+Every `/runs/{id}` endpoint needs the `X-User-Id` header the gateway sets from the token (§21.2): missing → 422, another user's run → 404. On `POST /runs` a header that differs from `user_id` is 403.
+
 No shared contract changes. The checkpoint is private to M3 and travels in `RunUpdate.state`.
 
 **Calls M3 makes to services that do not exist** (paths proposed to Ahmad; bodies are existing contracts):
