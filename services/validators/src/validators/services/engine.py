@@ -217,13 +217,17 @@ class Engine:
     def rubric_id(self, dimension: Dimension) -> str:
         return f"{dimension.value}@v{self.rubrics[dimension].version}"
 
+    @staticmethod
+    def unflagged(evidence: Iterable[EvidenceItem]) -> list[EvidenceItem]:
+        """Drop these before sharing out places, or a planted page takes one from real evidence."""
+        return [item for item in evidence if not scan_text(item.quote, item.source)]
+
     def bounded(self, evidence: Iterable[EvidenceItem]) -> list[EvidenceItem]:
         """What is sent to the model: few, short items (CPU latency, spec Z4 C4), none of them
         flagged as an instruction (ETH-5). The whole quote is scanned, not only what is sent."""
         unique: dict[str, EvidenceItem] = {}
-        for item in evidence:
-            if not scan_text(item.quote, item.source):
-                unique.setdefault(item.evidence_id, item)
+        for item in self.unflagged(evidence):
+            unique.setdefault(item.evidence_id, item)
         return [
             item.model_copy(update={"quote": item.quote[: self.settings.max_quote_chars]})
             for item in list(unique.values())[: self.settings.max_evidence]
