@@ -6,11 +6,11 @@
 | Owner | Zain |
 | Author | Claude Code headless session (`scripts/run-phase.sh`) |
 | Branch | `feat/z0-contracts-common` (parent: `chore/headless-decision-log`, PR #1) |
-| Status | Plan ready |
+| Status | In review |
 | Requirement IDs | GEN-7, GEN-8, GEN-9, DATA-1..8 (schemas), API-I7, API-P8 (metrics helper), M13-1 (client side), AO-1 (propagation), AVOID-2 (cache keys) |
 | Architecture refs | §7.2, §7.3, §8.4, §8.5, §12.1, §12.2, §15, §19–§21 |
 | Depends on | nothing |
-| Issue / PR | filled in Part C |
+| Issue / PR | #2 / see C1 |
 
 ---
 
@@ -140,15 +140,15 @@ All are recorded in `docs/decisions.md` (Z0-*).
 ### B1. Task breakdown
 | # | Task | Files | Verification | Done |
 |---|------|-------|--------------|------|
-| 1 | Package and repo tooling | `libs/common/pyproject.toml`, `src/common/__init__.py`, `py.typed`, root `pyproject.toml`, `.dockerignore` | `pip install -e libs/common`; `ruff check .` | [ ] |
-| 2 | Core and Zain's module contracts | `contracts/{base,core,orchestrator,agents,verdict,ops}.py`, `tests/test_contracts.py` | pytest: Guide examples, invalid variants | [ ] |
-| 3 | Ahmad's placeholders and schema export | `contracts/{kb,analyst,tools,scouts,profile,gateway,export}.py`, `schemas/*.json`, `tests/test_export.py` | `export --check` | [ ] |
-| 4 | Settings, context, cache keys | `settings.py`, `context.py`, `cache_keys.py` + tests | pytest | [ ] |
-| 5 | App bootstrap and HTTP client | `service.py`, `http.py` + tests | pytest (TestClient, respx) | [ ] |
-| 6 | Trace and LLM clients | `trace.py`, `llm.py` + tests | pytest | [ ] |
-| 7 | Fixtures | `eval/fixtures/*`, `tests/test_fixtures.py` | pytest | [ ] |
-| 8 | Independent test pass, fixes | tests, fixes | full suite, ruff, mypy, coverage | [ ] |
-| 9 | Docs and PR | checklist, plan, deviations, architecture §8.4, AI log, README, setup, `.env.example` | review of the diff | [ ] |
+| 1 | Package and repo tooling | `libs/common/pyproject.toml`, `src/common/__init__.py`, `py.typed`, root `pyproject.toml`, `.dockerignore` | `pip install -e libs/common`; `ruff check .` | [x] |
+| 2 | Core and Zain's module contracts | `contracts/{base,core,orchestrator,agents,verdict,ops}.py`, `tests/test_contracts.py` | pytest: Guide examples, invalid variants | [x] |
+| 3 | Ahmad's placeholders and schema export | `contracts/{kb,analyst,tools,scouts,profile,gateway,export}.py`, `schemas/*.json`, `tests/test_export.py` | `export --check` | [x] |
+| 4 | Settings, context, cache keys | `settings.py`, `context.py`, `cache_keys.py` + tests | pytest | [x] |
+| 5 | App bootstrap and HTTP client | `service.py`, `http.py` + tests | pytest (TestClient, respx) | [x] |
+| 6 | Trace and LLM clients | `trace.py`, `llm.py` + tests | pytest | [x] |
+| 7 | Fixtures | `eval/fixtures/*`, `tests/test_fixtures.py` | pytest | [x] |
+| 8 | Independent test pass, fixes | tests, fixes | full suite, ruff, mypy, coverage | [x] |
+| 9 | Docs and PR | checklist, plan, deviations, architecture §8.4, AI log, README, setup, `.env.example` | review of the diff | [x] |
 
 No Dockerfile or manifest in this phase, so no image build or kubeconform.
 
@@ -164,7 +164,64 @@ No Dockerfile or manifest in this phase, so no image build or kubeconform.
 9. `docs(Z0): update spec report, checklist, plan, logs`
 
 ### B3. Definition of Done (phase)
-- [ ] A4 criteria 1–13 pass (14 is a human review).
-- [ ] ruff + mypy clean; coverage ≥ 85 %.
-- [ ] Checklist, plan, deviations, AI-usage log, decision log updated.
-- [ ] PR opened against `chore/headless-decision-log`.
+- [x] A4 criteria 1–13 pass (14 is a human review).
+- [x] ruff + mypy clean; coverage ≥ 85 %.
+- [x] Checklist, plan, deviations, AI-usage log, decision log updated.
+- [x] PR opened against `chore/headless-decision-log`.
+
+---
+
+## Part C — Implementation and test report
+
+### C1. What was built
+Issue #2. PR: against `chore/headless-decision-log` (number in the plan).
+
+| Path | Content |
+|------|---------|
+| `libs/common/pyproject.toml` | installable package; extra `[direct]` for LiteLLM |
+| `src/common/contracts/` | `base`, `core`, `orchestrator`, `agents`, `verdict`, `ops` (Zain); `kb`, `analyst`, `tools`, `scouts`, `profile`, `gateway` (first drafts for Ahmad); `export` |
+| `libs/common/schemas/` | 136 JSON Schema files |
+| `src/common/{context,service,http,trace,llm,cache_keys,settings}.py` | runtime helpers |
+| `pyproject.toml`, `.dockerignore` | ruff, mypy, pytest config; image build context rules |
+| `eval/fixtures/` | 61 cards (3 sources, 1 poisoned), 18 run events, ops summary |
+| `libs/common/tests/` | 161 tests |
+
+### C2. Deviations from spec / architecture
+| What | Why | Logged in deviations.md as |
+|------|-----|---------------------------|
+| Verdict cache key also hashes user id, prompt versions, scorer model | keys collided across users; stale verdicts | D-001 |
+| LLM prompt/reply redacted in stdout trace lines | no prompts in logs | D-002 |
+| `step_id` is not a per-run counter owned by M3 | other services create steps too | D-003 |
+| Criterion 13 ran `mypy libs`, not `mypy libs services` | mypy errors on a directory without Python files; `services/` is empty until Z1 | decision Z0-21 |
+
+A first draft nested `VerdictRequest` inside `WhatIfRequest` and wrapped the `/ingest` body; both were changed to the §7.2 shapes before review (Z0-20), so they are not deviations.
+
+### C3. Test report
+**Testing subagent** (`agent-skills:test-engineer`, test-only changes). Commands: `ruff check .`, `ruff format --check .`, `mypy libs`, `pytest -q`, `pytest libs/common --cov=common`, `python -m common.contracts.export --check`. It added `test_edge_cases.py`; result at hand-back: 146 passed, 6 failed (3 bugs), coverage 99 %. 8 repeated runs showed no flakiness. No docker or kubeconform (nothing to build in Z0).
+
+**Bugs found → fixed** (commit `20d2db2`):
+1. `TraceClient.flush` lost the batch when cancelled during a send (the documented shutdown path).
+2. `direct` backend raised a raw `IndexError` on an empty `choices` list.
+3. `.dockerignore` excluded `.env`, keys and kubeconfig only at the context root.
+
+**Also fixed from its observations:** a batch rejected by M13 (400/413/422) blocked later records; malformed cassette lines raised `KeyError`; two request shapes differed from §7.2.
+
+**Found by the automated security hook during implementation → fixed** (`05266c5`): full prompts on stdout.
+
+**Not fixed** (see C5): a hanging synchronous ready check keeps its worker thread; a wrongly typed value assigned to a `Step` field raises from `step()` and hides the original error (mypy catches such code); `LLMClient()` without a `tracer` writes to stdout only.
+
+**Final run:** 161 passed; `libs/common` coverage 99 % (1427 statements, 6 missed); ruff, format, `mypy libs` clean; schemas up to date; no `localhost` in `libs/common/src`.
+
+**Criteria:** 1–13 pass (1 checked by command in this session; it has no test). 14 (Ahmad reviews `core.py`) is open.
+
+### C4. Measurements
+Test suite about 5 s (13 s with coverage). No service, so no latency or memory figures.
+
+### C5. Follow-ups
+- S1: Ahmad reviews `core.py` and takes over his six contract files. He is not yet a repository collaborator.
+- A0: CI runs `python -m common.contracts.export --check`; use `mypy libs` until Z1, then `mypy libs services`.
+- Z1: every service passes `TraceClient(settings.agentops_url)` to `LLMClient`, runs `run_periodic_flush` and calls `aclose()` in its lifespan.
+- Z3: M13 de-duplicates on `(run_id, step_id)` (delivery is at-least-once) and orders by `ts`, `step_id`.
+- Z3: rubric checks enforce at least one example per score level (DATA-8).
+- Z4 or first real call: verify the `direct` model ids against the live API.
+- Later, if needed: fake services under `common/fakes/`; honour `Retry-After`; guard against piled-up threads from hanging ready checks.

@@ -771,7 +771,7 @@ erDiagram
 ### 8.4 Redis keys (all with TTL)
 | Key | Owner | TTL | Purpose |
 |-----|-------|-----|---------|
-| `cache:verdict:{sha256(idea_text_hash, profile_version, rubric_set, engine_version, weights_version, kb_version)}` | M2 (API) / M3 (key builder in `common`) | 7 d | Verdict cache (M2-4, AVOID-2) |
+| `cache:verdict:{sha256(idea_text_hash, user_id, profile_version, rubric_set, engine_version, weights_version, kb_version, prompt_versions, scorer_model)}` (D-001) | M2 (API) / M3 (key builder in `common`) | 7 d | Verdict cache (M2-4, AVOID-2) |
 | `cache:retrieval:{sha256(query, filters, k, rerank, index_version)}` | M6 | 24 h | Retrieval cache |
 | `cache:step:{step}:{sha256(step inputs)}` | M3 | 24 h | Re-run only what changed (M3-5) |
 | `cache:fetch:{sha256(url)}` | M5 | per connector (1–24 h) | Fetch cache (M5-5) |
@@ -1088,7 +1088,7 @@ flowchart LR
 
 | Capability | Design |
 |-----------|--------|
-| **Tracing (AO-1)** | `TraceRecord` per agent step, tool call, LLM call and orchestrator decision; `run_id` propagated via `X-Run-Id` header; `step_id`/`parent_step` from a per-run counter in M3 (passed as `X-Parent-Step`). Stored as JSONL + index. `GET /runs/{id}/trace` returns the ordered tree. |
+| **Tracing (AO-1)** | `TraceRecord` per agent step, tool call, LLM call and orchestrator decision; `run_id` propagated via `X-Run-Id` header; `step_id` is a time-ordered unique integer from `common.trace`, `parent_step` is passed as `X-Parent-Step` (D-003). Stored as JSONL + index; also one JSON line per record on stdout, where `llm_call` contents are replaced by length + hash (D-002). `GET /runs/{id}/trace` returns the ordered tree. |
 | **Replay (AO-1)** | `python -m agentops.replay <run_id>`: loads the trace, runs the orchestrator state machine with a `ReplayTransport` that answers every tool/LLM call from the recorded output (matched by agent, tool, input hash, order). Diff of decisions printed; non-zero exit if the verdict differs. |
 | **Budgets (AO-2)** | `config/budgets.yaml` (ConfigMap): per workflow `max_tokens`, `max_cost_usd`, `max_pages`, `max_steps`, per-action caps. Enforced in M3 (before each step) and M5 (per fetch / LLM call, using `run_id`). Over budget → approval (if the action is optional) or `BUDGET_STOPPED`. |
 | **Registry (AO-3)** | `prompts/*.md` and `rubrics/*.yaml` with `version` in front-matter; `rubrics/manifest.yaml` defines the rubric set id; M13 `/registry` lists name, version, sha256; CI check fails if a prompt/rubric file changes without a version bump; a version bump requires a new eval run (Jenkins nightly + PR note). |

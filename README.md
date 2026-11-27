@@ -9,7 +9,7 @@ An interactive **multi-agent system that helps a student choose a project**. It 
 
 Semester project for **CS4032 Software Construction and Development** (FAST-NUCES) by **Zain** and **Ahmad**.
 
-**Status:** baseline (architecture, requirements, plans) — implementation in progress. Progress: [`docs/checklist.md`](docs/checklist.md).
+**Status:** shared contracts and `libs/common` (phase Z0) built; services come next. Progress: [`docs/checklist.md`](docs/checklist.md).
 
 ---
 
@@ -50,6 +50,7 @@ flowchart LR
 gh repo clone Zain-Shykh/idea-validator && cd idea-validator
 python3.12 -m venv .venv && source .venv/bin/activate
 pip install -r requirements-dev.txt
+pip install -e libs/common      # shared contracts package
 cp .env.example .env            # add GEMINI_API_KEY, GITHUB_TOKEN, passwords
 
 # 2. Local development (Docker Compose)
@@ -63,6 +64,8 @@ kubectl apply -k k8s/overlays/dev
 kubectl get pods -n idea-validator
 # open http://$(minikube -p idea-validator ip)/
 ```
+
+Checks: `ruff check . && ruff format --check . && mypy libs` (add `services` once it has code) · after a contract change `python -m common.contracts.export`, verified by `--check`.
 
 Tests: `pytest -q` (unit + contract) · `pytest -m integration` (needs `docker compose up -d postgres redis`) · UI: `cd services/ui && npm test`.
 

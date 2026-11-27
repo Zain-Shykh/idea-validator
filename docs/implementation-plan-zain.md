@@ -10,7 +10,7 @@
 
 | Phase | Title | Status | Spec | PR | Started | Completed |
 |-------|-------|--------|------|----|---------|-----------|
-| Z0 | Shared contracts, `libs/common`, repo tooling | In progress | [Z0](specs/Z0-contracts-common.md) | — | 2026-11-27 07:47 | — |
+| Z0 | Shared contracts, `libs/common`, repo tooling | In review | [Z0](specs/Z0-contracts-common.md) | — | 2026-11-27 07:47 | — |
 | Z1 | Walking skeleton of Zain's services | Not started | — | — | — | — |
 | Z2 | M11 Verdict Engine | Not started | — | — | — | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | Not started | — | — | — | — |
@@ -53,7 +53,7 @@ flowchart LR
 
 ## Z0 — Shared contracts, `libs/common`, repo tooling
 
-- **Status:** In progress · **Spec:** `docs/specs/Z0-contracts-common.md` · **Branch:** `feat/z0-contracts-common`
+- **Status:** In review · **Spec:** `docs/specs/Z0-contracts-common.md` · **Branch:** `feat/z0-contracts-common`
 - **Requirements:** GEN-7, GEN-8, GEN-9, DATA-1..8, API-I7, M13-1 (client side), AO-1 (propagation)
 - **Depends on:** nothing. **Unblocks:** everyone (sync **S1**).
 
@@ -78,21 +78,25 @@ flowchart LR
 **Out of scope.** Any service logic; Ahmad's module contracts beyond placeholders.
 
 **Acceptance criteria.**
-- [ ] `pip install -e libs/common` works in `.venv`; `python -c "import common.contracts"` OK.
-- [ ] The Guide's example JSONs (DATA-1..7, copied verbatim into tests) validate against the models; invalid variants (missing evidence ids, score 5.5, confidence 1.2, unknown dimension) are rejected.
-- [ ] `python -m common.contracts.export --check` passes; schemas committed.
-- [ ] `create_app` test: `/health` 200, `/ready` 503 when check fails and 200 when it passes, `/metrics` returns Prometheus text.
-- [ ] `ServiceClient` retries on 503 and timeout (respx), not on 400; propagates `X-Run-Id`.
-- [ ] `TraceClient` emits a valid `TraceRecord` JSON line and batches POSTs.
-- [ ] `LLMClient` fake backend replays a cassette; invalid JSON triggers exactly one repair retry.
-- [ ] `verdict_key` changes when profile version, rubric set, engine version, weights version or kb version changes (unit test).
-- [ ] ruff + mypy clean; coverage of `libs/common` ≥ 85 %.
-- [ ] Ahmad has reviewed `core.py` (S1).
+- [x] `pip install -e libs/common` works in `.venv`; `python -c "import common.contracts"` OK.
+- [x] The Guide's example JSONs (DATA-1..7, copied verbatim into tests) validate against the models; invalid variants (missing evidence ids, score 5.5, confidence 1.2, unknown dimension) are rejected.
+- [x] `python -m common.contracts.export --check` passes; schemas committed.
+- [x] `create_app` test: `/health` 200, `/ready` 503 when check fails and 200 when it passes, `/metrics` returns Prometheus text.
+- [x] `ServiceClient` retries on 503 and timeout (respx), not on 400; propagates `X-Run-Id`.
+- [x] `TraceClient` emits a valid `TraceRecord` JSON line and batches POSTs.
+- [x] `LLMClient` fake backend replays a cassette; invalid JSON triggers exactly one repair retry.
+- [x] `verdict_key` changes when profile version, rubric set, engine version, weights version or kb version changes (unit test).
+- [x] ruff + mypy clean; coverage of `libs/common` ≥ 85 %. *(99 %; `mypy libs` until Z1 adds Python under `services/`)*
+- [ ] Ahmad has reviewed `core.py` (S1). *(pending: Ahmad has not started yet; review in the PR)*
 
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
 | 2026-11-27 07:49 | Phase started | Branch `feat/z0-contracts-common` from `chore/headless-decision-log` (PR #1) |
+| 2026-11-27 07:50 | Spec pushed | `docs/specs/Z0-contracts-common.md` Part A |
+| 2026-11-27 07:51 | Plan pushed | Part B |
+| 2026-11-27 08:00 | Implementation pushed | contracts, helpers, fixtures; 113 tests |
+| 2026-11-27 08:05 | Tests and fixes pushed | testing subagent: 3 bugs fixed; 161 tests, coverage 99 % |
 
 ---
 

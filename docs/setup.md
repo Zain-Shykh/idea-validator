@@ -61,7 +61,8 @@ python3.12 -m venv .venv
 source .venv/bin/activate
 pip install --upgrade pip
 pip install -r requirements-dev.txt
-pip install -e libs/common                      # after Z0 (shared contracts package)
+pip install -e libs/common                      # shared contracts package
+# only for LLM_BACKEND=direct: pip install -e 'libs/common[direct]' (already in requirements-dev.txt)
 ```
 Each new terminal: `source .venv/bin/activate`. VS Code: select `.venv/bin/python` as interpreter.
 
