@@ -277,3 +277,23 @@ def test_validators_get_rubrics_and_prompts_and_one_scorer_slot() -> None:
         assert f"../../{name}:{mounts[name]}:ro" in compose["volumes"]
     assert deployment["replicas"] == 1
     assert {"name": "VALIDATORS_SCORER_CONCURRENCY", "value": "1"} in container["env"]
+
+
+def test_critic_gets_its_prompt_and_budgets_from_configmaps() -> None:
+    """K8S-4: the claim-check prompt and budget rules are mounted where the image looks."""
+    pod = docs("k8s/base/critic.yaml")[0]["spec"]["template"]["spec"]
+    (container,) = pod["containers"]
+    mounts = {m["name"]: m["mountPath"] for m in container["volumeMounts"]}
+    assert all(m["readOnly"] for m in container["volumeMounts"])
+    volumes = {v["name"]: v["configMap"]["name"] for v in pod["volumes"]}
+    assert volumes == {"prompts": "prompts", "budgets": "budgets"}
+    dockerfile = (ROOT / "services/critic/Dockerfile").read_text()
+    budgets = f"{mounts['budgets']}/budgets.yaml"
+    assert f"CRITIC_PROMPTS_DIR={mounts['prompts']}" in dockerfile
+    assert f"CRITIC_BUDGETS_PATH={budgets}" in dockerfile
+    assert "COPY config" not in dockerfile and "COPY prompts" not in dockerfile
+    compose = docs("services/critic/compose.yaml")[0]["services"]["critic"]
+    assert compose["volumes"] == [
+        f"../../prompts:{mounts['prompts']}:ro",
+        f"../../config/budgets.yaml:{budgets}:ro",
+    ]

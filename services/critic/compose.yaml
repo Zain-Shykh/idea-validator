@@ -9,3 +9,12 @@ services:
       - "127.0.0.1:8012:8000"
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # M6 is not built yet: until then /check answers 503 KB_UNAVAILABLE
+      KB_URL: ${KB_URL:-http://kb:8000}
+      # the claim judge needs M5 (TOOLS_URL); without it claims are unverifiable
+      LLM_BACKEND: gateway
+      TOOLS_URL: ${TOOLS_URL:-}
+      AGENTOPS_URL: http://agentops:8000
+    volumes:
+      - ../../prompts:/etc/prompts:ro
+      - ../../config/budgets.yaml:/etc/budgets/budgets.yaml:ro
