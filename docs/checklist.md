@@ -206,8 +206,8 @@ _Last updated: 2026-11-28 (Z0–Z8 in review, Z9 blocked; summary recounted from
 | [x] | M13-1 | Tracing per run (/trace, /runs/{id}/trace) | Zain | Z3 | `services/agentops`, `test_trace.py::test_thousand_records_ten_runs`, `test_postgres.py`; client from Z0 |
 | [x] | M13-2 | Budgets | Zain | Z3, Z7 | Z3 budget file; Z7 enforcement in M3 (`test_budget.py`); M5 enforcement is A2 (AO-2) |
 | [x] | M13-3 | Prompt and rubric registry | Zain | Z3 | `common/registry.py`, `scripts/check_registry.py`, `GET /registry` (`test_check_registry.py`, `test_api.py`); CI wiring proposed for A0 |
-| [ ] | M13-4 | Evaluation harness | Zain | Z10 | |
-| [ ] | M13-5 | Drift reports | Zain | Z10 | |
+| [~] | M13-4 | Evaluation harness | Zain | Z10 | Z10: `jobs/evaluation/run_eval.py`, `tune.py`, eval Job; tested on fakes only: no labels, real KB or cluster run (spec Z10 C6) |
+| [~] | M13-5 | Drift reports | Zain | Z10 | Z10: `drift.py`, CronJob, `eval_runs`, `/drift/latest` (`test_drift.py`, `test_postgres.py`); no report on real data yet |
 | [~] | M13-6 | Dashboard | Both | Z3, A9 | Z3: `GET /summary` (`test_summary.py`); UI page A9 |
 
 ## M14 Platform
@@ -270,7 +270,7 @@ _Last updated: 2026-11-28 (Z0–Z8 in review, Z9 blocked; summary recounted from
 | [x] | VE-7 | GO rule (≥ T_go, no floor breach on first five) | Zain | Z2 | `test_scoring.py` |
 | [x] | VE-8 | PIVOT rule naming weakest dimension | Zain | Z2 | `test_scoring.py` |
 | [x] | VE-9 | NO-GO below T_no | Zain | Z2 | `test_scoring.py` |
-| [ ] | VE-10 | T_go 70, T_no 50, floor 1.5 then tuned | Zain | Z2, Z10 | |
+| [~] | VE-10 | T_go 70, T_no 50, floor 1.5 then tuned | Zain | Z2, Z10 | Z2: starting values in `config/verdict.yaml`; Z10: `tune.py`; **not tuned** (no labels) |
 | [x] | VE-11 | Confidence formula, < 0.5 → IE | Zain | Z2 | `test_scoring.py::test_confidence_*` |
 | [x] | VE-12 | Challenge penalties (−0.5 each, max −1.0, conf −0.1) | Zain | Z2, Z7 | Z2 penalties (`services/verdict/tests/unit/test_challenge.py`); Z7 passes only critic-supported objections (`test_validate.py`); the challenge endpoint is Z8 (API-P6); Z8: a removed claim only changes M11's input (`services/orchestrator/tests/unit/test_challenge.py`) |
 | [x] | VE-13 | Sensitivity (±20 % weights, ±1 least-confident) → BORDERLINE | Zain | Z2 | `test_sensitivity.py` |
@@ -295,21 +295,21 @@ _Last updated: 2026-11-28 (Z0–Z8 in review, Z9 blocked; summary recounted from
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [~] | AO-1 | Tracing under one run id + replay command | Zain | Z3, Z7, Z10 | Z0 client; Z3 storage; Z7: M3 traces every step and decision under the run id; replay Z10 |
+| [x] | AO-1 | Tracing under one run id + replay command | Zain | Z3, Z7, Z10 | Z0 client; Z3 storage; Z7 M3 tracing; Z10 replay (`agentops.replay`, `test_replay.py`, `test_replay_edges.py`; Validate runs, D-022) |
 | [~] | AO-2 | Budgets (tokens, pages, steps, cost) in orchestrator and tool layer | Both | Z7, A2 | Z3 caps; Z7 orchestrator enforcement (`test_budget.py`); tool layer A2 |
-| [~] | AO-3 | Prompt and rubric registry; verdict records versions | Zain | Z3 | Z3: registry + version check; versions on verdicts since Z2; "new evaluation" per bump needs Z10 |
-| [ ] | AO-4 | Evaluation harness (agreement, confusion matrix, behaviour) as K8s Job + nightly Jenkins | Both | Z10, A10 | |
-| [ ] | AO-5 | Drift reports after each ingestion | Zain | Z10 | |
+| [~] | AO-3 | Prompt and rubric registry; verdict records versions | Zain | Z3 | Z3: registry + version check; versions on verdicts since Z2; Z10 gives the evaluation a version bump needs, not run yet |
+| [~] | AO-4 | Evaluation harness (agreement, confusion matrix, behaviour) as K8s Job + nightly Jenkins | Both | Z10, A10 | Z10: harness, behaviour checks, `k8s/base/eval-job.yaml`, `scripts/check_eval.sh` (`test_run_eval.py`, `test_check_eval.py`); not run in a cluster; nightly Jenkins is A10 |
+| [~] | AO-5 | Drift reports after each ingestion | Zain | Z10 | Z10: drift job and endpoint, tested on stand-in data; ingestion (A4) does not exist yet |
 | [~] | AO-6 | Dashboard (cost/verdict, latency/agent, cache hit, fallbacks, approvals, blocked injections) | Both | Z3, A9 | Z3: `/summary` and Prometheus metrics; dashboard page A9 |
-| [~] | AO-7 | Behaviour tests: invalid JSON, tool timeout, empty source, poisoned page | Zain | Z10 | Z6: poisoned page (`test_critic_injection.py`); drift-free full suite is Z10 |
+| [x] | AO-7 | Behaviour tests: invalid JSON, tool timeout, empty source, poisoned page | Zain | Z10 | `eval/behaviour/test_failures.py` (the four cases, sockets refused); cassettes hand-written except `scorer_base.jsonl`; CI wiring is A0 |
 
 ## Verdict tuning and evaluation
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | EVAL-1 | Labelled set (all case types), labelled independently by both | Both | Z10 | |
-| [ ] | EVAL-2 | Confusion matrix vs human verdicts | Zain | Z10 | |
-| [ ] | EVAL-3 | Tuning; false GO on human NO-GO reported separately | Zain | Z10 | |
+| [~] | EVAL-1 | Labelled set (all case types), labelled independently by both | Both | Z10 | Z10: 40 AI-drafted candidates pending review, label format and checks (`test_labelled.py`); **no human labels yet** |
+| [~] | EVAL-2 | Confusion matrix vs human verdicts | Zain | Z10 | Z10: matrix, κ and false GO computed by `run_eval.py` (`test_eval_metrics.py`); no real matrix yet |
+| [~] | EVAL-3 | Tuning; false GO on human NO-GO reported separately | Zain | Z10 | Z10: `tune.py` (`test_tune.py`); nothing tuned yet |
 | [ ] | EVAL-4 | Final values in ConfigMap; before/after matrices; no overfitting | Zain | Z10 | |
 | [ ] | EVAL-5 | Retrieval metrics on ≥ 20 queries + baseline gate | Ahmad | A5 | |
 

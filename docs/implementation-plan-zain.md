@@ -20,7 +20,7 @@
 | Z7 | M3 Orchestrator: run lifecycle + Validate | In review | [Z7](specs/Z7-orchestrator-validate.md) | [#17](https://github.com/Zain-Shykh/idea-validator/pull/17) | 2026-11-27 15:55 | — |
 | Z8 | M8 Ideation + Discover + challenge / what-if | In review | [Z8](specs/Z8-ideation-discover.md) | [#19](https://github.com/Zain-Shykh/idea-validator/pull/19) | 2026-11-27 | — |
 | Z9 | M10t Fine-tuning pipeline + model comparison | Blocked | [Z9](specs/Z9-finetuning.md) | [#21](https://github.com/Zain-Shykh/idea-validator/pull/21) | 2026-11-27 | — |
-| Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | In progress | — | — | — | — |
+| Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | Blocked | — | — | — | — |
 | Z11 | Cluster integration, measurements, end-to-end acceptance | Not started | — | — | — | — |
 | Z12 | Report and submission (shared with Ahmad) | Not started | — | — | — | — |
 
@@ -444,7 +444,7 @@ flowchart LR
 
 ## Z10 — Evaluation harness, behaviour tests, replay, drift, verdict tuning
 
-- **Status:** In progress · **Spec:** `docs/specs/Z10-evaluation-tuning.md` · **Branch:** `feat/z10-evaluation-tuning`
+- **Status:** Blocked (all unblocked code built and tested; waiting for human labels, real M2/M5/M6 services, a Gemini key, the cluster stack and the UI: spec Z10 C6) · **Spec:** `docs/specs/Z10-evaluation-tuning.md` · **Branch:** `feat/z10-evaluation-tuning`
 - **Requirements:** AO-1 (replay), AO-4, AO-5, AO-7, M13-4, M13-5, EVAL-1..4, VE-10, JEN-1 (nightly eval stage content), SUB-2c, SUB-2f, SS-14, SS-15, SS-16
 - **Depends on:** Z8, Z9 (or base scorer), S4 cluster. Shared labelling with Ahmad. **Unblocks:** Jenkins nightly eval (A10), S6.
 
@@ -462,17 +462,22 @@ flowchart LR
 **Deliverables.** `jobs/evaluation/**`, `eval/labelled/**`, `eval/behaviour/**`, `eval/results/baseline.json`, `k8s/base/eval-job.yaml`, `k8s/base/drift-cronjob.yaml`, `scripts/check_eval.sh`.
 
 **Acceptance criteria.**
-- [ ] Labelled set ≥ 40 ideas with all four case types; both members' independent labels + resolution committed.
-- [ ] Before and after confusion matrices produced; false-GO-on-NO-GO reported separately; tuned values in the ConfigMap with justification; CV shows no overfitting (fold variance reported).
-- [ ] The four behaviour tests pass in CI without any model or network.
-- [ ] Replay of a recorded run reproduces the same verdict offline.
-- [ ] Drift report generated after an ingestion run, visible via `/drift/latest` and on the dashboard.
-- [ ] Eval Job runs in the cluster and `check_eval.sh` fails when a metric regresses past tolerance (tested by perturbing the baseline).
+- [ ] Labelled set ≥ 40 ideas with all four case types; both members' independent labels + resolution committed. *(Blocked: 40 AI-drafted candidates await review; no labels.)*
+- [ ] Before and after confusion matrices produced; false-GO-on-NO-GO reported separately; tuned values in the ConfigMap with justification; CV shows no overfitting (fold variance reported). *(Blocked: needs labels and a real run; `tune.py` is ready.)*
+- [ ] The four behaviour tests pass in CI without any model or network. *(They pass offline in the default `pytest` run; no CI workflow exists yet, A0.)*
+- [x] Replay of a recorded run reproduces the same verdict offline.
+- [ ] Drift report generated after an ingestion run, visible via `/drift/latest` and on the dashboard. *(Blocked: no ingestion (A4) or dashboard (A9); job and endpoint tested on stand-in data.)*
+- [ ] Eval Job runs in the cluster and `check_eval.sh` fails when a metric regresses past tolerance (tested by perturbing the baseline). *(Blocked: no cluster stack. `check_eval.sh` failing on a perturbed baseline passes with FAKE fixtures.)*
 
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
 | 2026-11-28 01:40 | Started | Branch `feat/z10-evaluation-tuning` from `feat/z9-finetuning` (unmerged draft PR #21) |
+| 2026-11-28 01:42 | Spec | `docs/specs/Z10-evaluation-tuning.md` Part A |
+| 2026-11-28 01:44 | Plan | Part B |
+| 2026-11-28 03:04 | Implementation | Tasks 1–9 done and pushed; image built, smoke-tested and removed |
+| 2026-11-28 03:04 | Tests | Testing subagent: 6 root causes, all fixed; 2116 passed, 2 skipped; 7 integration tests passed |
+| 2026-11-28 03:04 | Blocked | **No labels, baseline, confusion matrix, tuned value, cluster run or real drift report.** Needs: owner review of the ideas, labels by Zain and Ahmad, M2/M5/M6 (A2, A4, A7), Gemini key, cluster stack, UI (A9). Steps: spec Z10 C6 |
 
 ---
 

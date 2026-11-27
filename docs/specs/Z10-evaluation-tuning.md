@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session |
 | Branch | `feat/z10-evaluation-tuning` (from `feat/z9-finetuning`, draft PR #21) |
-| Status | Plan ready |
+| Status | In review (blocked: see C6) |
 | Requirement IDs | AO-1 (replay), AO-4, AO-5, AO-7, M13-4, M13-5, EVAL-1..4, VE-10, JEN-1 (nightly eval stage content), SUB-2c, SUB-2f, SS-14..16 |
 | Architecture refs | `architecture.md` §8.3, §15, §17.3, §17.4, §18, §21.5 |
 | Depends on | Z7, Z8, Z9. Missing: real M2, M6, M4, M5, M7 (A-phases), Gemini key, fine-tuned model, cluster deployment of Ahmad's services, human labels |
@@ -125,16 +125,16 @@ Coverage target: ≥ 90 % for `jobs/evaluation` and `agentops.replay`.
 
 | # | Task | Files | Verification | Done |
 |---|------|-------|--------------|------|
-| 1 | Candidate ideas, label formats and validation | `eval/labelled/**`, `jobs/evaluation/labelled.py`, `pyproject.toml` | `test_labelled.py` | [ ] |
-| 2 | Trace what replay needs | `contracts/core.py`, `common/trace.py`, M3 `run.py`, `runner.py`, `validate.py`, schemas | `test_trace.py`, M3 tests | [ ] |
-| 3 | Replay | `agentops/replay.py` | `test_replay.py` | [ ] |
-| 4 | Metrics, behaviour checks, comparison | `eval_metrics.py`, `reports.py` | `test_eval_metrics.py` | [ ] |
-| 5 | `run_eval.py` and `check_eval.sh` | + `scripts/check_eval.sh`, fake fixtures | `test_run_eval.py`, `test_check_eval.py` | [ ] |
-| 6 | `tune.py` | + `verdict.engine` public label function | `test_tune.py` | [ ] |
-| 7 | `eval_runs`, report endpoints, `drift.py` | agentops migration 0002, repository, routes; `drift.py` | `test_api.py`, `test_drift.py`, integration | [ ] |
-| 8 | Four behaviour tests | `eval/behaviour/test_failures.py`, cassettes | pytest | [ ] |
-| 9 | Image, Job, CronJob | `jobs/evaluation/Dockerfile*`, `k8s/base/*.yaml`, overlay tag | packaging tests, kubeconform, docker build | [ ] |
-| 10 | Testing subagent, fixes, docs, draft PR | tests, docs | full suite | [ ] |
+| 1 | Candidate ideas, label formats and validation | `eval/labelled/**`, `jobs/evaluation/labelled.py`, `pyproject.toml` | `test_labelled.py` | [x] |
+| 2 | Trace what replay needs | `contracts/core.py`, `common/trace.py`, M3 `run.py`, `runner.py`, `validate.py`, schemas | `test_trace.py`, M3 tests | [x] |
+| 3 | Replay | `agentops/replay.py` | `test_replay.py` | [x] |
+| 4 | Metrics, behaviour checks, comparison | `eval_metrics.py`, `reports.py` | `test_eval_metrics.py` | [x] |
+| 5 | `run_eval.py` and `check_eval.sh` | + `scripts/check_eval.sh`, fake fixtures | `test_run_eval.py`, `test_check_eval.py` | [x] |
+| 6 | `tune.py` | + `verdict.engine` public label function | `test_tune.py` | [x] |
+| 7 | `eval_runs`, report endpoints, `drift.py` | agentops migration 0002, repository, routes; `drift.py` | `test_api.py`, `test_drift.py`, integration | [x] |
+| 8 | Four behaviour tests | `eval/behaviour/test_failures.py`, cassettes | pytest | [x] |
+| 9 | Image, Job, CronJob | `jobs/evaluation/Dockerfile*`, `k8s/base/*.yaml`, overlay tag | packaging tests, kubeconform, docker build | [x] |
+| 10 | Testing subagent, fixes, docs, draft PR | tests, docs | full suite | [x] |
 
 ### B2. Commit plan
 `docs(spec)`, `docs(plan)`, `feat(eval): candidate ideas and label checks`, `feat(trace): record what replay needs`, `feat(agentops): replay`, `feat(eval): metrics, run_eval, check_eval`, `feat(eval): tuning`, `feat(agentops): eval_runs and drift`, `test(behaviour): four failure cases`, `build(eval): image and manifests`, `fix(...)`, `docs(Z10)`.
@@ -143,3 +143,79 @@ Coverage target: ≥ 90 % for `jobs/evaluation` and `agentops.replay`.
 As the template. Criteria 2, 7, 12 and 14 (and the real part of 11) stay open: they need people, the real KB, the UI and the cluster.
 
 ---
+
+## Part C — Implementation and test report
+
+> **The phase is partly blocked. There are no results:** no human label, no baseline, no confusion
+> matrix, no tuned value, no cluster run and no drift report on real data. `config/` is unchanged.
+> Every number produced by tests comes from fakes. The 40 ideas are AI drafts the owner has not
+> reviewed.
+
+### C1. What was built
+| Part | Files |
+|------|-------|
+| 40 candidate ideas with profiles, intended case types kept apart, labelling rules, label checks with inter-rater κ | `eval/labelled/**`, `jobs/evaluation/labelled.py` |
+| Evaluation run: matrix, agreement, κ, false GO on NO-GO, behaviour checks, baseline comparison, fake guard | `run_eval.py`, `eval_metrics.py`, `reports.py` |
+| Tuning: ~2,300 rule candidates replayed through the real M11, 5-fold CV, before/after matrices, never edits the rules | `tune.py`, `verdict.engine.label_only` |
+| Replay of a Validate run from its trace; `TraceRecord.reply` and the input records M3 now writes | `agentops/replay.py`, `common/trace.py`, M3 |
+| Four behaviour tests with sockets refused | `eval/behaviour/test_failures.py` |
+| Drift report, `eval_runs` (migration 0002), real `/drift/latest` and `/eval/latest` | `drift.py`, `agentops/**` |
+| Evaluation image, eval Job, drift CronJob, regression gate | `jobs/evaluation/Dockerfile*`, `k8s/base/{eval-job,drift-cronjob}.yaml`, `scripts/check_eval.sh` |
+| M9 fix: planted pages no longer take evidence places (Z10-19) | `validators/services/engine.py`, `scorers/competition.py` |
+
+Commands: [`jobs/evaluation/README.md`](../../jobs/evaluation/README.md).
+
+**Acceptance (A4).** Met by tests: 1, 3, 4, 5, 6, 8 (offline in the default `pytest` run; there is no CI workflow yet), 9, 10, 11 (the code), 13 (manifests and Dockerfile by tests; image build and non-root run by hand). **Open:** 2, 7, 12, 14.
+
+### C2. Deviations from spec / architecture
+| What | Why | Logged in deviations.md as |
+|------|-----|---------------------------|
+| Replay needs full replies in the trace; M11 decides again; Validate runs only | summaries cannot drive M3 | D-022 |
+| Drift reads `ops`, jobs write `eval_runs` directly, report endpoints answer 404 when empty, daily CronJob | no M2 endpoint, no ingestion job | D-023 |
+| "Tool timeout → retry → abstain" differs per tool | D-010; an outage is not "no evidence" | D-024 |
+
+Against Part A: answer safety checks are traced as `answer_rail` (Z10-22); the evidence scan is not an expected tool; `check_eval.sh` also saves the Job's report.
+
+### C3. Test report
+**Testing subagent** (`agent-skills:test-engineer`, test files only). Before its tests: 253 passed in the new areas. With them: 768 passed and **17 failed on purpose** (`jobs/evaluation`, `agentops`, `libs/common`, `eval/behaviour`); `orchestrator`, `validators`, `verdict` 905 passed; 6 Postgres integration tests passed; ruff, mypy and kubeconform clean. Coverage (tests omitted) 98 % over the measured packages: `jobs/evaluation` modules 83–98 % (`eval_paths` 83 %, 6 lines; `reports` 90 %), `replay.py` 93 %. Mutants (the Z10-19 bug restored, redaction off, memo replay off, fake guard off, eval users counted in drift) were each caught. With the guard removed for a mutant, guard tests wrote four `FAKE-*` files into `eval/results/`; the agent deleted them, and those tests now point the results folder at a temporary one.
+
+| # | Bug | Fix (commit `fix(eval): z10 test report`) |
+|---|-----|-----|
+| 1 | `check_eval.sh` returned 1 ("regression") for kubectl and usage errors | `ERR` trap → 2, explicit usage check; a crash of `run_eval` is 2 |
+| 2 | Replay reported a difference after a refused or unstored clarify answer | `answer_rail` trace name; latest identical attempt wins |
+| 3 | A run failed by one of four parallel scorers did not replay | cancelled calls stay unanswered until replay cancels them |
+| 4 | A damaged trace crashed replay with exit 1 | `ReplayError`; any crash is 2 |
+| 5 | A hostile trace reply ended the whole evaluation; an oversized CSV field escaped as `csv.Error` | an entry with `error`; `LabelError` |
+| 6 | `tune.py` traceback on broken YAML | exit 2 |
+
+Its observations also led to: a fake report from a Job log is not saved, and an unusable baseline is rejected before any run.
+
+**Final, after the fixes:** `pytest -q` 2116 passed, 2 skipped, 7 deselected (5 min 47 s); `pytest -m integration` 7 passed (Postgres and Redis from compose); `ruff check`, `ruff format --check`, `mypy libs services jobs/finetune jobs/evaluation` clean; `check_registry.py` and schema export current; dev overlay 28/28 and `eval-job.yaml` valid in kubeconform. Coverage was not re-measured after the fixes.
+
+**By hand:** image `idea-validator-evaluation` built (275 MB), runs as uid 10001; with `--network none` and a read-only root filesystem it replayed a run recorded on the fake stack (one with a refused then an accepted answer: same verdict); the drift job in the image, against compose Postgres and a stand-in `/stats` server, stored a report that `/drift/latest` returned. Both images were then removed and the build cache pruned; the overlay tag `870ed03` has to be built and loaded again. The minikube profile was never started; the compose services were stopped.
+
+**Open from the testing report (accepted):** fake detection relies on `--fake` or a `tests/`/`fixtures/` path, so made-up services used without the flag count as real; a run resumed after a crash holds repeated calls and replays with exit 1.
+
+### C4. Measurements
+None of the product (no real run). Tooling only: tuning the full grid on 20 made-up ideas took under a minute in one test; the image is 275 MB.
+
+### C5. Follow-ups
+- M9: a flagged card is withheld from the model but still counts in the competitor features, the facts line and the duplicate check (Z10-19).
+- Replay a whole Discover run; replay crash-resumed runs.
+- The build-effort keyword tables (`common/idea_rules.py`, comment "tuned in Z10") and the confidence minimum are not tuned: do it with real labels if the matrices point there.
+- Dashboard page: show drift, and treat 404 as "no report yet" (A9).
+- **Proposals for Ahmad** (his files are not edited): build and push the evaluation image in CI and Jenkins (`jobs/evaluation/Dockerfile`, build arg `GIT_SHA`); Jenkins nightly stage `IMAGE_TAG=<sha> scripts/check_eval.sh`, archiving `eval/results/eval-<sha>.json`; run the behaviour tests (part of `pytest`) in `pr-checks`; M2 `POST /internal/ideas` with idempotency (A7); eval and drift pods are `tier=backend` for the NetworkPolicies; trigger `drift-report` at the end of ingestion; review the new overlay image line.
+
+### C6. Owner runbook (what unblocks the phase)
+1. **Review the ideas** in `eval/labelled/ideas.jsonl`: edit or replace, set `owner_review` to `accepted` or `edited`, commit. Do this **before** labelling and before Z9's `split.py` (spec Z9 C6).
+2. **Label independently.** Zain writes `labels_zain.csv`, Ahmad `labels_ahmad.csv` (header `idea_id,verdict,note`), neither opening `case_types.csv`, the other's file or any system output.
+3. `python jobs/evaluation/labelled.py`; resolve disagreements in `resolved.csv` (`idea_id,verdict,labelled_by,resolution`) until it exits 0. Commit all three files.
+4. **Deploy** the real stack (needs A2, A4 with ≥ 1,500 cards, A7; Gemini key in Secret `api-keys`; Secret `db`). Build and load the evaluation image (`jobs/evaluation/README.md`), set its tag in the dev overlay, `kubectl apply -k k8s/overlays/dev`. For the fine-tuned scorer, finish Z9 C6 first, and set `SCORER_MODEL_ID` on the orchestrator accordingly.
+5. **First evaluation** (there is no baseline yet, so not through `check_eval.sh`): port-forward `orchestrator`, `profile` and `agentops`, export `ORCHESTRATOR_URL`, `PROFILE_URL`, `AGENTOPS_URL`, run `python jobs/evaluation/run_eval.py`. This is the **before** matrix. Check `errors` is 0 and read the behaviour metrics; mind the free-tier limits (40 runs).
+6. **Tune:** `python jobs/evaluation/tune.py --results eval/results/eval-<sha>.json`. Read `tune-<sha>.md`: false GOs, fold standard deviation, train/test gap. Commit both files.
+7. If it says `adopt` (otherwise keep the values and record why): edit `config/verdict.yaml`, bump `version` (and `weights_version` if weights moved), add the justification to `docs/decisions.md`, `python scripts/check_registry.py --update`, run `pytest` (tests built on the worked example's values may need the new ones), redeploy, repeat step 5. That is the **after** matrix of the real system.
+8. **Baseline:** `cp eval/results/eval-<sha>.json eval/results/baseline.json` (the run with the committed rules), commit.
+9. **Cluster Job:** `IMAGE_TAG=<sha> scripts/check_eval.sh` → exit 0. Then perturb a **copy** of the baseline (raise `agreement` by 0.2), run with `--baseline <copy>` → exit 1. Save both outputs in `docs/evidence/`.
+10. **Drift:** after an ingestion, `kubectl -n idea-validator create job drift-now --from=cronjob/drift-report`; `curl` agentops `/drift/latest`; copy the JSON to `eval/results/`; screenshot SS-16 (and the dashboard once A9 exists).
+11. **Replay a real run** (command in `jobs/evaluation/README.md`) → exit 0; screenshot the trace (SS-14).
+12. Tick EVAL-1..4, VE-10, AO-4, AO-5, M13-4, M13-5 and the plan's criteria; set Z10 to Done.
