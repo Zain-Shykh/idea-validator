@@ -160,3 +160,29 @@ Coverage target: ≥ 90 % of `services/orchestrator/src` and `services/ideation/
 | The duplicate threshold means something else on real retrieval scores | `ORCH_DUPLICATE_SIMILARITY` knob; tune in Z10 |
 | The 40 h lowest band drops every idea for very small time budgets | intended (M11 would say NO-GO); the result says why |
 | Discover exceeds `max_steps` 80 with 5 children | partial result with names of ideas not validated; tune in Z11 |
+
+---
+
+## Part B — Plan
+
+### B1. Task breakdown
+| # | Task | Files | Verification | Done |
+|---|------|-------|--------------|------|
+| 1 | Idea text sections and shared idea rules; use them in M3, M9, M10 (Z7 follow-up) | `common/{idea_text,idea_rules}.py`, `validators/services/{engine,features}.py`, `scorer/services/prompt.py`, `orchestrator/services/validate.py` | `pytest libs/common services/validators services/scorer services/orchestrator` | [ ] |
+| 2 | Real M8 agents, `gap_analyst@v2`, app and settings | `services/ideation/**`, `prompts/`, `config/registry.lock.json` | `pytest services/ideation`; `python scripts/check_registry.py` | [ ] |
+| 3 | Discover: state machine, checkpoint, downstream calls, steps, child runs, shared budget, ranking | `orchestrator/**` | `pytest services/orchestrator` | [ ] |
+| 4 | Challenge and what-if | `orchestrator/services/revise.py`, routes | `test_challenge.py`, `test_whatif.py` | [ ] |
+| 5 | Behaviour tests with real M8, M9, M11, M12 and cassettes | `eval/behaviour/test_discover.py`, cassettes | `pytest eval/behaviour` | [ ] |
+| 6 | Packaging: images, compose, manifests, `.env.example` | `services/{ideation,orchestrator}`, `k8s/base`, dev overlay | build, run, kubeconform; images removed | [ ] |
+| 7 | Testing subagent, fixes | tests | full suite | [ ] |
+| 8 | Docs, issue, PR | `docs/**`, README | — | [ ] |
+
+### B2. Commit plan
+1. `docs(spec)`, 2. `docs(plan)`, 3. `fix(common): keep appended answers when idea text is shortened`, 4. `feat(ideation): …`, 5. `feat(orchestrator): discover workflow`, 6. `feat(orchestrator): challenge and what-if`, 7. `test: behaviour …`, 8. `build: …`, 9. `fix: …` (test report), 10. `docs(Z8): …`. Push after every task.
+
+### B3. Definition of Done (phase)
+- [ ] All A4 criteria pass.
+- [ ] ruff, ruff format and mypy clean; coverage target met.
+- [ ] Changed images build, run non-root and are removed; manifests validate.
+- [ ] Checklist, plan, decisions, deviations, AI log updated.
+- [ ] PR opened against `feat/z7-orchestrator-validate`; never merged.
