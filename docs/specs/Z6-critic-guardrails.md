@@ -136,3 +136,30 @@ Coverage target: ≥ 80 % of `critic` and ≥ 85 % of `common`.
 | Rules flag honest text | Rules need an instruction-like shape; clean fixtures are tested; tune in Z10 |
 | Name rule misses lower-case or sentence-start names | The prompt also requires named products to be in the quotes; documented ceiling |
 | Name rule rejects a true claim | Fails safe (claim not accepted); tune in Z10 |
+
+---
+
+## Part B — Plan
+
+### B1. Task breakdown
+| # | Task | Files | Verification | Done |
+|---|------|-------|--------------|------|
+| 1 | Injection rules, shared counters, list limits | `libs/common/src/common/{injection,metrics}.py`, `contracts/agents.py`, schemas, `agentops/services/metrics.py`, `libs/common/tests/` | `pytest libs services/agentops` | [ ] |
+| 2 | M9 withholds flagged passages | `validators/services/engine.py` | `pytest services/validators` | [ ] |
+| 3 | Prompt `critic_check@v2` and registry lock | `prompts/`, `config/registry.lock.json` | `python scripts/check_registry.py` | [ ] |
+| 4 | Names, judge, check pipeline | `critic/services/{names,judge,check}.py` | `test_names.py`, `test_check.py` | [ ] |
+| 5 | Rail, policy, API, settings, app | `critic/{main,settings}.py`, `api/routes.py`, `services/{rail,policy}.py` | `test_rail.py`, `test_policy.py`, `test_api.py` | [ ] |
+| 6 | Poisoned fixtures, cassettes, behaviour tests | `eval/fixtures/poisoned_cards.jsonl`, `eval/behaviour/` | `pytest eval/behaviour` | [ ] |
+| 7 | Image, compose, manifest, packaging test, env names | `services/critic/{Dockerfile,compose.yaml,requirements.txt}`, `k8s/base/critic.yaml`, overlay tag, `.env.example` | docker build, container smoke, kubeconform | [ ] |
+| 8 | Testing subagent, fixes | tests | full suite, ruff, mypy | [ ] |
+| 9 | Docs, issue, PR | `docs/` | — | [ ] |
+
+### B2. Commit plan
+1. `docs(spec): add Z6 spec` 2. `docs(plan): add Z6 plan` 3. `feat(common): injection rules` 4. `feat(validators): withhold flagged passages` 5. `feat(critic): claim check, rails, scan, approval policy` 6. `test(critic): behaviour tests and poisoned fixtures` 7. `feat(critic): image, compose and manifest` 8. `fix(...)`/`test(...)` from the test report 9. `docs(Z6): update spec report, checklist, plan, logs`
+
+### B3. Definition of Done (phase)
+- [ ] All A4 criteria pass.
+- [ ] ruff + mypy clean; coverage target met.
+- [ ] Critic image builds, non-root; manifests validate.
+- [ ] Checklist, plan, deviations, AI-usage log updated.
+- [ ] PR opened against `feat/z5-validators`.
