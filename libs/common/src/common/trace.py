@@ -2,9 +2,13 @@
 
 Every record is written to stdout as one JSON line (K8S-12) and, when ``AGENTOPS_URL`` is set,
 POSTed to M13 in batches. Tracing never makes the traced call fail.
+
+Prompts and model replies never reach stdout (container logs are widely readable): the line of
+an ``llm_call`` carries only their length and hash; the full record goes to M13 (replay, AO-1).
 """
 
 import asyncio
+import hashlib
 import logging
 import secrets
 import sys
@@ -28,6 +32,20 @@ log = logging.getLogger("common.trace")
 def new_step_id() -> int:
     """Time-ordered and unique across pods without a shared counter; below 2**53 for the UI."""
     return (time.time_ns() // 1_000_000) * 4096 + secrets.randbelow(4096)
+
+
+def _digest(text: str | None) -> str | None:
+    if text is None:
+        return None
+    return f"[redacted chars={len(text)} sha256={hashlib.sha256(text.encode()).hexdigest()[:16]}]"
+
+
+def _stdout_view(record: TraceRecord) -> TraceRecord:
+    if record.kind is not TraceKind.LLM_CALL:
+        return record
+    return record.model_copy(
+        update={"input": _digest(record.input), "output": _digest(record.output)}
+    )
 
 
 @dataclass
@@ -60,7 +78,7 @@ class TraceClient:
         self._client = ServiceClient(agentops_url, retries=1) if agentops_url else None
         self._sink = sink or (self._post if self._client else None)
         self._batch_size = batch_size
-        # ponytail: bounded in memory, oldest dropped when M13 stays down; stdout keeps all
+        # ponytail: bounded in memory, oldest dropped when M13 stays down
         self._buffer: deque[TraceRecord] = deque(maxlen=max_buffer)
         self._stream = stream
         self._clock = clock
@@ -74,7 +92,7 @@ class TraceClient:
     def emit(self, record: TraceRecord) -> None:
         stream = self._stream or sys.stdout
         try:
-            stream.write(record.model_dump_json() + "\n")
+            stream.write(_stdout_view(record).model_dump_json() + "\n")
             stream.flush()
         except (OSError, ValueError):
             log.warning("could not write trace line", exc_info=True)

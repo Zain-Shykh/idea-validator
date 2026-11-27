@@ -9,6 +9,7 @@ import pytest
 import respx
 from pydantic import BaseModel
 
+from common.contracts.core import TraceRecord
 from common.contracts.tools import ChatMessage
 from common.http import ServiceClient
 from common.llm import (
@@ -30,11 +31,13 @@ GOOD = '{"score": 3}'
 MESSAGES = [ChatMessage(role="user", content="score it")]
 
 
-def fake_client(*replies: str, out: io.StringIO | None = None) -> LLMClient:
+def fake_client(
+    *replies: str, out: io.StringIO | None = None, sink: Any = None
+) -> LLMClient:
     return LLMClient(
         LlmSettings(backend="fake"),
         cassette=Cassette([{"content": r, "tokens_in": 10, "tokens_out": 2} for r in replies]),
-        tracer=TraceClient(stream=out or io.StringIO()),
+        tracer=TraceClient(sink=sink, stream=out or io.StringIO()),
     )
 
 
@@ -67,13 +70,24 @@ async def test_fenced_json_is_accepted() -> None:
 
 async def test_invalid_json_one_repair_retry() -> None:
     out = io.StringIO()
-    result = await ask(fake_client("Sure! three", GOOD, GOOD, out=out), prompt_version="t@v1")
+    sent: list[TraceRecord] = []
+
+    async def sink(batch: list[TraceRecord]) -> None:
+        sent.extend(batch)
+
+    client = fake_client("Sure! three", GOOD, GOOD, out=out, sink=sink)
+    result = await ask(client, prompt_version="t@v1")
+    await client._tracer.flush()
     assert (result.data, result.repaired) == (Answer(score=3), True)
     assert (result.tokens_in, result.tokens_out) == (20, 4)
     records = [json.loads(line) for line in out.getvalue().splitlines()]
     assert [r["retries"] for r in records] == [0, 1]
     assert {(r["kind"], r["prompt_version"]) for r in records} == {("llm_call", "t@v1")}
-    repair_prompt = json.loads(records[1]["input"])
+    # prompts and replies go to M13 only, never to container logs
+    assert "score it" not in out.getvalue() and "Sure! three" not in out.getvalue()
+    assert records[0]["input"].startswith("[redacted chars=")
+    assert sent[0].output == "Sure! three"
+    repair_prompt = json.loads(sent[1].input or "")
     assert repair_prompt[-2] == {"role": "assistant", "content": "Sure! three"}
     assert "did not match the schema" in repair_prompt[-1]["content"]
 
