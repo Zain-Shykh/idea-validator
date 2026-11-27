@@ -262,6 +262,8 @@ All fixed in `71b3f4c`; none left open. Before the subagent, the automated secur
 - `kubectl kustomize k8s/overlays/dev | kubeconform -strict`: 27 valid.
 - Image, run `--read-only`: on `85baded`, with the fake services served over HTTP and a real Redis, one Validate run ended COMPLETED (`GO`, 80.0, 37 events, 8 steps; a request without `X-User-Id` was 422; no error or warning lines and no idea text on stdout). On the final `71b3f4c`: uid 10001, `/health` 200, `/ready` 503 without dependencies, stop in 0.6 s with exit 0; the full run was not repeated on it.
 
+**After the header fix** (`e862c4e`): ruff, format and mypy clean; `pytest -q services/orchestrator eval/behaviour` 490 passed, 1 deselected (the full suite and the Redis test were not rerun). Image `e862c4e`: uid 10001, `/health` 200, `/ready` 503 without dependencies, exit 0; the dev overlay points at it.
+
 **Not tested:** a real M2, M4 or M6 (they do not exist); real models (no Gemini key; cassettes and stand-ins only); real M8 behaviour (stub until Z8); the cluster (no criterion needs it, disk).
 
 ### C4. Measurements
