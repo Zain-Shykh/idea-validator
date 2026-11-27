@@ -43,6 +43,8 @@ _RULES: dict[str, str] = {
         r"(?<!where )\byou are now\b(?= \w)|\bfrom now on,? you\b|\bpretend you are\b"
         rf"|{_ORDER}(?:pretend to be\b"
         r"|act as (?:an? |the )?(?:ai|assistant|system|language model|judge|critic|scorer)\b)"
+        # nobody asks these of a person, wherever they stand in a sentence
+        r"|\bact as (?:an? |the )?(?:language model|scorer)\b"
         r"|\bnew instructions\s{0,3}:"
     ),
     "system_prompt": (
@@ -54,13 +56,18 @@ _RULES: dict[str, str] = {
         # unless what follows addresses a model
         r"(?m:^[ \t>#*-]{0,8}(?:(?-i:system|assistant|developer|SYSTEM|ASSISTANT|DEVELOPER)"
         r"[ \t]{0,3}:|(?:system|assistant|developer)[ \t]{0,3}:[ \t]{0,3}"
-        r"(?:you|ignore|disregard|respond|reply|answer|always|never|must|do not)\b))"
+        r"(?:you|ignore|disregard|respond|reply|answer|always|never|must|do not"
+        r"|approve|mark|score|rate|(?:the|this) (?:claim|idea|verdict))\b))"
         r"|<\|[a-z_]{2,20}\|>|\[/?inst\]|<<\s{0,3}/?sys\s{0,3}>>"
         r"|<\s{0,3}/?\s{0,3}(?:system|assistant|evidence|claim|idea|instructions)\b[^<>\n]{0,80}>"
     ),
     "secrecy": r"\b(?:do not|don't|never) (?:tell|inform|mention (?:this )?to|alert) the user\b",
     "output_command": (
         rf"{_ORDER}(?:score|rate|grade|approve|mark) this {_TARGET}\b"
+        # words that address a model, then the order
+        r"|\b(?:ai|assistant|model|llm|evaluator|critic|judge|scorer)\b[,:]? "
+        r"(?:(?:must|should|shall|has to|needs to) )?(?:please )?"
+        rf"(?:score|rate|grade|approve|mark) (?:this|the) {_TARGET}\b"
         rf"|\b(?:score|rate|grade|mark) (?:this|the|my) {_TARGET} (?:a |as |with |at )?"
         r"(?:5|five|10/10|highly|supported|go)\b(?! stars?\b)"
         r"|\b(?:and|then|please|must|should|always) (?:score|rate) (?:it |this )?"
