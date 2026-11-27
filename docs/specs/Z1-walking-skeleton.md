@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session (`scripts/run-phase.sh`) |
 | Branch | `feat/z1-walking-skeleton` (from `feat/z0-contracts-common`, PR #3) |
-| Status | Draft spec |
+| Status | Plan ready |
 | Requirement IDs | GEN-6, GEN-8, DOCK-1..3, K8S-1, K8S-5 (probes), K8S-11, AVOID-8 |
 | Architecture refs | `architecture.md` §5, §6.1, §6.7, §7.2, §17, §19, §20, §21; ADR-004 |
 | Depends on | Z0 (`libs/common`). A0 does not exist: minimal compose, kustomization and dev overlay are created here |
@@ -135,4 +135,30 @@ Coverage target: ≥ 80 % of `services/*/src`.
 
 ## Part B — Plan
 
-*(added next)*
+### B1. Task breakdown
+
+| # | Task | Files | Verification | Done |
+|---|------|-------|--------------|------|
+| 1 | Verdict stub, test paths for pytest and mypy | `services/verdict/**`, `pyproject.toml` | `pytest services/verdict` | [ ] |
+| 2 | Ideation, validators, scorer, critic, agentops stubs | `services/{ideation,validators,scorer,critic,agentops}/{src,tests}` | `pytest services` | [ ] |
+| 3 | Orchestrator stub: event repository, stub run, routes | `services/orchestrator/{src,tests}` | unit + integration tests | [ ] |
+| 4 | Dockerfiles, requirements, compose fragments, root compose | `services/*/{Dockerfile,requirements.txt,compose.yaml}`, `docker-compose.yml` | build, `id -u`, `docker compose up --wait`, smoke | [ ] |
+| 5 | Manifests, kustomization, dev overlay, packaging tests | `k8s/**`, `eval/behaviour/test_packaging.py` | kubeconform, deploy on minikube, smoke | [ ] |
+| 6 | Testing subagent, fixes | tests | all green | [ ] |
+| 7 | Docs and PR | `docs/**`, `README.md`, `.env.example` | review | [ ] |
+
+### B2. Commit plan
+1. `docs(spec): add Z1 spec` · 2. `docs(plan): add Z1 plan` · 3. `feat(services): stub APIs for six agent services` · 4. `feat(orchestrator): stub run with Redis event stream` · 5. `chore(docker): images and compose` · 6. `chore(k8s): manifests and dev overlay` · 7. tests and fixes · 8. `docs(Z1): update spec report, checklist, plan, logs`
+
+### B3. Definition of Done (phase)
+- [ ] All A4 criteria pass.
+- [ ] ruff, `ruff format --check`, `mypy libs services` clean; coverage ≥ 80 %.
+- [ ] Images build and run non-root; manifests pass kubeconform; pods Ready.
+- [ ] Checklist, plan, decisions, deviations, AI-usage log, README, setup updated.
+- [ ] PR opened against `feat/z0-contracts-common`.
+
+---
+
+## Part C — Implementation and test report
+
+*(filled during and after implementation)*

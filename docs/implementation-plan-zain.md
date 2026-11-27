@@ -11,7 +11,7 @@
 | Phase | Title | Status | Spec | PR | Started | Completed |
 |-------|-------|--------|------|----|---------|-----------|
 | Z0 | Shared contracts, `libs/common`, repo tooling | In review | [Z0](specs/Z0-contracts-common.md) | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) | 2026-11-27 07:47 | — |
-| Z1 | Walking skeleton of Zain's services | Not started | — | — | — | — |
+| Z1 | Walking skeleton of Zain's services | In progress | [Z1](specs/Z1-walking-skeleton.md) | — | 2026-11-27 08:09 | — |
 | Z2 | M11 Verdict Engine | Not started | — | — | — | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | Not started | — | — | — | — |
 | Z4 | M10 Scorer serving (base model + fallback) | Not started | — | — | — | — |
@@ -103,7 +103,7 @@ flowchart LR
 
 ## Z1 — Walking skeleton of Zain's services
 
-- **Status:** Not started · **Spec:** `docs/specs/Z1-walking-skeleton.md` · **Branch:** `feat/z1-walking-skeleton`
+- **Status:** In progress · **Spec:** `docs/specs/Z1-walking-skeleton.md` · **Branch:** `feat/z1-walking-skeleton`
 - **Requirements:** GEN-6, GEN-8, DOCK-1..3, K8S-1, K8S-5 (probes), K8S-11, AVOID-8
 - **Depends on:** Z0. Uses A0's `k8s/base/kustomization.yaml` if merged; otherwise creates own manifests and Ahmad adds them to the kustomization. **Unblocks:** S2.
 
@@ -127,7 +127,8 @@ flowchart LR
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 08:09 | Phase started | Branch `feat/z1-walking-skeleton` from `feat/z0-contracts-common` (PR #3) |
+| 2026-11-27 08:10 | Spec and plan pushed | `docs/specs/Z1-walking-skeleton.md` Parts A, B |
 
 ---
 
