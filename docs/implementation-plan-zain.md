@@ -15,7 +15,7 @@
 | Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | In review | [Z3](specs/Z3-rubrics-agentops.md) | [#9](https://github.com/Zain-Shykh/idea-validator/pull/9) | 2026-11-27 10:04 | — |
 | Z4 | M10 Scorer serving (base model + fallback) | In review | [Z4](specs/Z4-scorer-serving.md) | [#11](https://github.com/Zain-Shykh/idea-validator/pull/11) | 2026-11-27 10:43 | — |
-| Z5 | M9 Validation agents (4 scorers) | In progress | [Z5](specs/Z5-validators.md) | — | 2026-11-27 11:46 | — |
+| Z5 | M9 Validation agents (4 scorers) | In review | [Z5](specs/Z5-validators.md) | — | 2026-11-27 11:46 | — |
 | Z6 | M12 Critic and Guardrails | Not started | — | — | — | — |
 | Z7 | M3 Orchestrator: run lifecycle + Validate | Not started | — | — | — | — |
 | Z8 | M8 Ideation + Discover + challenge / what-if | Not started | — | — | — | — |
@@ -251,7 +251,7 @@ flowchart LR
 
 ## Z5 — M9 Validation agents (four scorers)
 
-- **Status:** In progress · **Spec:** `docs/specs/Z5-validators.md` · **Branch:** `feat/z5-validators`
+- **Status:** In review · **Spec:** `docs/specs/Z5-validators.md` · **Branch:** `feat/z5-validators`
 - **Requirements:** M9-1..4, VE-2, VE-3, WF-V3, WF-V4, VE-4 (gate inputs), AVOID-4, AVOID-7
 - **Depends on:** Z4; M6 via `FakeKB` until S3, M7 via `FakeAnalyst` until A6. **Unblocks:** Z7, Z9 (feature code reused for dataset building).
 
@@ -266,17 +266,21 @@ flowchart LR
 **Deliverables.** `services/validators/**`, fakes `FakeKB`/`FakeAnalyst` in `libs/common/src/common/fakes/` (reusable by M3 tests).
 
 **Acceptance criteria.**
-- [ ] Each scorer returns schema-valid results for 5 fixture ideas; demand→1 dim, competition→2, feasibility→2, risk→1 (six total).
-- [ ] Every non-abstained score has ≥ 1 evidence id that exists in the retrieval results; empty retrieval → abstain with reason (behaviour test "empty source").
-- [ ] Feature functions have unit tests with hand-computed values (incl. `available_hours = hours_per_week × weeks × team_size`).
-- [ ] Gate inputs: evidence counts (sources/platforms) correct on fixtures; duplicate candidate produced only for a known clone fixture and names the KB card; a medical-advice fixture yields a named legal/safety blocker.
-- [ ] Changing only the profile changes only feasibility/learning outputs (same cassette for others).
-- [ ] Running the four scorers concurrently against the fake stack completes < 2× the slowest single scorer (parallel-safe).
+- [x] Each scorer returns schema-valid results for 5 fixture ideas; demand→1 dim, competition→2, feasibility→2, risk→1 (six total).
+- [x] Every non-abstained score has ≥ 1 evidence id that exists in the retrieval results; empty retrieval → abstain with reason (behaviour test "empty source").
+- [x] Feature functions have unit tests with hand-computed values (incl. `available_hours = hours_per_week × weeks × team_size`).
+- [x] Gate inputs: evidence counts (sources/platforms) correct on fixtures; duplicate candidate produced only for a known clone fixture and names the KB card; a medical-advice fixture yields a named legal/safety blocker.
+- [x] Changing only the profile changes only feasibility/learning outputs (same cassette for others).
+- [x] Running the four scorers concurrently against the fake stack completes < 2× the slowest single scorer (parallel-safe). *(with 6 scorer slots; the default of 1 serialises calls to the CPU model, D-010)*
 
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
 | 2026-11-27 11:46 | Started | Branch `feat/z5-validators` from `feat/z4-scorer-serving` (PR #11 unmerged) |
+| 2026-11-27 11:46 | Spec pushed | `docs/specs/Z5-validators.md` Part A |
+| 2026-11-27 11:46 | Plan pushed | Part B |
+| 2026-11-27 11:58 | Implementation pushed | Four scorers, fakes, image, manifest; fake KB, analyst and M10 only |
+| 2026-11-27 12:13 | Tests and fixes pushed | Testing subagent: 3 bugs, fixed; 1065 passed, coverage 98 % |
 
 ---
 

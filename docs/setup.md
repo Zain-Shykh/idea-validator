@@ -158,6 +158,11 @@ python scripts/scorer_check.py --url http://127.0.0.1:8010            # ten fixt
 ```
 `--record eval/behaviour/cassettes/scorer_base.jsonl` (instead of `--url`, same variables) records the model's replies again. The hosted fallback needs `GEMINI_API_KEY` with `LLM_BACKEND=direct`, or M5; without it a failed local score abstains. In Compose, Ollama must listen where the container can reach it (`OLLAMA_HOST=0.0.0.0` exposes it to your network, so use a trusted one).
 
+**Validators (M9)** need M6 (`KB_URL`) and M10 (`SCORER_URL`). M6 is not built yet, so a running service answers 503 `KB_UNAVAILABLE`; tests use `common.fakes.FakeKB` and `FakeAnalyst`. Without M5 or `LLM_BACKEND=direct` the effort estimate is the middle of the code's band. With one CPU model keep `VALIDATORS_SCORER_CONCURRENCY=1`, and give each request up to 600 s.
+```bash
+pytest -q services/validators eval/behaviour       # no model needed
+```
+
 ## 8. Cleanup, teardown and disk space
 
 Check: `df -h ~` and `docker system df`.

@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session (`scripts/run-phase.sh`) |
 | Branch | `feat/z5-validators` (parent: `feat/z4-scorer-serving`, PR #11) |
-| Status | Draft spec |
+| Status | In review |
 | Requirement IDs | M9-1..4, VE-2, VE-3, WF-V3, WF-V4, VE-4 (gate inputs), AVOID-4, AVOID-7 |
 | Architecture refs | `architecture.md` §6.2, §7.2, §9, §11, §12.2, §12.4, §13.1, §21.4; ADR-001, ADR-005; D-006, D-009 |
 | Depends on | Z3 (rubrics, prompts, trace), Z4 (`/score`). M6, M7, M5 not built: `FakeKB`, `FakeAnalyst`, cassettes |
@@ -143,14 +143,14 @@ Coverage target: ≥ 80 % of `validators` business logic. No test calls a real m
 
 | # | Task | Files | Verification | Done |
 |---|------|-------|--------------|------|
-| 1 | `FakeKB`, `FakeAnalyst`, `VALIDATOR_TIMEOUT` | `libs/common/src/common/{fakes/,http.py}`, tests | `pytest libs` | [ ] |
-| 2 | Effort prompt in the registry | `prompts/effort@v1.md`, `prompts/kustomization.yaml`, `config/registry.lock.json` | `check_registry.py`, registry tests | [ ] |
-| 3 | Pure features and keyword rules | `validators/services/features.py` | `test_features.py` | [ ] |
-| 4 | Settings, tool clients, effort estimate, shared engine | `validators/{settings.py,services/{tools,effort,engine}.py}` | `test_tools.py`, `test_scoring.py` | [ ] |
-| 5 | Four scorers, routes, app | `validators/{scorers/,api/routes.py,main.py}` | `test_api.py`, `test_gate_inputs.py` | [ ] |
-| 6 | Fixtures and behaviour tests | `eval/fixtures/validator_*.jsonl`, `eval/behaviour/{test_validators.py,cassettes/validators_*.jsonl}` | `pytest eval/behaviour` | [ ] |
-| 7 | Image, compose, manifest, env names | `services/validators/{Dockerfile,requirements.txt,compose.yaml}`, `k8s/base/validators.yaml`, `.env.example` | docker build + container check; kubeconform | [ ] |
-| 8 | Testing subagent, fixes, docs, PR | — | full suite green | [ ] |
+| 1 | `FakeKB`, `FakeAnalyst`, `VALIDATOR_TIMEOUT` | `libs/common/src/common/{fakes/,http.py}`, tests | `pytest libs` | [x] |
+| 2 | Effort prompt in the registry | `prompts/effort@v1.md`, `prompts/kustomization.yaml`, `config/registry.lock.json` | `check_registry.py`, registry tests | [x] |
+| 3 | Pure features and keyword rules | `validators/services/features.py` | `test_features.py` | [x] |
+| 4 | Settings, tool clients, effort estimate, shared engine | `validators/{settings.py,services/{tools,effort,engine}.py}` | `test_tools.py`, `test_scoring.py` | [x] |
+| 5 | Four scorers, routes, app | `validators/{scorers/,api/routes.py,main.py}` | `test_api.py`, `test_gate_inputs.py` | [x] |
+| 6 | Fixtures and behaviour tests | `eval/fixtures/validator_*.jsonl`, `eval/behaviour/{test_validators.py,cassettes/validators_*.jsonl}` | `pytest eval/behaviour` | [x] |
+| 7 | Image, compose, manifest, env names | `services/validators/{Dockerfile,requirements.txt,compose.yaml}`, `k8s/base/validators.yaml`, `.env.example` | docker build + container check; kubeconform | [x] |
+| 8 | Testing subagent, fixes, docs, PR | — | full suite green | [x] |
 
 ### B2. Commit plan
 1. `docs(spec): add Z5 spec` · 2. `docs(plan): add Z5 plan`
@@ -162,8 +162,71 @@ Coverage target: ≥ 80 % of `validators` business logic. No test calls a real m
 8. `test…` / `fix…` (testing subagent) · 9. `docs(Z5): update spec report, checklist, plan, logs`
 
 ### B3. Definition of Done (phase)
-- [ ] All A4 criteria pass, or are left unticked with the reason.
-- [ ] ruff + mypy clean; coverage target met.
-- [ ] Dockerfile builds, non-root; manifest validates (kubeconform).
-- [ ] Checklist rows, plan progress log, deviations, AI log, decisions updated.
+- [x] All A4 criteria pass, or are left unticked with the reason.
+- [x] ruff + mypy clean; coverage target met.
+- [x] Dockerfile builds, non-root; manifest validates (kubeconform).
+- [x] Checklist rows, plan progress log, deviations, AI log, decisions updated.
 - [ ] PR opened against `feat/z4-scorer-serving`; reviewer = Ahmad.
+
+---
+
+## Part C — Implementation and test report
+
+### C1. What was built
+- `services/validators/src/validators/`: `scorers/{demand,competition,feasibility,risk}.py`; `services/{features,tools,effort,engine}.py`; `settings.py`, `main.py`, `api/routes.py` (replaces the stub).
+- `services/validators/{Dockerfile,compose.yaml,requirements.txt}` (adds PyYAML 6.0.4); `k8s/base/validators.yaml` (rubrics and prompts mounted, one scorer slot); dev overlay points at image `467609f`.
+- `common.fakes` (`FakeKB`, `FakeAnalyst`), `common.http.VALIDATOR_TIMEOUT`, `prompts/effort@v1.md` (registry lock and prompts ConfigMap updated). No contract or JSON Schema changed.
+- Fixes in shared code: `common.trace` hides tool inputs on stdout; `common.http` handles a too deeply nested reply.
+- Tests and fixtures: `services/validators/tests/unit/`, `eval/behaviour/test_validators{,_verdict}.py`, `eval/fixtures/validator_{ideas,cards}.jsonl`, `eval/behaviour/cassettes/validators_effort.jsonl` (written by hand).
+
+### C2. Deviations from spec / architecture
+| What | Why | Logged in deviations.md as |
+|------|-----|---------------------------|
+| M9 requests may take 600 s and are not retried; M10 calls are serialised by default | one CPU model | D-010 |
+| `tool_call` inputs are hidden on stdout too (not in the first A5) | idea text reached the logs | D-011 |
+| Shared scorer prompt; code-written reason; blocker needs evidence, else risk abstains | API-I3, AVOID-4, M9-4 | D-012 |
+
+A4 #6a holds with 6 scorer slots (the test uses a stand-in with a fixed delay). **With the default of 1 slot it does not hold**: the six scores run one after another, by design for the CPU model.
+
+### C3. Test report
+
+**Testing subagent** (`agent-skills:test-engineer`, one run, test files only; it added `test_edge_cases.py` and `eval/behaviour/test_validators_verdict.py`). Its run: ruff and mypy clean (93 files); `pytest -q` 1055 passed, 7 failed (its own bug tests), 8 deselected; coverage of validators and fakes 98 %; `check_registry.py` and compose config ok; kubeconform 27/27; image built (212 MB) and run with `--read-only --network none` (uid 10001, `/ready` 200, 503 `KB_UNAVAILABLE`). It found every A4 criterion covered, no flaky test in five repeats, and that the four responses for all five ideas merge into a valid `VerdictRequest`: a blocker gives NO-GO, an unconfirmed blocker never GO, the clone and the hours gates fail as intended, an empty KB or failed model gives INSUFFICIENT_EVIDENCE.
+
+Bugs found, all fixed (`467609f` has fixes and tests):
+1. Idea text reached stdout through the `search_kb` trace input → `common.trace` redacts tool inputs.
+2. Blocker rules missed "dosages" and "scraped" (also "bypasses the paywall", "torrenting", named but not tested by it) → shared patterns; tests added for all four.
+3. A deeply nested JSON reply from M10 or the KB gave HTTP 500 → `common.http` treats it as an invalid reply.
+
+**Final run:**
+| Command | Result |
+|---------|--------|
+| `ruff check .`, `ruff format --check .`, `mypy libs services scripts` | clean |
+| `python scripts/check_registry.py` | ok, 17 entries |
+| `pytest -q` | 1065 passed, 8 deselected |
+| `pytest services/validators eval/behaviour libs/common/tests/test_fakes.py --cov=validators --cov=common.fakes` | 321 passed, 98 % |
+| `kubectl kustomize k8s/overlays/dev \| kubeconform -strict` | 27 valid, 0 invalid |
+| `docker compose config -q` | ok (no service started) |
+| `docker build` validators at `467609f` | ok, 212 MB |
+
+**Container smoke** (final image, `--read-only`, uid 10001, `--network host`, repo rubrics and prompts mounted) against a host process serving `FakeKB`, `FakeAnalyst` and a stand-in `/score`, M5 absent: `/ready` 200; eight requests 200 for the clone and medical ideas; the clone gave the `SlideCards` duplicate, the medical idea the safety blocker; effort fell back to the band midpoint (100 h of 240 h); the clone idea's text was not in the container logs. With the host process stopped: 503 `KB_UNAVAILABLE`.
+
+**Not run / not verified:** minikube; `pytest -m integration` (no database code changed); **any real model** (scores, latency and the effort estimate), the real M6, M7 and M5. The fixtures say nothing about retrieval or scoring quality.
+
+Disk: 4.4 GB free before and after, lowest observed 4.3 GB. The images built here were removed and the build cache pruned.
+
+### C4. Measurements
+| Measure | Value |
+|---------|-------|
+| Image size | 212 MB on disk (same base layers as the other services) |
+| Model input per score (bound, not measured on a model) | ≤ 4 quotes × 300 characters, idea ≤ 1200 characters (before XML escaping) |
+| Expected scoring time on this CPU (estimate from Z4's 35 s per score) | 6 scores ≈ 3.5 min, one after another |
+
+### C5. Follow-ups
+- **Z7:** call M9 with `VALIDATOR_TIMEOUT` and `retry=False`; merge the partial gate inputs; on 503 `KB_UNAVAILABLE` fail the step, and never cache a verdict with a `scoring failed` score; consider not caching one whose `effort_source` is `band_midpoint`; record `effort@v1` and `scorer@v1` in `prompt_versions`; give the deployment `TOOLS_URL`/M5 for effort estimates.
+- **Z6:** scan retrieved evidence (`/scan`) before it reaches M10 and the validators; M9 does not.
+- **Z8:** competitor names in ideation need the same KB-only rule.
+- **Z10:** tune the keyword tables (blockers cannot read negation; word forms are limited), effort bands and thresholds on the labelled set.
+- **Z11:** build the other service images again to pick up the two `common` fixes; measure real latency; raise `VALIDATORS_SCORER_CONCURRENCY` only with more M10 slots.
+- **Ahmad (A4):** return `SearchResult.score` as a similarity in 0..1 (or add such a field), tag complaint cards with `complaint` in `niche_tags`, keep `GET /cards/{id}` and `POST /evidence`. Until this is confirmed the duplicate gate and competitor counts are not reliable on a real KB. (A6): `Niche.niche_id` or `name` should match card `niche_tags`.
+- Smaller (Z5-15): minimum similarity is not applied to request evidence; only the top product is checked as a duplicate; threshold order is not validated; a deadline can free the slot while M10 is still working; gap statements without Latin letters count as unaddressed.
+- Base-model scores can contradict the features (Z4 C4); M9 passes M10's score through unchanged.
