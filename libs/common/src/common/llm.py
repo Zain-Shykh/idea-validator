@@ -53,7 +53,8 @@ class LLMResult[T: BaseModel]:
 _FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL | re.IGNORECASE)
 
 
-def _strip_fence(content: str) -> str:
+def strip_fence(content: str) -> str:
+    """The reply without a surrounding markdown code fence."""
     text = content.strip()
     match = _FENCE.match(text)
     return match.group(1) if match else text
@@ -150,7 +151,7 @@ class LLMClient:
             data: T | None = None
             if schema is not None:
                 try:
-                    data = schema.model_validate_json(_strip_fence(reply.content))
+                    data = schema.model_validate_json(strip_fence(reply.content))
                 except ValidationError as exc:
                     problem = "; ".join(
                         f"{'.'.join(map(str, e['loc'])) or '(root)'}: {e['msg']}"
