@@ -88,7 +88,22 @@ See A3.
 
 ## Part B — Implementation plan
 
-_filled next_
+| # | Task | Files | Verification |
+|---|------|-------|--------------|
+| T1 | Start the profile; build the model image from the Ollama blob, stream it into the node, remove it from the host | no repo change | `df -h`; `ctr images ls` |
+| T2 | Scorer path on the cluster: deploy, import Job, sidecar, probe-gated `/ready`, ten `/score` calls | `docs/evidence/cluster-z11.md`; fixes if needed | `scripts/scorer_check.py` through a port-forward |
+| T3 | Build the 8 images at one commit, load them, set the overlay tags, deploy; check probes, migrations, ConfigMaps | `k8s/overlays/dev/kustomization.yaml`, evidence | `kubectl get pods`, logs, DB queries |
+| T4 | Drift CronJob and eval Job in the cluster without and with the stand-in | evidence; fixes | exit codes |
+| T5 | Stand-in and one end-to-end Validate run through Zain's services | `scripts/standins/`, `scripts/tests/test_standin.py`, `eval/behaviour/test_no_fakes.py` | pytest; run result |
+| T6 | Load script and sampler | `scripts/load_validate.py`, `scripts/sample_resources.py`, `scripts/tests/` | pytest |
+| T7 | Load run with sampling; resources file; scorer requests/limits | `docs/evidence/resources.md`, `k8s/base/scorer.yaml` | manifest tests, re-deploy |
+| T8 | Integration tests | — | `pytest -m integration` |
+| T9 | Testing subagent, fixes | tests | full suite |
+| T10 | Docs, runbook, draft PR; clean up (stand-in, profile, compose, Ollama, own images) | docs | checks |
+
+Commit plan: scripts and tests per task; each deployment fix as its own `fix(...)` commit with its test; evidence with the task that produced it.
+
+**Definition of done:** A4 rows 1–9 pass (or are reported as failed with the reason), rows 10–12 stay open, plan status Blocked, draft PR open, machine cleaned up.
 
 ---
 
