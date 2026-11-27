@@ -1,0 +1,30 @@
+{
+  "$defs": {
+    "RunState": {
+      "description": "Run lifecycle (architecture \u00a76.1).",
+      "enum": [
+        "QUEUED",
+        "RUNNING",
+        "AWAITING_INPUT",
+        "AWAITING_APPROVAL",
+        "COMPLETED",
+        "FAILED",
+        "BUDGET_STOPPED",
+        "CANCELLED"
+      ],
+      "title": "RunState",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "status": {
+      "$ref": "#/$defs/RunState"
+    }
+  },
+  "required": [
+    "status"
+  ],
+  "title": "RunStatusEvent",
+  "type": "object"
+}
