@@ -137,7 +137,8 @@ def test_a_later_record_cannot_rewrite_a_stored_step(client: TestClient) -> None
     forged = record(step_id=1, output="something else", ts="2026-11-26T00:00:00Z")
     post(client, [original])
     post(client, [forged])
-    assert read(client, "run_1") == [original]
+    post(client, [record(step_id=2, output="first"), record(step_id=2, output="second")])
+    assert [r.output for r in read(client, "run_1")] == ["what happened", "first"]
     assert client.get("/summary").json()["total_cost_usd"] == 0.5
 
 

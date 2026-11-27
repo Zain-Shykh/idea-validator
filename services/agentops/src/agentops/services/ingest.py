@@ -96,10 +96,14 @@ class TraceService:
     def _ingest_run(self, run_id: str, batch: list[TraceRecord]) -> None:
         # ponytail: re-reads the run's file per batch (budgets keep runs small)
         stored = self.files.read(run_id)
-        self.files.append(run_id, batch)
-        known = {r.step_id for r in stored}
+        # first write wins, decided here: a stored step is never appended again (a later record
+        # with an older date would otherwise sort into an earlier file and replace it)
+        fresh = {r.step_id: r for r in reversed(batch)}
+        for record in stored:
+            fresh.pop(record.step_id, None)
+        new = [r for r in batch if fresh.get(r.step_id) is r]
+        self.files.append(run_id, new)
         merged = self.files.read(run_id)
-        new = [r for r in merged if r.step_id not in known]
         row = index_row(run_id, merged)
         # counted as soon as they are on disk, so a retry after a database error adds nothing
         _observe(new, row, index_row(run_id, stored) if stored else None)
