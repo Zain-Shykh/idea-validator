@@ -189,15 +189,19 @@ def interest_match(interests: Iterable[str], text: str) -> float | None:
 
 # --- risk --------------------------------------------------------------------------------------
 
+# shared by the risk categories and the blocker rules, on the idea and on the evidence
+_SCRAPING = "scrap(?:e|es|ed|ing|er|ers)|crawl\\w*"
+_PAYWALL = "paywalls?"
+
 _RISK = {
-    "medical": "medical|medicine|medication|diagnos\\w*|patients?|symptoms?|prescri\\w*|dosage|"
+    "medical": "medical|medicine|medication|diagnos\\w*|patients?|symptoms?|prescri\\w*|dosages?|"
     "clinical|health advice|therap\\w*|disease",
     "legal": "legal advice|lawyers?|lawsuits?|contracts? review|immigration",
     "finance": "invest\\w*|trading|stocks?|crypto\\w*|loans?|credit score|bank accounts?|tax\\w*",
     "minors": "children|kids|minors|under[- ]1[38]|school ?children",
     "pii": "personal data|e-?mail addresses?|phone numbers?|location tracking|biometric\\w*|"
     "face recognition|health records?|passwords?",
-    "scraping": "scrap(?:e|es|ing|er|ers)|crawl\\w*|terms of service",
+    "scraping": f"{_SCRAPING}|terms of service",
 }
 _REGULATED = frozenset({"medical", "legal", "finance", "minors"})
 _PLATFORMS = ("instagram", "whatsapp", "linkedin", "facebook", "tiktok", "twitter", "youtube",
@@ -221,22 +225,25 @@ BLOCKER_RULES = (
         "medical_advice",
         BlockerType.SAFETY,
         "unlicensed medical advice: the idea offers diagnosis, treatment or dosage guidance",
-        ("diagnos\\w*|prescri\\w*|dosage|medical advice|treatment (?:advice|plans?)",),
-        "medical|diagnos\\w*|health advice|patients?|prescri\\w*|dosage|clinical",
+        ("diagnos\\w*|prescri\\w*|dosages?|medical advice|treatment (?:advice|plans?)",),
+        "medical|diagnos\\w*|health advice|patients?|prescri\\w*|dosages?|clinical",
     ),
     BlockerRule(
         "forbidden_scraping",
         BlockerType.LEGAL,
         "scraping a platform whose terms of service forbid it",
-        ("scrap(?:e|es|ing|er|ers)|crawl\\w*", _CLOSED_PLATFORMS),
-        "scrap\\w*|crawl\\w*|terms of service",
+        (_SCRAPING, _CLOSED_PLATFORMS),
+        f"{_SCRAPING}|terms of service",
     ),
     BlockerRule(
         "piracy",
         BlockerType.LEGAL,
         "copyright infringement: the idea distributes or unlocks protected content",
-        ("pirat\\w*|torrents?|bypass\\w* paywalls?|crack\\w* (?:software|licen[cs]es?)",),
-        "copyright|pira\\w*|dmca|paywalls?",
+        (
+            f"pirat\\w*|torrent\\w*|bypass\\w* (?:\\w+ )?{_PAYWALL}|"
+            "crack\\w* (?:software|licen[cs]es?)",
+        ),
+        f"copyright|pira\\w*|dmca|{_PAYWALL}",
     ),
     BlockerRule(
         "investment_advice",

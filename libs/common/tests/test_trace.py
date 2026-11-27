@@ -125,3 +125,13 @@ def test_step_ids_stay_increasing_when_the_random_part_collides(
     monkeypatch.setattr("common.trace.secrets.randbelow", lambda _: 0)
     first, second, third = new_step_id(), new_step_id(), new_step_id()
     assert first < second < third
+
+
+def test_tool_inputs_stay_out_of_stdout_but_reach_the_record() -> None:
+    """A search query carries the student's idea (Z5-14)."""
+    stream = io.StringIO()
+    tracer = TraceClient(stream=stream)
+    with tracer.step("a", TraceKind.TOOL_CALL, tool="search_kb", input="MY IDEA", run_id="r") as s:
+        s.output = "card_a#c0"
+    assert "MY IDEA" not in stream.getvalue()
+    assert "card_a#c0" in stream.getvalue() and "[redacted chars=7" in stream.getvalue()

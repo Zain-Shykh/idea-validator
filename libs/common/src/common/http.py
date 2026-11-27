@@ -54,7 +54,7 @@ def _status_error(response: httpx.Response) -> ServiceError:
         return ServiceError(
             str(error["code"]), str(error["message"]), response.status_code, error.get("details")
         )
-    except (ValueError, KeyError, TypeError, AttributeError):
+    except (ValueError, KeyError, TypeError, AttributeError, RecursionError):
         return ServiceError("HTTP_ERROR", "downstream error", response.status_code)
 
 
@@ -192,7 +192,7 @@ def _parse(response: httpx.Response, response_model: Any) -> Any:
             return data
         # validate in JSON mode so dates and enums are read the same way as on the server
         return TypeAdapter(response_model).validate_json(json.dumps(data))
-    except (ValueError, ValidationError) as exc:
+    except (ValueError, ValidationError, RecursionError) as exc:  # e.g. deeply nested JSON
         raise ServiceError(
             "INVALID_RESPONSE", "response does not match the contract", response.status_code
         ) from exc
