@@ -39,8 +39,8 @@ class TraceFiles:
                 file.write("".join(lines).encode())
 
     def read(self, run_id: str) -> list[TraceRecord]:
-        """One record per ``step_id`` (a re-sent one replaces the first), ordered by
-        ``(ts, step_id)`` (D-003)."""
+        """One record per ``step_id``, ordered by ``(ts, step_id)`` (D-003). The first one stored
+        wins: a retry is identical, and nothing sent later can rewrite the audit trail."""
         records: dict[int, TraceRecord] = {}
         for path in sorted(self.root.glob(f"*/{run_id}.jsonl")):
             for line in path.read_bytes().split(b"\n"):
@@ -51,7 +51,7 @@ class TraceFiles:
                 except ValidationError:
                     log.warning("skipped an unreadable trace line in %s", path)
                     continue
-                records[record.step_id] = record
+                records.setdefault(record.step_id, record)
         return sorted(records.values(), key=lambda r: (r.ts, r.step_id))
 
     def writable(self) -> bool:

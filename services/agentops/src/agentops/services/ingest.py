@@ -98,8 +98,8 @@ class TraceService:
         stored = self.files.read(run_id)
         self.files.append(run_id, batch)
         known = {r.step_id for r in stored}
-        new = list({r.step_id: r for r in batch if r.step_id not in known}.values())
         merged = self.files.read(run_id)
+        new = [r for r in merged if r.step_id not in known]
         row = index_row(run_id, merged)
         # counted as soon as they are on disk, so a retry after a database error adds nothing
         _observe(new, row, index_row(run_id, stored) if stored else None)

@@ -132,6 +132,15 @@ def test_naive_timestamps_are_utc_and_sortable(client: TestClient) -> None:
     assert client.get("/summary").status_code == 200
 
 
+def test_a_later_record_cannot_rewrite_a_stored_step(client: TestClient) -> None:
+    original = record(step_id=1, output="what happened", cost_usd=0.5)
+    forged = record(step_id=1, output="something else", ts="2026-11-26T00:00:00Z")
+    post(client, [original])
+    post(client, [forged])
+    assert read(client, "run_1") == [original]
+    assert client.get("/summary").json()["total_cost_usd"] == 0.5
+
+
 def test_run_over_midnight_uses_two_files(client: TestClient, settings: AgentOpsSettings) -> None:
     post(
         client,
