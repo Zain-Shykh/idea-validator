@@ -38,5 +38,10 @@ docker rmi "$IMAGE" && docker builder prune -f
 rm "$ctx/model.gguf" && rmdir "$ctx"
 ```
 
-A new model (Z9) gets a new tag (`lora-v1`), a new file name on the PVC, a new Job name (Jobs are
-immutable) and a new `SCORER_MODEL_ID`, all in `k8s/base/scorer.yaml`.
+## The fine-tuned model (`scorer-model:v1`)
+
+Same Dockerfile, tag `v1`, with the GGUF of [`../export_gguf.md`](../export_gguf.md). A new model
+gets a new image tag, file name on the PVC, Job name (Jobs are immutable) and `SCORER_MODEL_ID`
+(scorer **and** orchestrator). For `scorer-lora@v1` all of these are in the Kustomize component
+[`../k8s-lora/component`](../k8s-lora/component/kustomization.yaml); `k8s/base` stays on the base
+model until the image exists.

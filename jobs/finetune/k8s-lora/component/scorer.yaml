@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scorer
+spec:
+  template:
+    spec:
+      initContainers:
+        - name: wait-for-model
+          command:
+            - sh
+            - -c
+            - until [ -s /models/scorer-lora-v1.gguf ]; do echo waiting for the model; sleep 5; done
+      containers:
+        - name: scorer
+          env:
+            - name: SCORER_MODEL_ID
+              value: scorer-lora@v1
+        # a list of arguments is replaced as a whole: keep the rest equal to the base
+        - name: llama
+          args:
+            - --model
+            - /models/scorer-lora-v1.gguf
+            - --host
+            - 127.0.0.1
+            - --port
+            - "8080"
+            - --ctx-size
+            - "4096"
+            - --parallel
+            - "1"
+            - --threads
+            - "2"

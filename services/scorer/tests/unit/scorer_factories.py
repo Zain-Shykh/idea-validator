@@ -89,6 +89,7 @@ class Rig:
         hosted: list[str] | None = None,
         *,
         local_timeout_s: float = 5.0,
+        model_id: str = "scorer-base@v1",
         hosted_client: LLMClient | None = None,
     ) -> None:
         self.stream = io.StringIO()
@@ -113,7 +114,7 @@ class Rig:
             else LocalModel("http://model", "m", timeout_s=5, transport=httpx.MockTransport(local)),
             hosted=llm,
             tracer=self.tracer,
-            model_id="scorer-base@v1",
+            model_id=model_id,
             local_timeout_s=local_timeout_s,
             hosted_timeout_s=5,
         )
