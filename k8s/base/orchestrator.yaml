@@ -9,6 +9,7 @@ metadata:
     tier: backend
     app.kubernetes.io/part-of: idea-validator
 spec:
+  # run tasks and locks live in the process: keep one replica
   replicas: 1
   strategy:
     type: RollingUpdate
@@ -30,12 +31,18 @@ spec:
         runAsUser: 10001
         seccompProfile:
           type: RuntimeDefault
+      # uvicorn 10 s + run tasks 5 s + trace flush 8 s fit in this (orchestrator.main)
+      terminationGracePeriodSeconds: 30
       containers:
         - name: orchestrator
           image: ghcr.io/zain-shykh/idea-validator-orchestrator:set-by-overlay
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
+          env:
+            # add "profile" when M2 is deployed (A1): until then it would keep the pod unready
+            - name: ORCH_READY_REQUIRES
+              value: verdict
           envFrom:
             - configMapRef:
                 name: app-config
@@ -43,6 +50,16 @@ spec:
             - secretRef:
                 name: redis
                 optional: true
+          volumeMounts:
+            - name: rubrics
+              mountPath: /etc/rubrics
+              readOnly: true
+            - name: prompts
+              mountPath: /etc/prompts
+              readOnly: true
+            - name: budgets
+              mountPath: /etc/budgets
+              readOnly: true
           readinessProbe:
             httpGet:
               path: /ready
@@ -69,6 +86,16 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: [ALL]
+      volumes:
+        - name: rubrics
+          configMap:
+            name: rubrics
+        - name: prompts
+          configMap:
+            name: prompts
+        - name: budgets
+          configMap:
+            name: budgets
 ---
 apiVersion: v1
 kind: Service

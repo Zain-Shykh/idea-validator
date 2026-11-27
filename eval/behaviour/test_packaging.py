@@ -297,3 +297,24 @@ def test_critic_gets_its_prompt_and_budgets_from_configmaps() -> None:
         f"../../prompts:{mounts['prompts']}:ro",
         f"../../config/budgets.yaml:{budgets}:ro",
     ]
+
+
+def test_orchestrator_reads_its_rules_from_configmaps() -> None:
+    """K8S-4: rubrics, prompts and budgets are mounted, in the cluster and in compose."""
+    deployment = docs("k8s/base/orchestrator.yaml")[0]["spec"]
+    assert deployment["replicas"] == 1  # run tasks and locks are in the process
+    pod = deployment["template"]["spec"]
+    mounts = {m["mountPath"] for m in pod["containers"][0]["volumeMounts"]}
+    assert mounts == {"/etc/rubrics", "/etc/prompts", "/etc/budgets"}
+    assert {v["configMap"]["name"] for v in pod["volumes"]} == {"rubrics", "prompts", "budgets"}
+    dockerfile = (ROOT / "services/orchestrator/Dockerfile").read_text()
+    for path in (*mounts, "/etc/budgets/budgets.yaml"):
+        assert path in dockerfile
+    spec = docs("services/orchestrator/compose.yaml")[0]["services"]["orchestrator"]
+    assert {v.split(":")[1] for v in spec["volumes"]} == {
+        "/etc/rubrics", "/etc/prompts", "/etc/budgets/budgets.yaml",
+    }  # fmt: skip
+    base = docs("k8s/base/kustomization.yaml")[0]
+    config = {item.split("=", 1)[0] for item in base["configMapGenerator"][0]["literals"]}
+    needed = {"PROFILE_URL", "VERDICT_URL", "VALIDATORS_URL", "KB_URL", "CRITIC_URL"}
+    assert needed | {"IDEATION_URL", "SCOUTS_URL"} <= config

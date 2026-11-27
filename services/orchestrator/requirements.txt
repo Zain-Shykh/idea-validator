@@ -7,3 +7,5 @@ tenacity==9.2.1
 prometheus-client==0.26.0
 uvicorn==0.54.0
 redis==8.2.0
+# common.registry: rubrics, prompt versions and budgets
+pyyaml==6.0.4
