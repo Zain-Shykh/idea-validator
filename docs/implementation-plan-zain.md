@@ -16,7 +16,7 @@
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | In review | [Z3](specs/Z3-rubrics-agentops.md) | [#9](https://github.com/Zain-Shykh/idea-validator/pull/9) | 2026-11-27 10:04 | — |
 | Z4 | M10 Scorer serving (base model + fallback) | In review | [Z4](specs/Z4-scorer-serving.md) | [#11](https://github.com/Zain-Shykh/idea-validator/pull/11) | 2026-11-27 10:43 | — |
 | Z5 | M9 Validation agents (4 scorers) | In review | [Z5](specs/Z5-validators.md) | [#13](https://github.com/Zain-Shykh/idea-validator/pull/13) | 2026-11-27 11:46 | — |
-| Z6 | M12 Critic and Guardrails | Not started | — | — | — | — |
+| Z6 | M12 Critic and Guardrails | In progress | [Z6](specs/Z6-critic-guardrails.md) | — | 2026-11-27 12:25 | — |
 | Z7 | M3 Orchestrator: run lifecycle + Validate | Not started | — | — | — | — |
 | Z8 | M8 Ideation + Discover + challenge / what-if | Not started | — | — | — | — |
 | Z9 | M10t Fine-tuning pipeline + model comparison | Not started | — | — | — | — |
@@ -287,7 +287,7 @@ flowchart LR
 
 ## Z6 — M12 Critic and Guardrails
 
-- **Status:** Not started · **Spec:** `docs/specs/Z6-critic-guardrails.md` · **Branch:** `feat/z6-critic-guardrails`
+- **Status:** In progress · **Spec:** `docs/specs/Z6-critic-guardrails.md` · **Branch:** `feat/z6-critic-guardrails`
 - **Requirements:** M12-1..4, ETH-5, AO-7 (poisoned page), U8 (critic side), WF-D6, WF-V6, API-I5
 - **Depends on:** Z3 (prompts), M6 `/evidence` via fake until S3. **Unblocks:** Z7, Z8.
 
@@ -312,7 +312,7 @@ flowchart LR
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 12:25 | Started | Branch `feat/z6-critic-guardrails` from `feat/z5-validators` (PR #13 unmerged) |
 
 ---
 
