@@ -1,0 +1,2 @@
+{"agent": "scorer", "alias": "scorer-local", "content": "The score is 4 because many people want it."}
+{"agent": "scorer", "alias": "scorer-local", "content": "{\"score\": 4, \"confidence\": \"high\"}"}
