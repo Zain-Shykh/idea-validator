@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session (`scripts/run-phase.sh`) |
 | Branch | `feat/z0-contracts-common` (parent: `chore/headless-decision-log`, PR #1) |
-| Status | Draft spec |
+| Status | Plan ready |
 | Requirement IDs | GEN-7, GEN-8, GEN-9, DATA-1..8 (schemas), API-I7, API-P8 (metrics helper), M13-1 (client side), AO-1 (propagation), AVOID-2 (cache keys) |
 | Architecture refs | §7.2, §7.3, §8.4, §8.5, §12.1, §12.2, §15, §19–§21 |
 | Depends on | nothing |
@@ -132,3 +132,39 @@ All are recorded in `docs/decisions.md` (Z0-*).
 | Ahmad needs different shapes | placeholders are small; changes are cheap before anyone depends on them |
 | Strict `extra="forbid"` breaks a consumer on an additive change | one repo, all images build the same `libs/common` |
 | Schema export differs between Pydantic versions | Pydantic pinned; `--check` catches it |
+
+---
+
+## Part B — Plan
+
+### B1. Task breakdown
+| # | Task | Files | Verification | Done |
+|---|------|-------|--------------|------|
+| 1 | Package and repo tooling | `libs/common/pyproject.toml`, `src/common/__init__.py`, `py.typed`, root `pyproject.toml`, `.dockerignore` | `pip install -e libs/common`; `ruff check .` | [ ] |
+| 2 | Core and Zain's module contracts | `contracts/{base,core,orchestrator,agents,verdict,ops}.py`, `tests/test_contracts.py` | pytest: Guide examples, invalid variants | [ ] |
+| 3 | Ahmad's placeholders and schema export | `contracts/{kb,analyst,tools,scouts,profile,gateway,export}.py`, `schemas/*.json`, `tests/test_export.py` | `export --check` | [ ] |
+| 4 | Settings, context, cache keys | `settings.py`, `context.py`, `cache_keys.py` + tests | pytest | [ ] |
+| 5 | App bootstrap and HTTP client | `service.py`, `http.py` + tests | pytest (TestClient, respx) | [ ] |
+| 6 | Trace and LLM clients | `trace.py`, `llm.py` + tests | pytest | [ ] |
+| 7 | Fixtures | `eval/fixtures/*`, `tests/test_fixtures.py` | pytest | [ ] |
+| 8 | Independent test pass, fixes | tests, fixes | full suite, ruff, mypy, coverage | [ ] |
+| 9 | Docs and PR | checklist, plan, deviations, architecture §8.4, AI log, README, setup, `.env.example` | review of the diff | [ ] |
+
+No Dockerfile or manifest in this phase, so no image build or kubeconform.
+
+### B2. Commit plan
+1. `docs(spec): add Z0 spec`
+2. `docs(plan): add Z0 plan`
+3. `chore(common): package skeleton and repo tooling`
+4. `feat(contracts): shared schemas and JSON Schema export`
+5. `feat(common): settings, cache keys, service bootstrap, http client`
+6. `feat(common): trace and llm clients`
+7. `test(eval): contract fixtures`
+8. `test(common)` / `fix(common)` from the test report
+9. `docs(Z0): update spec report, checklist, plan, logs`
+
+### B3. Definition of Done (phase)
+- [ ] A4 criteria 1–13 pass (14 is a human review).
+- [ ] ruff + mypy clean; coverage ≥ 85 %.
+- [ ] Checklist, plan, deviations, AI-usage log, decision log updated.
+- [ ] PR opened against `chore/headless-decision-log`.
