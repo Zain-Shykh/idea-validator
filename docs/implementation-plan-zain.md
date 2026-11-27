@@ -12,7 +12,7 @@
 |-------|-------|--------|------|----|---------|-----------|
 | Z0 | Shared contracts, `libs/common`, repo tooling | In review | [Z0](specs/Z0-contracts-common.md) | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) | 2026-11-27 07:47 | — |
 | Z1 | Walking skeleton of Zain's services | In review | [Z1](specs/Z1-walking-skeleton.md) | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) | 2026-11-27 08:09 | — |
-| Z2 | M11 Verdict Engine | Not started | — | — | — | — |
+| Z2 | M11 Verdict Engine | In progress | [Z2](specs/Z2-verdict-engine.md) | — | 2026-11-27 08:44 | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | Not started | — | — | — | — |
 | Z4 | M10 Scorer serving (base model + fallback) | Not started | — | — | — | — |
 | Z5 | M9 Validation agents (4 scorers) | Not started | — | — | — | — |
@@ -137,7 +137,7 @@ flowchart LR
 
 ## Z2 — M11 Verdict Engine
 
-- **Status:** Not started · **Spec:** `docs/specs/Z2-verdict-engine.md` · **Branch:** `feat/z2-verdict-engine`
+- **Status:** In progress · **Spec:** `docs/specs/Z2-verdict-engine.md` · **Branch:** `feat/z2-verdict-engine`
 - **Requirements:** M11-1..5, VE-1..16, U6, U7 (engine side), U10, API-I4, K8S-4 (ConfigMap), CI-2
 - **Depends on:** Z0, Z1. **Unblocks:** real verdict cards for the UI; Z7.
 
@@ -166,7 +166,7 @@ flowchart LR
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 08:44 | Phase started | Branch `feat/z2-verdict-engine` from `feat/z1-walking-skeleton` (PR #5) |
 
 ---
 
