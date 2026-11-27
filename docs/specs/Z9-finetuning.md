@@ -166,7 +166,7 @@ nothing about training or model quality.
 | 5 | Training config and notebook | `train_config.yaml`, `train.ipynb`, stub-library test | same | [x] |
 | 6 | Comparison | `evaluate.py`, tests, pipeline test | same | [x] |
 | 7 | Export and packaging: GGUF steps, model image `v1`, scorer component, weights check | `export_gguf.md`, `model-image/README.md`, `k8s-lora/`, tests | `kubectl kustomize`, `kubeconform`, docker build with a stand-in | [x] |
-| 8 | README, setup, `data/README.md` | docs | read-through | [ ] |
+| 8 | README, setup, `data/README.md` | docs | read-through | [x] |
 | 9 | Testing subagent, fixes | tests | full suite, ruff, mypy | [ ] |
 | 10 | Part C, runbook, tracking docs, draft PR | docs | — | [ ] |
 

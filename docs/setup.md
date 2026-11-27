@@ -228,7 +228,7 @@ Then: install suggested plugins → add credentials `kubeconfig` (Secret file: `
 
 ## 11. Fine-tuning environment (Colab/Kaggle)
 
-Not installed locally (no GPU, saves disk). Open `jobs/finetune/train.ipynb` (*after Z9*) in Google Colab or Kaggle with a free **T4 GPU**; the notebook installs Unsloth/PEFT/TRL itself. Upload `jobs/finetune/data/train.jsonl` and `test.jsonl`; download the GGUF and attach it to a GitHub Release / build the `scorer-model` image (commands in the notebook and `jobs/finetune/README` section of the spec).
+Not installed locally (no GPU, saves disk), and no ML library goes into `.venv` or a service image. The data scripts and the comparison run from the repo virtualenv; the commands are in [`jobs/finetune/README.md`](../jobs/finetune/README.md). Open [`jobs/finetune/train.ipynb`](../jobs/finetune/train.ipynb) in Google Colab or Kaggle with a free **T4 GPU**; it installs the versions pinned in `train_config.yaml`. It needs `data/train.jsonl`, `data/val.jsonl` and `data/split-report.json` (not the test set). Then follow [`export_gguf.md`](../jobs/finetune/export_gguf.md) for the GGUF, the GitHub Release asset, the `scorer-model:v1` image and the switch to `scorer-lora@v1`.
 
 ## 12. Verify your setup
 

@@ -9,6 +9,7 @@ adapter merged in, 16 bit. **No weights in git**: `outputs/` and `*.gguf` are gi
 ## 1. Convert and quantise (in the same Colab/Kaggle session, after training)
 
 llama.cpp's requirements may replace training libraries, so do this only when training is done.
+Run these as shell commands (Colab: a `%%bash` cell) from the `FT_DIR` folder.
 
 ```bash
 git clone --depth 1 https://github.com/ggml-org/llama.cpp /tmp/llama.cpp
