@@ -13,7 +13,7 @@
 | Z0 | Shared contracts, `libs/common`, repo tooling | In review | [Z0](specs/Z0-contracts-common.md) | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) | 2026-11-27 07:47 | — |
 | Z1 | Walking skeleton of Zain's services | In review | [Z1](specs/Z1-walking-skeleton.md) | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) | 2026-11-27 08:09 | — |
 | Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | — |
-| Z3 | Rubrics, prompts registry, M13 AgenticOps core | In progress | [Z3](specs/Z3-rubrics-agentops.md) | — | 2026-11-27 10:04 | — |
+| Z3 | Rubrics, prompts registry, M13 AgenticOps core | In review | [Z3](specs/Z3-rubrics-agentops.md) | — | 2026-11-27 10:04 | — |
 | Z4 | M10 Scorer serving (base model + fallback) | Not started | — | — | — | — |
 | Z5 | M9 Validation agents (4 scorers) | Not started | — | — | — | — |
 | Z6 | M12 Critic and Guardrails | Not started | — | — | — | — |
@@ -176,7 +176,7 @@ flowchart LR
 
 ## Z3 — Rubrics, prompts registry, M13 AgenticOps core
 
-- **Status:** In progress · **Spec:** `docs/specs/Z3-rubrics-agentops.md` · **Branch:** `feat/z3-rubrics-agentops`
+- **Status:** In review · **Spec:** `docs/specs/Z3-rubrics-agentops.md` · **Branch:** `feat/z3-rubrics-agentops`
 - **Requirements:** DATA-8, VE-2, AO-1 (store + read), AO-2 (budgets config), AO-3, AO-6 (summary API), M13-1..3, M13-6, M2-5 (cache-hit metric aggregation), API-I6, K8S-12
 - **Depends on:** Z0, Z1. **Unblocks:** Z4/Z5 (rubrics), Ahmad's Ops page (`/summary`), trace ingestion for all services.
 
@@ -193,18 +193,23 @@ flowchart LR
 **Deliverables.** `rubrics/**`, `prompts/**`, `config/budgets.yaml`, `services/agentops/**`, `scripts/check_registry.py`, manifests.
 
 **Acceptance criteria.**
-- [ ] Each rubric has anchors 0,1,2,3,4,5 and ≥ 1 example per level (schema-validated test).
-- [ ] Registry check fails on a content change without a version bump (test with a temp copy).
-- [ ] Posting 1,000 trace records for 10 runs → `GET /runs/{id}/trace` returns them ordered with parent links; JSONL files written; `traces_index` totals (cost, tokens, steps, cache hits, fallbacks) correct.
-- [ ] `GET /summary` returns all six AO-6 metrics computed from seeded traces (unit test with known numbers).
-- [ ] Invalid trace records are rejected with 422 and counted, never crash the service.
-- [ ] Alembic migration up/down works against Postgres (integration test, compose).
-- [ ] Pod runs on minikube with PVC bound; probes green.
+- [x] Each rubric has anchors 0,1,2,3,4,5 and ≥ 1 example per level (schema-validated test).
+- [x] Registry check fails on a content change without a version bump (test with a temp copy).
+- [x] Posting 1,000 trace records for 10 runs → `GET /runs/{id}/trace` returns them ordered with parent links; JSONL files written; `traces_index` totals (cost, tokens, steps, cache hits, fallbacks) correct.
+- [x] `GET /summary` returns all six AO-6 metrics computed from seeded traces (unit test with known numbers).
+- [x] Invalid trace records are rejected with 422 and counted, never crash the service.
+- [x] Alembic migration up/down works against Postgres (integration test, compose).
+- [x] Pod runs on minikube with PVC bound; probes green.
 
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
 | 2026-11-27 10:04 | Started | Branch `feat/z3-rubrics-agentops` from `feat/z2-verdict-engine` (PR #7 unmerged) |
+| 2026-11-27 10:05 | Spec pushed | `67db763` |
+| 2026-11-27 10:05 | Plan pushed | `ccefbff` |
+| 2026-11-27 10:18 | Implementation pushed | up to `18af52e` |
+| 2026-11-27 10:32 | Tests and fixes pushed | testing subagent; `b181715`, `9d8410a` |
+| 2026-11-27 10:36 | Image checked on compose and minikube | tag `9d8410a` |
 
 ---
 

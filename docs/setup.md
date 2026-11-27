@@ -92,6 +92,12 @@ If a host port is taken (for example a local Postgres on 5432), set `POSTGRES_HO
 
 Host ports: see `docs/architecture/architecture.md` §19 (gateway 8001 … agentops 8013, UI 5173). Compose is for development only; the deployment target is Kubernetes.
 
+AgentOps integration tests use a throwaway database whose name ends in `_test`; they create and **drop** it:
+```bash
+AGENTOPS_TEST_DATABASE_URL=postgresql+psycopg://ideaval:localdev@127.0.0.1:5432/ops_test \
+  pytest -m integration services/agentops          # use your POSTGRES_PASSWORD and host port
+```
+
 ## 6. Kubernetes (minikube + Calico)
 
 The cluster's network plugin **must enforce NetworkPolicy** (LOC-1), so we use **Calico**. Use a **dedicated profile** so other minikube clusters on your machine are untouched.
@@ -112,6 +118,13 @@ minikube -p idea-validator start                 # resume (keeps settings)
 minikube -p idea-validator stop                  # free RAM when not working
 minikube -p idea-validator ip                    # ingress address (add to /etc/hosts as idea-validator.local)
 ```
+Until A0 provides secrets, create the database password once (agentops and the temporary dev Postgres read it; it is not stored in git):
+```bash
+kubectl create namespace idea-validator --dry-run=client -o yaml | kubectl apply -f -
+kubectl -n idea-validator create secret generic db --from-literal=POSTGRES_PASSWORD="$(openssl rand -hex 16)"
+```
+The temporary Postgres has no volume: if its pod is replaced, restart agentops (`kubectl -n idea-validator rollout restart deploy/agentops`) so `db-migrate` creates the tables again.
+
 Deploy (*after A0/Z1*): `kubectl apply -k k8s/overlays/dev` · status: `kubectl get pods -n idea-validator`.
 
 Images are named `ghcr.io/zain-shykh/idea-validator-<svc>:<sha>` (public GHCR, after A0). Until they are pushed, build and load them, then set the same tag in `k8s/overlays/dev/kustomization.yaml` (`newTag`):

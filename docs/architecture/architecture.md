@@ -763,9 +763,9 @@ erDiagram
 ```
 
 ### 8.3 `ops` database (M13) and files
-- `traces_index(run_id PK, workflow, user_id, status, steps, tokens_in, tokens_out, cost_usd, latency_ms, cache_hits, fallbacks, started_at, finished_at, versions jsonb)`
-- `eval_runs(id, kind: eval|retrieval|drift|finetune, git_sha, created_at, metrics jsonb, path)`
-- `registry(kind: prompt|rubric|config, name, version, sha256, path, registered_at)`
+- `traces_index(run_id PK, workflow, user_id, status, steps, tokens_in, tokens_out, cost_usd, latency_ms, cache_hits, fallbacks, started_at, finished_at, versions jsonb, metrics jsonb)` (D-008)
+- `eval_runs` (added in Z10, D-008) `(id, kind: eval|retrieval|drift|finetune, git_sha, created_at, metrics jsonb, path)`
+- No `registry` table: `GET /registry` is computed from the mounted files (D-008)
 - Files: `traces/YYYY-MM-DD/<run_id>.jsonl` on PVC `traces` (+ JSON lines to stdout); `eval/results/*.json`; `rubrics/*.yaml`, `prompts/*.md`, `config/*.yaml` versioned in git and mounted via ConfigMaps.
 
 ### 8.4 Redis keys (all with TTL)
@@ -1082,7 +1082,7 @@ flowchart LR
     end
     TC -->|POST /trace| AO["M13 agentops"]
     AO --> JL[("PVC traces<br/>traces/date/run_id.jsonl")]
-    AO --> IDX[("ops DB<br/>traces_index, eval_runs, registry")]
+    AO --> IDX[("ops DB<br/>traces_index, eval_runs (Z10)")]
     AO --> SUM["GET /summary<br/>cost per verdict, latency per agent,<br/>cache hit rate, fallbacks, approvals,<br/>blocked injections"]
     SUM --> GW["gateway /ops/summary"] --> DASH["UI Ops dashboard page"]
     PM -.->|optional| PROM["Prometheus (optional)"]
@@ -1093,11 +1093,13 @@ flowchart LR
 | **Tracing (AO-1)** | `TraceRecord` per agent step, tool call, LLM call and orchestrator decision; `run_id` propagated via `X-Run-Id` header; `step_id` is a time-ordered unique integer from `common.trace`, `parent_step` is passed as `X-Parent-Step` (D-003). Stored as JSONL + index; also one JSON line per record on stdout, where `llm_call` contents are replaced by length + hash (D-002). `GET /runs/{id}/trace` returns the ordered tree. |
 | **Replay (AO-1)** | `python -m agentops.replay <run_id>`: loads the trace, runs the orchestrator state machine with a `ReplayTransport` that answers every tool/LLM call from the recorded output (matched by agent, tool, input hash, order). Diff of decisions printed; non-zero exit if the verdict differs. |
 | **Budgets (AO-2)** | `config/budgets.yaml` (ConfigMap): per workflow `max_tokens`, `max_cost_usd`, `max_pages`, `max_steps`, per-action caps. Enforced in M3 (before each step) and M5 (per fetch / LLM call, using `run_id`). Over budget → approval (if the action is optional) or `BUDGET_STOPPED`. |
-| **Registry (AO-3)** | `prompts/*.md` and `rubrics/*.yaml` with `version` in front-matter; `rubrics/manifest.yaml` defines the rubric set id; M13 `/registry` lists name, version, sha256; CI check fails if a prompt/rubric file changes without a version bump; a version bump requires a new eval run (Jenkins nightly + PR note). |
+| **Registry (AO-3)** | `prompts/*.md` and `rubrics/*.yaml` with `version` in front-matter; `rubrics/manifest.yaml` defines the rubric set id; M13 `/registry` lists name, version, sha256; `scripts/check_registry.py` (lock `config/registry.lock.json`) fails if a rubric, prompt, budgets or verdict rules file changes without a version bump; a version bump requires a new eval run (Jenkins nightly + PR note). |
 | **Evaluation harness (AO-4)** | `jobs/evaluation` image: runs labelled ideas (`eval/labelled/ideas.jsonl`) through the orchestrator, computes agreement, 4×4 confusion matrix, Cohen's κ, **false-GO-on-human-NO-GO count**; behaviour checks from traces (expected tools used, evidence cited ratio, budget kept, injection resisted on poisoned fixtures). Runs as K8s Job `eval`, nightly from Jenkins; compares with `eval/results/baseline.json`. Offline threshold tuning (`tune.py`) replays stored dimension scores through M11 with a grid over T_go/T_no/floor/weights using k-fold CV (EVAL-3/4). |
 | **Behaviour tests (AO-7)** | Cassettes `eval/behaviour/cassettes/*.jsonl` (recorded model/tool responses) replayed in pytest: invalid JSON from a scorer → retry → fallback/abstain; tool timeout → retry → abstain; empty source → INSUFFICIENT EVIDENCE with `missing`; poisoned page → sanitised + flagged, instructions not followed. |
 | **Drift (AO-5)** | CronJob `drift-report` after ingestion: freshness (median age, % < 90 days per source), niche coverage (niches with < 10 cards, coverage vs previous), verdict distribution shift (PSI of last-7-days verdict mix vs baseline window). Stored in `eval_runs` + `eval/results/drift-*.json`; shown on the dashboard. |
 | **Dashboard (AO-6)** | UI page "Ops" reading `/ops/summary` ([ADR-006](../decisions/ADR-006-dashboard-in-ui.md)); all services also expose Prometheus metrics. |
+
+**Run facts (D-007):** `run_started`, `run_status`, `verdict`, `approval`, `injection_blocked` and `scorer_fallback` are decision records with `tool=<event>` and a JSON `output` (`contracts/ops.py`). For a repeated `step_id` the first stored record wins.
 
 Metric names (Prometheus): `ideaval_runs_total{workflow,status}`, `ideaval_verdict_cost_usd` (histogram), `ideaval_agent_latency_seconds{agent}` (histogram), `ideaval_llm_tokens_total{model,direction}`, `ideaval_cache_requests_total{cache,result}`, `ideaval_scorer_fallbacks_total{dimension}`, `ideaval_approvals_total{decision}`, `ideaval_injections_blocked_total{stage}`, `ideaval_budget_stops_total`, `ideaval_fabricated_ids_total`, `ideaval_http_requests_total{service,route,code}`.
 

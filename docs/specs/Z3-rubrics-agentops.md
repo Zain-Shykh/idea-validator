@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session (`scripts/run-phase.sh`) |
 | Branch | `feat/z3-rubrics-agentops` (parent: `feat/z2-verdict-engine`, PR #7) |
-| Status | Plan ready |
+| Status | In review |
 | Requirement IDs | DATA-8, VE-2, AO-1 (store + read), AO-2 (budgets config), AO-3, AO-6 (summary API), M13-1..3, M13-6, M2-5 (cache-hit aggregation), API-I6, K8S-12 |
 | Architecture refs | `architecture.md` §7.2, §8.3, §8.5, §12.2, §12.4, §15, §17; D-002, D-003 |
 | Depends on | Z0 (contracts, `common.trace`), Z1 (agentops stub), Z2 (`config/verdict.yaml`) |
@@ -108,8 +108,8 @@ A decision record with another `tool` is stored and ignored by the numbers. A kn
 lock
 for each run in the batch:
     known = step_ids already in the run's files
-    append the batch's lines to traces/<UTC date of record.ts>/<run_id>.jsonl
-    records = all lines of the run, one per step_id (last wins)
+    append the lines of unknown step_ids (first one wins; changed after review, C2) to traces/<UTC date of record.ts>/<run_id>.jsonl
+    records = all lines of the run, one per step_id (first wins)
     upsert index(records)            # recomputed, never incremented: re-sends are harmless
     count Prometheus metrics for step_ids not in known (after the upsert succeeded)
 ```
@@ -160,22 +160,87 @@ Coverage target: ≥ 80 % `agentops`, ≥ 85 % `libs/common`.
 ### B1. Task breakdown
 | # | Task | Files | Verification | Done |
 |---|------|-------|--------------|------|
-| 1 | Rubrics, manifest, prompts, budgets, registry loader | `rubrics/**`, `prompts/**`, `config/budgets.yaml`, `libs/common/src/common/registry.py`, `libs/common/pyproject.toml` | `pytest libs/common/tests/test_registry.py` | [ ] |
-| 2 | Registry check and lock (incl. the Z2 follow-up) | `scripts/check_registry.py`, `config/registry.lock.json` | `pytest libs/common/tests/test_check_registry.py` | [ ] |
-| 3 | Ops contracts: events, two summary fields, schemas, fixture | `contracts/ops.py`, `libs/common/schemas/`, `eval/fixtures/ops_summary.json` | `python -m common.contracts.export --check` | [ ] |
-| 4 | AgentOps: files, index, ingest, aggregation, routes, metrics, migration | `services/agentops/**`, `pyproject.toml` | `pytest services/agentops`, mypy | [ ] |
-| 5 | Packaging: requirements, Dockerfile, compose, ConfigMaps, PVC, init container, temporary Postgres in dev | `services/agentops/{Dockerfile,compose.yaml,requirements.txt}`, `k8s/**`, `{rubrics,prompts,config}/kustomization.yaml`, `eval/behaviour/test_packaging.py`, `.env.example` | packaging tests, kubeconform | [ ] |
-| 6 | Postgres integration tests | `services/agentops/tests/integration/` | `pytest -m integration services/agentops` | [ ] |
-| 7 | Testing subagent, fixes | — | full suite | [ ] |
-| 8 | Image build, minikube smoke | `k8s/overlays/dev` | pod Ready, PVC Bound | [ ] |
-| 9 | Docs and PR | `docs/**` | — | [ ] |
+| 1 | Rubrics, manifest, prompts, budgets, registry loader | `rubrics/**`, `prompts/**`, `config/budgets.yaml`, `libs/common/src/common/registry.py`, `libs/common/pyproject.toml` | `pytest libs/common/tests/test_registry.py` | [x] |
+| 2 | Registry check and lock (incl. the Z2 follow-up) | `scripts/check_registry.py`, `config/registry.lock.json` | `pytest libs/common/tests/test_check_registry.py` | [x] |
+| 3 | Ops contracts: events, two summary fields, schemas, fixture | `contracts/ops.py`, `libs/common/schemas/`, `eval/fixtures/ops_summary.json` | `python -m common.contracts.export --check` | [x] |
+| 4 | AgentOps: files, index, ingest, aggregation, routes, metrics, migration | `services/agentops/**`, `pyproject.toml` | `pytest services/agentops`, mypy | [x] |
+| 5 | Packaging: requirements, Dockerfile, compose, ConfigMaps, PVC, init container, temporary Postgres in dev | `services/agentops/{Dockerfile,compose.yaml,requirements.txt}`, `k8s/**`, `{rubrics,prompts,config}/kustomization.yaml`, `eval/behaviour/test_packaging.py`, `.env.example` | packaging tests, kubeconform | [x] |
+| 6 | Postgres integration tests | `services/agentops/tests/integration/` | `pytest -m integration services/agentops` | [x] |
+| 7 | Testing subagent, fixes | — | full suite | [x] |
+| 8 | Image build, minikube smoke | `k8s/overlays/dev` | pod Ready, PVC Bound | [x] |
+| 9 | Docs and PR | `docs/**` | — | [x] |
 
 ### B2. Commit plan
 `docs(spec)` → `docs(plan)` → `feat(registry): rubrics, prompts, budgets, loader` → `feat(registry): version lock check` → `feat(contracts): ops events` → `feat(agentops): trace store, summary, registry` → `chore(k8s): agentops config, PVC, migrate` → `test`/`fix` → `docs(Z3)`. Decision rows go into the commit they belong to.
 
 ### B3. Definition of Done
-- [ ] All A4 criteria pass.
-- [ ] `ruff check .`, `ruff format --check .`, `mypy libs services` clean; coverage targets met.
-- [ ] agentops image builds, non-root; manifests validate.
-- [ ] Checklist, plan, deviations, decisions, AI-usage log, setup updated.
-- [ ] PR against `feat/z2-verdict-engine`.
+- [x] All A4 criteria pass.
+- [x] `ruff check .`, `ruff format --check .`, `mypy libs services` clean; coverage targets met.
+- [x] agentops image builds, non-root; manifests validate.
+- [x] Checklist, plan, deviations, decisions, AI-usage log, setup updated.
+- [x] PR against `feat/z2-verdict-engine`.
+
+---
+
+## Part C — Implementation and test report
+
+### C1. What was built
+| File | What |
+|---|---|
+| `rubrics/*.yaml`, `rubrics/manifest.yaml` | six rubrics v1 (anchors 0–5, one worked example per level, all fictional), set `r1` |
+| `prompts/*@v1.md` | seven prompts with front matter and the evidence-as-data rule; none asks for a verdict about an idea |
+| `config/budgets.yaml` | caps v1 per workflow and per action |
+| `libs/common/src/common/registry.py` | loaders and validation (extra `common[registry]`) |
+| `scripts/check_registry.py`, `config/registry.lock.json` | version lock for 16 files, incl. `verdict.yaml` and `weights_version` (Z2 follow-up) |
+| `libs/common/src/common/contracts/ops.py` (+ schemas, fixture) | ops events; `runs_by_status`, `p50_ms` |
+| `services/agentops/**` | trace ingest and read, JSONL files, `traces_index`, migration, summary, registry, metrics |
+| `k8s/base/agentops.yaml`, `{config,rubrics,prompts}/kustomization.yaml`, `k8s/overlays/dev` | ConfigMaps, PVC `traces`, `db-migrate` init, temporary Postgres, agentops tag `9d8410a` |
+| `services/orchestrator/tests/unit/test_run.py` | its contract test now runs against the real AgentOps app on SQLite |
+
+### C2. Deviations from spec / architecture
+| What | Why | Logged in deviations.md as |
+|------|-----|---------------------------|
+| Run facts are decision records with a typed payload; `OpsSummary` has two more fields | DATA-6 has no fields for the AO-6 facts | D-007 |
+| Only `traces_index` exists in `ops` (plus a `metrics` column); `/registry` reads the mounted files | no reader for the other tables yet | D-008 |
+| Spec said the last record wins for a repeated `step_id`; the first one wins | a later write could rewrite the audit trail | Z3-14 (spec updated) |
+
+An automated security review ran during the session. (1) Last-wins: fixed. My first fix only changed which line won on read, so a re-sent record with an older date still replaced the original through folder order; it was also committed with its new test failing, because a pipe to `tail` hid the exit code (`ec168ac`). The review and the test both showed it; `6ef6df3` decides it at ingest. (2) No authentication on `/trace` and `/runs/{id}/trace`: not changed. This is the known limit in architecture §16; the routes are not exposed through the gateway and NetworkPolicy is A0's.
+
+### C3. Test report
+Testing subagent (`agent-skills:test-engineer`; added `test_edge_cases.py`, `test_registry_edges.py`, two Postgres tests and more lock and packaging tests; changed no production code):
+- Before its tests: 664 passed. After: 784 passed, 7 failed (one bug); integration 5 passed; ruff, format, mypy clean; kubeconform 25/25; coverage 99 % over `common` + `agentops`.
+- No flaky tests (three repeated runs).
+
+| Finding | Result (`b181715`) |
+|---|---|
+| Bug: an impossible YAML date raised a plain `ValueError`; agentops crashed at import instead of staying not ready | fixed in the shared loader |
+| A deleted prompt could be recorded and re-added changed under the same version | `--update` refuses removals; test added |
+| `run_id` `.`/`..` accepted but unreadable over HTTP; `parent_step` unbounded | rejected with 422 |
+| Dev overlay still tagged the stub image | updated after the build |
+| A deleted lock can be re-created with `--update` | not changed (visible in the diff) |
+| A two-day batch failing on the second file undercounts Prometheus | not changed (index totals stay right) |
+| `TraceClient` drops a batch on 413 (needs > 250 kB per record) | not changed, follow-up |
+
+Final run: `ruff check .`, `ruff format --check .`, `mypy libs services scripts/check_registry.py` clean; `pytest -q` → 794 passed, 8 deselected; coverage `agentops` + `common.registry` 98 % in their own tests (`migrate.py` 76 % there, its Postgres branch runs in the integration tests); `pytest -m integration services/agentops` → 5 passed; `python scripts/check_registry.py` and `python -m common.contracts.export --check` ok. The 3 Redis integration tests of the orchestrator were not run.
+
+Manual checks (image `ghcr.io/zain-shykh/idea-validator-agentops:9d8410a`):
+- Compose (Postgres on 5433): `agentops-migrate` exit 0, agentops healthy, uid 10001; posted the seeded runs → 202, 10 records for `run_a`, summary 2 runs / 3 verdicts / $0.003 per verdict / hit rate 0.4 / 1 fallback / approvals 1-1-1 / 4 injections; 16 registry entries.
+- minikube `idea-validator`: `kubectl apply -k k8s/overlays/dev` with a hand-made Secret `db`; PVC `traces` Bound (1 Gi); new agentops pod Ready, 0 restarts, `db-migrate` "database is up to date"; from the orchestrator pod `/ready` 200, post 202, unsafe `run_id` 422, trace with parent link, 16 registry entries; after `rollout restart` the same trace and summary were returned. Profile stopped afterwards; host images removed (the copy in the minikube node stays).
+
+### C4. Measurements
+| What | Value |
+|---|---|
+| agentops memory on compose after the smoke test | 68 MiB (limit 384 MiB) |
+| agentops image on disk | 272 MB |
+| 1,000 records, 10 runs, re-sent in part (test, SQLite, host) | about 3 s |
+
+In-cluster memory was not measured (`kubectl top` had no data yet).
+
+### C5. Follow-ups
+- **A0 (Ahmad):** run `python scripts/check_registry.py` in CI; real Postgres Service `postgres` and Secret `db` (`POSTGRES_PASSWORD`) in `create_secrets.sh`, replacing the temporary one; NetworkPolicy limiting who reaches agentops.
+- **A2/Z6/Z7/Z4 (producers):** emit the ops events of `contracts/ops.py`; put each model call's cost on one record only (the caller or M5, not both).
+- **A9:** the Ops page can show `runs_by_status` and `p50_ms`.
+- Z4–Z8: render prompts and escape evidence text so it cannot close its `<evidence>` block.
+- Z7: enforce `budgets.yaml` through `common.registry.load_budgets`.
+- Z10: `eval_runs` migration, drift and evaluation reports, replay; require an evaluation run after a version bump.
+- Later: trace retention (1 GiB volume), SQL aggregation for `/summary`, per-run incremental index, duplicate YAML keys.
