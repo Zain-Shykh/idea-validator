@@ -19,7 +19,7 @@
 | Z6 | M12 Critic and Guardrails | In review | [Z6](specs/Z6-critic-guardrails.md) | [#15](https://github.com/Zain-Shykh/idea-validator/pull/15) | 2026-11-27 12:25 | — |
 | Z7 | M3 Orchestrator: run lifecycle + Validate | In review | [Z7](specs/Z7-orchestrator-validate.md) | [#17](https://github.com/Zain-Shykh/idea-validator/pull/17) | 2026-11-27 15:55 | — |
 | Z8 | M8 Ideation + Discover + challenge / what-if | In review | [Z8](specs/Z8-ideation-discover.md) | [#19](https://github.com/Zain-Shykh/idea-validator/pull/19) | 2026-11-27 | — |
-| Z9 | M10t Fine-tuning pipeline + model comparison | Blocked | [Z9](specs/Z9-finetuning.md) | PR_LINK | 2026-11-27 | — |
+| Z9 | M10t Fine-tuning pipeline + model comparison | Blocked | [Z9](specs/Z9-finetuning.md) | [#21](https://github.com/Zain-Shykh/idea-validator/pull/21) | 2026-11-27 | — |
 | Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | Not started | — | — | — | — |
 | Z11 | Cluster integration, measurements, end-to-end acceptance | Not started | — | — | — | — |
 | Z12 | Report and submission (shared with Ahmad) | Not started | — | — | — | — |
@@ -438,7 +438,7 @@ flowchart LR
 | 2026-11-28 01:11 | Implementation | Resumed: split verified and finished, notebook, comparison, packaging, docs (tasks 4–8) |
 | 2026-11-28 01:29 | Tests | Testing subagent: 5 bugs, all fixed; 1941 passed, 2 skipped |
 | 2026-11-28 01:31 | Blocked | **No dataset, labels, checks, training run, metrics or comparison.** Needs: real KB (S3), Gemini key, hand checks by Zain (≥ 40) and Ahmad (≥ 20), `eval/labelled/ideas.jsonl`, free T4, then export and cluster. Steps: spec Z9 C6 |
-| 2026-11-28 01:31 | PR | Draft PR_LINK against `feat/z8-ideation-discover`; no acceptance criterion below is met yet |
+| 2026-11-28 01:31 | PR | Draft PR [#21](https://github.com/Zain-Shykh/idea-validator/pull/21) against `feat/z8-ideation-discover`; no acceptance criterion below is met yet |
 
 ---
 

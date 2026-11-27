@@ -10,7 +10,7 @@
 | Requirement IDs | M10t-1, M10t-2, FT-1..8, M10-1, M10-4, M10-5, DATA-7, SUB-2e, SS-18 |
 | Architecture refs | §12.2, §14.1, §14.2, ADR-005 |
 | Depends on | Z5 (M9 features and evidence bounds), Z4 (prompt builder, scorer). **S3 (real KB) is not available**: `FakeKB` in tests only |
-| Issue / PR | ISSUE_PR |
+| Issue / PR | #20 / #21 (draft) |
 
 ---
 
