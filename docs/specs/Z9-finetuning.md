@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session |
 | Branch | `feat/z9-finetuning` (parent `feat/z8-ideation-discover`, PR #19) |
-| Status | Draft spec |
+| Status | Implementing |
 | Requirement IDs | M10t-1, M10t-2, FT-1..8, M10-1, M10-4, M10-5, DATA-7, SUB-2e, SS-18 |
 | Architecture refs | §12.2, §14.1, §14.2, ADR-005 |
 | Depends on | Z5 (M9 features and evidence bounds), Z4 (prompt builder, scorer). **S3 (real KB) is not available**: `FakeKB` in tests only |
@@ -156,7 +156,30 @@ nothing about training or model quality.
 
 ## Part B — Plan
 
-*(next commit)*
+### B1. Task breakdown
+| # | Task | Files | Verification | Done |
+|---|------|-------|--------------|------|
+| 1 | Shared formats, ids, grouping, labelled set, fake guard; sampling and assembly | `dataset.py`, `build_dataset.py`, tests, `pyproject.toml` paths | `pytest jobs/finetune` | [ ] |
+| 2 | Teacher drafts | `draft_labels.py`, tests | same | [ ] |
+| 3 | Terminal review | `review.py`, tests | same | [ ] |
+| 4 | Split with leakage assertions | `split.py`, tests incl. committed-data test | same | [ ] |
+| 5 | Training config and notebook | `train_config.yaml`, `train.ipynb`, stub-library test | same | [ ] |
+| 6 | Comparison | `evaluate.py`, tests, pipeline test | same | [ ] |
+| 7 | Export and packaging: GGUF steps, model image `v1`, scorer component, weights check | `export_gguf.md`, `model-image/README.md`, `k8s-lora/`, tests | `kubectl kustomize`, `kubeconform`, docker build with a stand-in | [ ] |
+| 8 | README, setup, `data/README.md` | docs | read-through | [ ] |
+| 9 | Testing subagent, fixes | tests | full suite, ruff, mypy | [ ] |
+| 10 | Part C, runbook, tracking docs, draft PR | docs | — | [ ] |
+
+### B2. Commit plan
+`docs(spec)` → `docs(plan)` → one `feat(finetune)` per task 1–7 (tests included) → `docs(finetune)` →
+`fix(finetune)` (test report) → `docs(Z9)`. Push after every task. Decision rows go with their change.
+
+### B3. Definition of Done (phase)
+- [ ] A4 criteria 1–11 pass; O1–O7 stay unticked with their reasons.
+- [ ] ruff and mypy clean (`mypy libs services jobs/finetune`); coverage target met.
+- [ ] No heavy ML dependency added to `.venv`, `requirements-dev.txt` or any service image.
+- [ ] No data, labels, checks, logs or results committed.
+- [ ] Tracking docs updated; plan status **Blocked** with reasons; **draft** PR against `feat/z8-ideation-discover`.
 
 ---
 
