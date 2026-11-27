@@ -103,11 +103,12 @@ Comparisons use values rounded to 9 decimals (removes float noise such as 69.999
 | Duplicate with different user or features | gate passes |
 | Duplicate and differentiation abstained | gate fails |
 | Objection without evidence | rejected by the contract (422); the engine also ignores it |
-| Same objection id twice | counted once |
+| Same objection id twice on one dimension | counted once (on two dimensions: two objections) |
+| Several blockers | all named, in sorted order |
 | Penalty below 0 | score and confidence clamp at 0 |
 | Tie for weakest / least confident | higher weight, then fixed dimension order |
 | Invalid, unreadable or missing config | `/ready` 503, `/verdict` `/whatif` `/config` 503, `/health` 200, error logged |
-| NaN/inf, score out of range, unknown field | 422 (contracts) |
+| NaN/inf in a typed field, score out of range, unknown field | 422 (contracts); free-form `features` values are passed through (NaN serialises as null) |
 
 ### A8. Test plan
 | Level | What | Command |

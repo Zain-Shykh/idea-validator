@@ -31,7 +31,7 @@ def test_threshold_edges(
 
 def test_score_too_low_is_said(config: VerdictConfig) -> None:
     verdict = decide(make_request(scores=flat(2.0)), config)
-    assert verdict.gate_details["score"] == "score too low: 40.00 is below 50"
+    assert verdict.gate_details["score"] == "score too low: 40 is below 50"
 
 
 @pytest.mark.parametrize("index", range(5))

@@ -90,7 +90,8 @@ class VerdictConfig(ContractModel):
             if not math.isclose(math.fsum(values), 100, abs_tol=1e-9):
                 raise ValueError(f"{goal} weights must sum to 100, got {math.fsum(values)}")
             # a larger weight cannot be raised by weight_delta without the others going negative
-            if max(values) * (1 + self.sensitivity.weight_delta) > 100:
+            top = max(values)  # at 100 there is nothing to redistribute to
+            if top >= 100 or top * (1 + self.sensitivity.weight_delta) > 100:
                 raise ValueError(f"{goal} has a weight too large for the sensitivity check")
         return self
 

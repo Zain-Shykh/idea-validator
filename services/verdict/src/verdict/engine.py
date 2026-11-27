@@ -53,16 +53,16 @@ def apply_challenge(
 ) -> dict[Dimension, DimensionScore]:
     """VE-12. Returns the effective scores, keyed and ordered by dimension.
 
-    Only evidence-backed objections count, each id once. An abstained dimension has nothing to
-    lower.
+    Only evidence-backed objections count, each id once per dimension. An abstained dimension has
+    nothing to lower.
     """
     rules = config.challenge
-    backed = {o.objection_id: o for o in objections if o.evidence_ids}
+    backed = {(o.dimension, o.objection_id) for o in objections if o.evidence_ids}
     by_dimension = {s.dimension: s for s in scores}
     effective = {}
     for dimension in Dimension:
         item = by_dimension[dimension]
-        ids = sorted(i for i, o in backed.items() if o.dimension == dimension)
+        ids = sorted(i for d, i in backed if d == dimension)
         if ids and item.score is not None:
             penalty = min(len(ids) * rules.score_penalty, rules.max_penalty)
             before = {"score": item.score, "confidence": item.confidence}
@@ -134,12 +134,12 @@ def check_gates(
                 VerdictLabel.NO_GO,
                 f"estimated effort {inputs.est_effort_hours:g} h exceeds {limit:g} h "
                 f"({margin:g} x {inputs.available_hours:g} available hours): "
-                f"gap {round(gap, 2):g} h",
+                f"gap {_exact(gap):g} h",
             )
         results["feasibility"] = GateResult.PASS
 
     if inputs.blockers:
-        named = "; ".join(f"{b.type} blocker: {b.description}" for b in inputs.blockers)
+        named = "; ".join(sorted(f"{b.type} blocker: {b.description}" for b in inputs.blockers))
         return fail("risk", VerdictLabel.NO_GO, named)
     results["risk"] = GateResult.PASS
 
@@ -261,7 +261,9 @@ def _evaluate(
         label = VerdictLabel.INSUFFICIENT_EVIDENCE
     if label is None and conf < config.confidence.min:
         label = VerdictLabel.INSUFFICIENT_EVIDENCE
-        details["confidence"] = f"confidence too low: {conf:.4g} is below {config.confidence.min:g}"
+        details["confidence"] = (
+            f"confidence too low: {conf:.12g} is below {config.confidence.min:g}"
+        )
         missing.append(details["confidence"])
 
     score: float | None = None
@@ -280,7 +282,7 @@ def _evaluate(
                 + f" below the floor {thresholds.floor:g}"
             )
         if score < thresholds.T_no:
-            details["score"] = f"score too low: {score:.2f} is below {thresholds.T_no:g}"
+            details["score"] = f"score too low: {score:.12g} is below {thresholds.T_no:g}"
         n_runs, flips = sensitivity(values, confidences, weight_map, label, config)
 
     return Verdict(
@@ -347,7 +349,7 @@ def what_would_make_go(
             targets.add(config.gates.duplicate.differentiation_override)
         # evaluate the rounded value that is shown, so applying it gives the same result
         for target in sorted({round(t, 2) for t in targets}):
-            if target <= start:
+            if target <= round(start, 2):  # would read "from 5 to 5"
                 continue
             changed = {**scores, dimension: item.model_copy(update={"score": target})}
             result = _evaluate(request, changed, config)
