@@ -1,9 +1,8 @@
 """M8 API (architecture §7.2): five agents behind five endpoints."""
 
 from collections.abc import Awaitable, Callable
-from typing import Annotated
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Request
 
 from common import context
 from common.contracts.agents import (
@@ -26,23 +25,17 @@ from ideation.services.agents import Agents
 router = APIRouter()
 
 
-def get_agents(request: Request) -> Agents:
-    agents: Agents | None = request.app.state.agents
-    if agents is None:
-        raise ApiError(503, "NOT_READY", "the agents are not configured")
-    return agents
-
-
-Service = Annotated[Agents, Depends(get_agents)]
-
-
-async def _run[T](run_id: str, agent: Callable[[], Awaitable[T]]) -> T:
+async def _run[T](request: Request, run_id: str, call: Callable[[Agents], Awaitable[T]]) -> T:
     if context.safe_id(run_id) is None:
         # the run id names a trace file
         raise ApiError(422, "VALIDATION_ERROR", "run_id has characters that are not allowed")
+    # checked here, not in a dependency: a bad body is a 422 even when the service is unready
+    agents: Agents | None = request.app.state.agents
+    if agents is None:
+        raise ApiError(503, "NOT_READY", "the agents are not configured")
     token = context.run_id_var.set(run_id)
     try:
-        return await agent()
+        return await call(agents)
     except LLMOutputError as exc:
         # never free text into the pipeline: the step fails (§12.2)
         raise ApiError(502, "LLM_OUTPUT_INVALID", "the model's reply was unusable") from exc
@@ -55,25 +48,25 @@ async def _run[T](run_id: str, agent: Callable[[], Awaitable[T]]) -> T:
 
 
 @router.post("/intake")
-async def intake(body: IntakeRequest, agents: Service) -> IntakeResponse:
-    return await _run(body.run_id, lambda: agents.intake(body))
+async def intake(body: IntakeRequest, request: Request) -> IntakeResponse:
+    return await _run(request, body.run_id, lambda agents: agents.intake(body))
 
 
 @router.post("/ideate")
-async def ideate(body: IdeateRequest, agents: Service) -> IdeateResponse:
-    return await _run(body.run_id, lambda: agents.ideate(body))
+async def ideate(body: IdeateRequest, request: Request) -> IdeateResponse:
+    return await _run(request, body.run_id, lambda agents: agents.ideate(body))
 
 
 @router.post("/gap-analyze")
-async def gap_analyze(body: GapAnalyzeRequest, agents: Service) -> GapAnalyzeResponse:
-    return await _run(body.run_id, lambda: agents.gap_analyze(body))
+async def gap_analyze(body: GapAnalyzeRequest, request: Request) -> GapAnalyzeResponse:
+    return await _run(request, body.run_id, lambda agents: agents.gap_analyze(body))
 
 
 @router.post("/skeptic")
-async def skeptic(body: SkepticRequest, agents: Service) -> SkepticResponse:
-    return await _run(body.run_id, lambda: agents.skeptic(body))
+async def skeptic(body: SkepticRequest, request: Request) -> SkepticResponse:
+    return await _run(request, body.run_id, lambda agents: agents.skeptic(body))
 
 
 @router.post("/concretize")
-async def concretize(body: ConcretizeRequest, agents: Service) -> ConcretizeResponse:
-    return await _run(body.run_id, lambda: agents.concretize(body))
+async def concretize(body: ConcretizeRequest, request: Request) -> ConcretizeResponse:
+    return await _run(request, body.run_id, lambda agents: agents.concretize(body))

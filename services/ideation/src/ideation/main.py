@@ -43,9 +43,7 @@ def build_agents(
         return None
 
 
-def build_app(
-    settings: IdeationSettings | None = None, *, agents: Agents | None = None
-) -> FastAPI:
+def build_app(settings: IdeationSettings | None = None, *, agents: Agents | None = None) -> FastAPI:
     settings = settings or IdeationSettings()
 
     @asynccontextmanager

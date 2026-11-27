@@ -51,9 +51,7 @@ class Recorded(Cassette):
     """Keeps what each call sent."""
 
     def __init__(self, *replies: Any) -> None:
-        super().__init__(
-            [{"content": r if isinstance(r, str) else json.dumps(r)} for r in replies]
-        )
+        super().__init__([{"content": r if isinstance(r, str) else json.dumps(r)} for r in replies])
 
 
 class Built:

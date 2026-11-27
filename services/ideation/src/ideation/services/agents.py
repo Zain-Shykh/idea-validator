@@ -218,7 +218,8 @@ class Agents:
 
     async def ideate(self, request: IdeateRequest) -> IdeateResponse:
         """Ideas that cite gap evidence they were shown; the others are not returned (M8-3)."""
-        parts, niche_of = [], {}
+        parts: list[str] = []
+        niche_of: dict[str, str] = {}
         for gap in request.gaps[:MAX_GAPS]:
             items = clean(
                 (i for i in gap.evidence if i.evidence_id not in niche_of),
@@ -238,10 +239,7 @@ class Agents:
             "niches": _json([n.model_dump(mode="json") for n in request.niches]),
             "evidence": "\n".join(parts),
             "objections": _json(
-                [
-                    {"dimension": o.dimension, "text": o.text}
-                    for o in request.prior_objections[:20]
-                ]
+                [{"dimension": o.dimension, "text": o.text} for o in request.prior_objections[:20]]
             ),
         }
         drafts = await self._ask(
@@ -270,13 +268,13 @@ class Agents:
                 log.warning("an idea with an empty field was dropped")
         return IdeateResponse(ideas=ideas[:MAX_IDEAS])
 
-    async def _idea_evidence(self, idea: GeneratedIdea) -> list[EvidenceItem]:
+    async def _idea_evidence(self, idea: GeneratedIdea, run_id: str) -> list[EvidenceItem]:
         """The idea's gap evidence and what M6 finds for the idea. Raises ``ServiceError``."""
         cited = await self.kb.evidence(idea.gap_evidence_ids)
         query = shorten(f"{idea.title}\n{idea.text}", MAX_QUERY_CHARS)
         search = SearchRequest(query=query, k=self.search_k)
         with self.tracer.step("gap_analyst", TraceKind.TOOL_CALL, tool="search_kb",
-                              input=search.model_dump_json()) as step:  # fmt: skip
+                              input=search.model_dump_json(), run_id=run_id) as step:  # fmt: skip
             found = await self.kb.search(search)
             step.output = json.dumps([r.evidence_id for r in found.results])
         results = (
@@ -289,7 +287,7 @@ class Agents:
         ideas = request.ideas[:MAX_IDEAS]
         if not ideas:
             return GapAnalyzeResponse(ideas=[])
-        evidence = [await self._idea_evidence(idea) for idea in ideas]
+        evidence = [await self._idea_evidence(idea, request.run_id) for idea in ideas]
         shown = {i.evidence_id: i for items in evidence for i in items}
         enriched = [EnrichedIdea(idea=idea) for idea in ideas]
         if not shown:
@@ -323,9 +321,9 @@ class Agents:
             def claims(
                 drafted: list[DraftClaim], kind: str, n: int = n, own: set[str] = own
             ) -> list[Claim]:
-                kept = [
-                    (c.text, ids) for c in drafted if (ids := grounded(c.evidence_ids, own))
-                ][:MAX_CLAIMS]
+                kept = [(c.text, ids) for c in drafted if (ids := grounded(c.evidence_ids, own))][
+                    :MAX_CLAIMS
+                ]
                 return [
                     Claim(claim_id=f"{kind}_{n}_{m}", text=text[:500], evidence_ids=ids)
                     for m, (text, ids) in enumerate(kept)
