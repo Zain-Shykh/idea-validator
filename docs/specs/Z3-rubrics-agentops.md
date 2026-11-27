@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session (`scripts/run-phase.sh`) |
 | Branch | `feat/z3-rubrics-agentops` (parent: `feat/z2-verdict-engine`, PR #7) |
-| Status | Draft spec |
+| Status | Plan ready |
 | Requirement IDs | DATA-8, VE-2, AO-1 (store + read), AO-2 (budgets config), AO-3, AO-6 (summary API), M13-1..3, M13-6, M2-5 (cache-hit aggregation), API-I6, K8S-12 |
 | Architecture refs | `architecture.md` §7.2, §8.3, §8.5, §12.2, §12.4, §15, §17; D-002, D-003 |
 | Depends on | Z0 (contracts, `common.trace`), Z1 (agentops stub), Z2 (`config/verdict.yaml`) |
@@ -152,3 +152,30 @@ Coverage target: ≥ 80 % `agentops`, ≥ 85 % `libs/common`.
 | Producers do not follow the event convention | typed payload models in contracts; bad events are counted |
 | Re-reading a run's file on every batch is O(n²) per run | runs are bounded (budgets); marked in code, incremental index if it matters |
 | Little disk | build only the agentops image; remove it afterwards |
+
+---
+
+## Part B — Plan
+
+### B1. Task breakdown
+| # | Task | Files | Verification | Done |
+|---|------|-------|--------------|------|
+| 1 | Rubrics, manifest, prompts, budgets, registry loader | `rubrics/**`, `prompts/**`, `config/budgets.yaml`, `libs/common/src/common/registry.py`, `libs/common/pyproject.toml` | `pytest libs/common/tests/test_registry.py` | [ ] |
+| 2 | Registry check and lock (incl. the Z2 follow-up) | `scripts/check_registry.py`, `config/registry.lock.json` | `pytest libs/common/tests/test_check_registry.py` | [ ] |
+| 3 | Ops contracts: events, two summary fields, schemas, fixture | `contracts/ops.py`, `libs/common/schemas/`, `eval/fixtures/ops_summary.json` | `python -m common.contracts.export --check` | [ ] |
+| 4 | AgentOps: files, index, ingest, aggregation, routes, metrics, migration | `services/agentops/**`, `pyproject.toml` | `pytest services/agentops`, mypy | [ ] |
+| 5 | Packaging: requirements, Dockerfile, compose, ConfigMaps, PVC, init container, temporary Postgres in dev | `services/agentops/{Dockerfile,compose.yaml,requirements.txt}`, `k8s/**`, `{rubrics,prompts,config}/kustomization.yaml`, `eval/behaviour/test_packaging.py`, `.env.example` | packaging tests, kubeconform | [ ] |
+| 6 | Postgres integration tests | `services/agentops/tests/integration/` | `pytest -m integration services/agentops` | [ ] |
+| 7 | Testing subagent, fixes | — | full suite | [ ] |
+| 8 | Image build, minikube smoke | `k8s/overlays/dev` | pod Ready, PVC Bound | [ ] |
+| 9 | Docs and PR | `docs/**` | — | [ ] |
+
+### B2. Commit plan
+`docs(spec)` → `docs(plan)` → `feat(registry): rubrics, prompts, budgets, loader` → `feat(registry): version lock check` → `feat(contracts): ops events` → `feat(agentops): trace store, summary, registry` → `chore(k8s): agentops config, PVC, migrate` → `test`/`fix` → `docs(Z3)`. Decision rows go into the commit they belong to.
+
+### B3. Definition of Done
+- [ ] All A4 criteria pass.
+- [ ] `ruff check .`, `ruff format --check .`, `mypy libs services` clean; coverage targets met.
+- [ ] agentops image builds, non-root; manifests validate.
+- [ ] Checklist, plan, deviations, decisions, AI-usage log, setup updated.
+- [ ] PR against `feat/z2-verdict-engine`.
