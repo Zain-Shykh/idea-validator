@@ -13,7 +13,8 @@ from critic.services.names import missing_names, names_in
         ("Unlike Anki, it syncs", ["Anki"]),
         ("study.com charges teachers", ["study.com"]),
         ("It is weaker than Kahoot's quiz mode", ["Kahoot"]),
-        ('The market has one leader: "Quizlet"', []),  # sentence start, no product verb
+        ('The market has one leader: "Quizlet"', ["Quizlet"]),  # ":" opens no sentence
+        ('It is old. "Quizlet" came first', []),  # sentence start, no product verb
         ("Anki and Anki again, like Anki", ["Anki"]),
         ("The app has no AI tutor and no SaaS API", []),
         ("Teachers want offline quizzes on Android and iOS", []),

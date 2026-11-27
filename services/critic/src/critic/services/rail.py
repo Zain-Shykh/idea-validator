@@ -14,11 +14,24 @@ EMAIL_MARK = "[email removed]"
 PHONE_MARK = "[phone removed]"
 
 # every repeat is bounded, so matching stays linear on long hostile text
-_EMAIL = re.compile(
-    r"[A-Za-z0-9._%+-]{1,64}@[A-Za-z0-9-]{1,63}(?:\.[A-Za-z0-9-]{1,63}){0,8}\.[A-Za-z]{2,24}"
+_EMAIL = re.compile(r"[\w.%+'-]{1,64}@(?:[\w-]{1,63}\.){1,9}[^\W\d_]{2,24}")
+# spaces (also no-break), dots, hyphens and dashes, slashes
+_SEP = "[ \t\u00a0\u202f./\\-\u2010-\u2015]"
+_GROUPED = re.compile(
+    rf"(?<![\w+])(?:1{_SEP})?(?:\(\d{{3}}\){_SEP}?|\d{{3}}{_SEP})\d{{3}}{_SEP}\d{{4}}(?!\w)"
 )
-_PHONE = re.compile(r"(?<![\w+])(?:\+|\(\d{1,4}\))?[ .\-]?\d(?:[ .\-()]{0,2}\d){6,16}(?!\w)")
-_GROUPED = re.compile(r"\d{3}[ .\-]\d{3}[ .\-]\d{4}")
+_PHONE = re.compile(
+    rf"(?<![\w+])(?:\+|\(\d{{1,4}}\))?{_SEP}?\d(?:(?:{_SEP}|[()]){{0,3}}\d){{6,16}}(?!\w)"
+)
+# bare digits count only after a word that says they are a phone number
+_CALLED = re.compile(
+    r"(\b(?:phone|call|number|whatsapp|mobile|contact)"
+    r"(?: (?:is|me|at|no\.?|number|on)){0,3}[: ]{1,3})\+?\d{9,15}(?!\w)",
+    re.IGNORECASE,
+)
+_DATE = re.compile(r"\d{1,2}[./-]\d{1,2}[./-]\d{4}")
+# "(2020) 15000" is a year in brackets, not an area code
+_YEAR = re.compile(r"\((?:19|20)\d\d\)")
 
 _ABUSE = re.compile(
     r"\bkill yourself\b|\bf+u+c+k+\s+(?:you|off)\b|\bstupid (?:bot|ai|machine)\b"
@@ -32,13 +45,16 @@ _HARMFUL = re.compile(
     r"|(?:hack into|ddos|dox|stalk)(?![\w-]))",
     re.IGNORECASE,
 )
-# a request addressed to the assistant instead of an idea: only at the very start
+# a request addressed to the assistant instead of an idea: only at the very start, and the
+# thing asked for must not be the first word of a longer one ("write the assignment tracker")
 _OFF_TOPIC = re.compile(
     r"\A\W{0,8}(?:(?:please|can you|could you|will you)\s{1,3}){0,2}"
     r"(?:(?:write|do|solve|finish|complete)\s+(?:me\s+)?(?:my|this|an?|the)\s+(?:\w{1,20}\s+){0,2}?"
-    r"(?:essay|homework|assignment|poem|joke|song|exam)(?![\w-])"
-    r"|tell me a (?:joke|story)\b"
-    r"|what(?:'s| is) the (?:weather|time)\b|who won\b)",
+    r"(?:essay|homework|assignment|poem|joke|song|exam)"
+    r"(?=\s{0,3}(?:\Z|[.?!,]|(?:for|about|on|please|due|now)\b))"
+    # a bare question, with nothing after it that could be an idea
+    r"|(?:tell me a (?:joke|story)|what(?:'s| is) the (?:weather|time)|who won)\b"
+    r"[^.?!\n]{0,80}[.?!]{0,3}\s*\Z)",
     re.IGNORECASE,
 )
 
@@ -46,15 +62,18 @@ _OFF_TOPIC = re.compile(
 def _phone(match: re.Match[str]) -> str:
     """Only numbers shaped like a phone number, so dates, years and big counts stay."""
     text = match.group()
-    body = text.lstrip(" .-")
+    body = text.lstrip(" \t\u00a0./-")
     digits = sum(c.isdigit() for c in text)
-    if 9 <= digits <= 15 and (body.startswith(("+", "(", "0")) or _GROUPED.fullmatch(body)):
+    shaped = body.startswith(("+", "(", "0")) and not _DATE.match(body) and not _YEAR.match(body)
+    if 9 <= digits <= 15 and shaped:
         return text[: len(text) - len(body)] + PHONE_MARK
     return text
 
 
 def redact(text: str) -> str:
-    return _PHONE.sub(_phone, _EMAIL.sub(EMAIL_MARK, text))
+    text = _EMAIL.sub(EMAIL_MARK, text)
+    text = _CALLED.sub(lambda m: m.group(1) + PHONE_MARK, text)
+    return _PHONE.sub(_phone, _GROUPED.sub(PHONE_MARK, text))
 
 
 def check_input(text: str, max_chars: int) -> tuple[InputRailResponse, list[str]]:

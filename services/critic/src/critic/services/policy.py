@@ -7,6 +7,11 @@ from common.registry import BudgetConfig
 _LIMITS = {"cost_usd": "max_cost_usd", "pages": "max_pages", "tokens": "max_tokens"}
 
 
+def _number(value: float) -> str:
+    # an int may be too large for a float, which ":g" would convert it to
+    return str(value) if isinstance(value, int) else f"{value:g}"
+
+
 def approval(request: ApprovalPolicyRequest, budgets: BudgetConfig) -> ApprovalPolicyResponse:
     """Equal to a limit is within it. An action without a cap is never approved silently."""
     reasons = []
@@ -17,10 +22,14 @@ def approval(request: ApprovalPolicyRequest, budgets: BudgetConfig) -> ApprovalP
         wanted = getattr(request.estimate, field)
         left = getattr(request.remaining, limit)
         if wanted > left:
-            reasons.append(f"estimated {field} {wanted:g} is above the {left:g} left in this run")
+            reasons.append(
+                f"estimated {field} {_number(wanted)} is above the {_number(left)} left in this run"
+            )
         allowed = None if cap is None else getattr(cap, limit)
         if allowed is not None and wanted > allowed:
-            reasons.append(f"estimated {field} {wanted:g} is above the cap of {allowed:g}")
+            reasons.append(
+                f"estimated {field} {_number(wanted)} is above the cap of {_number(allowed)}"
+            )
     return ApprovalPolicyResponse(
         requires_approval=bool(reasons),
         reason="; ".join(reasons) or f"within the remaining budget and the cap ({budgets.version})",

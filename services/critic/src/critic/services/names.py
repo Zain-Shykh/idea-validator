@@ -13,7 +13,9 @@ from collections.abc import Iterable
 CARD_ID = re.compile(r"\bcard_[A-Za-z0-9]+")
 
 _TOKEN = re.compile(r"[^\W_]+(?:['.\-][^\W_]+)*")
-_DOMAIN = re.compile(r"[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|io|ai|app|org|net|co|dev|edu|so|me)")
+_DOMAIN = re.compile(
+    r"[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:com|io|ai|app|org|net|co|dev|edu|so|me|tech|uk|pk|de|info|xyz)"
+)
 # quotes, brackets and list markers that may stand between a sentence end and its first word
 _OPENERS = " \t\r\"'([*>#-"
 # a capitalised word right before one of these, even at the start of a sentence, names a product
@@ -39,7 +41,8 @@ def _opens_sentence(text: str, start: int) -> bool:
     end = start
     while end and text[end - 1] in _OPENERS:
         end -= 1
-    return not end or text[end - 1] in ".!?:;\n"
+    # not ":": "the main competitor: Quizlet" names one
+    return not end or text[end - 1] in ".!?;\n"
 
 
 def normalise(text: str) -> str:

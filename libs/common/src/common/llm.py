@@ -238,7 +238,7 @@ class LLMClient:
                 "POST", "/llm/chat", body=request, response_model=LlmChatResponse
             )
         except ServiceError as exc:
-            raise LLMUnavailableError(str(exc)) from exc
+            raise LLMUnavailableError(exc.summary) from exc
 
     async def _call_direct(self, request: LlmChatRequest) -> LlmChatResponse:
         model = self.settings.provider_model(request.model_alias)
