@@ -5,6 +5,7 @@ target-version = "py312"
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "UP", "B", "ASYNC", "SIM", "RUF"]
+ignore = ["ASYNC109"]  # per-request httpx timeouts are passed as arguments on purpose
 
 [tool.ruff.lint.isort]
 known-first-party = ["common"]
