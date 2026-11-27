@@ -113,10 +113,10 @@ async def test_repair_retry_shares_the_local_deadline() -> None:
 
     async def slow(_: httpx.Request) -> httpx.Response:
         calls.append(1)
-        await asyncio.sleep(0.15)
+        await asyncio.sleep(0.6)
         return completion("not json")
 
-    rig = Rig(slow, [reply()], local_timeout_s=0.25)
+    rig = Rig(slow, [reply()], local_timeout_s=1.0)
     assert (await rig.scorer.score(request())).model == "scorer-hosted"
     assert len(calls) == 2
 

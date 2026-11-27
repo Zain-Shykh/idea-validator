@@ -5,6 +5,7 @@ from common.contracts.core import Dimension
 from common.registry import Prompt, RegistryError, load_prompts, load_rubrics
 from scorer.services.prompt import (
     MAX_EVIDENCE,
+    MAX_EVIDENCE_CHARS,
     MAX_QUOTE_CHARS,
     build_messages,
     check_template,
@@ -50,7 +51,19 @@ def test_evidence_and_quotes_are_bounded_and_deduplicated() -> None:
     chosen = select_evidence(body.evidence)
     assert [e.evidence_id for e in chosen] == [f"card_b{i}#c0" for i in range(MAX_EVIDENCE)]
     _, user = messages(evidence=items)
-    assert "q" * MAX_QUOTE_CHARS in user and "q" * (MAX_QUOTE_CHARS + 1) not in user
+    share = MAX_EVIDENCE_CHARS // MAX_EVIDENCE
+    assert "q" * share in user and "q" * (share + 1) not in user
+    _, one = messages(evidence=items[:1])
+    assert "q" * MAX_QUOTE_CHARS in one and "q" * (MAX_QUOTE_CHARS + 1) not in one
+
+
+def test_largest_input_is_bounded_even_when_escaping_expands_it() -> None:
+    system, user = messages(
+        idea={"title": "t", "text": "&" * 5000},
+        evidence=[evidence(f"card_b{i}#c0", "&" * 2000) for i in range(30)],
+        features={"k": "&" * 5000},
+    )
+    assert len(system) + len(user) < 13_000
 
 
 @pytest.mark.parametrize("body", ["no marker", PROMPT.body.replace("{{features}}", "{{other}}")])
