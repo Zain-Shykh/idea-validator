@@ -10,7 +10,7 @@
 | Requirement IDs | `M8-1..5, WF-D1..D9, U2, U7, U8, U9 (versions), VE-12, VE-14, API-P6 (orchestrator side), AVOID-1, AVOID-7` |
 | Architecture refs | `architecture.md §6.4, §6.6, §7.1–7.2, §11, §12.2–12.3, §12.5`, ADR-001, ADR-004 |
 | Depends on | Z7 (real). Fakes: M2, M4, M5 (cassettes), M6, M7 (`FakeAnalyst`), gateway |
-| Issue / PR | — |
+| Issue / PR | #18 / #19 |
 
 ---
 
@@ -185,7 +185,7 @@ Coverage target: ≥ 90 % of `services/orchestrator/src` and `services/ideation/
 - [x] ruff, ruff format and mypy clean; coverage target met.
 - [x] Changed images build, run non-root and are removed; manifests validate.
 - [x] Checklist, plan, decisions, deviations, AI log updated.
-- [ ] PR opened against `feat/z7-orchestrator-validate`; never merged.
+- [x] PR opened against `feat/z7-orchestrator-validate`; never merged.
 
 ---
 

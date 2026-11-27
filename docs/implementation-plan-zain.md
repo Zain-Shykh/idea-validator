@@ -396,6 +396,7 @@ flowchart LR
 | 2026-11-27 20:01 | Interrupted | Usage limit; untested M8 work saved (`99be1b9`). Resumed in a second session |
 | 2026-11-27 20:31 | Implemented | M8, Discover, challenge, what-if, behaviour tests, packaging |
 | 2026-11-27 21:18 | Tests | Testing subagent: 4 bugs, all fixed; 1801 tests pass, coverage 98 % |
+| 2026-11-27 21:42 | PR | #19 against `feat/z7-orchestrator-validate` (closes #18) |
 
 ---
 
