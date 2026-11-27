@@ -15,7 +15,7 @@
 | Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | In review | [Z3](specs/Z3-rubrics-agentops.md) | [#9](https://github.com/Zain-Shykh/idea-validator/pull/9) | 2026-11-27 10:04 | — |
 | Z4 | M10 Scorer serving (base model + fallback) | In review | [Z4](specs/Z4-scorer-serving.md) | [#11](https://github.com/Zain-Shykh/idea-validator/pull/11) | 2026-11-27 10:43 | — |
-| Z5 | M9 Validation agents (4 scorers) | In review | [Z5](specs/Z5-validators.md) | — | 2026-11-27 11:46 | — |
+| Z5 | M9 Validation agents (4 scorers) | In review | [Z5](specs/Z5-validators.md) | [#13](https://github.com/Zain-Shykh/idea-validator/pull/13) | 2026-11-27 11:46 | — |
 | Z6 | M12 Critic and Guardrails | Not started | — | — | — | — |
 | Z7 | M3 Orchestrator: run lifecycle + Validate | Not started | — | — | — | — |
 | Z8 | M8 Ideation + Discover + challenge / what-if | Not started | — | — | — | — |
@@ -281,6 +281,7 @@ flowchart LR
 | 2026-11-27 11:46 | Plan pushed | Part B |
 | 2026-11-27 11:58 | Implementation pushed | Four scorers, fakes, image, manifest; fake KB, analyst and M10 only |
 | 2026-11-27 12:13 | Tests and fixes pushed | Testing subagent: 3 bugs, fixed; 1065 passed, coverage 98 % |
+| 2026-11-27 12:19 | PR opened | [#13](https://github.com/Zain-Shykh/idea-validator/pull/13) into `feat/z4-scorer-serving`, closes #12; Ahmad could not be requested (not a collaborator) |
 
 ---
 

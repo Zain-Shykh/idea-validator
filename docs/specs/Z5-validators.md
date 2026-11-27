@@ -10,7 +10,7 @@
 | Requirement IDs | M9-1..4, VE-2, VE-3, WF-V3, WF-V4, VE-4 (gate inputs), AVOID-4, AVOID-7 |
 | Architecture refs | `architecture.md` §6.2, §7.2, §9, §11, §12.2, §12.4, §13.1, §21.4; ADR-001, ADR-005; D-006, D-009 |
 | Depends on | Z3 (rubrics, prompts, trace), Z4 (`/score`). M6, M7, M5 not built: `FakeKB`, `FakeAnalyst`, cassettes |
-| Issue / PR | — |
+| Issue / PR | #12 / #13 |
 
 ---
 
@@ -166,7 +166,7 @@ Coverage target: ≥ 80 % of `validators` business logic. No test calls a real m
 - [x] ruff + mypy clean; coverage target met.
 - [x] Dockerfile builds, non-root; manifest validates (kubeconform).
 - [x] Checklist rows, plan progress log, deviations, AI log, decisions updated.
-- [ ] PR opened against `feat/z4-scorer-serving`; reviewer = Ahmad.
+- [x] PR opened against `feat/z4-scorer-serving`; reviewer = Ahmad.
 
 ---
 
