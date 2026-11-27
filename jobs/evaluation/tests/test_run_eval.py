@@ -1,12 +1,13 @@
 """``run_eval`` against the real M3 and M11 on M3's fake stack (spec Z10, A4 #3)."""
 
 import json
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
 
 import httpx
 import pytest
-from orchestrator_factories import Orchestrator, Stack, question
+from orchestrator_factories import Orchestrator, Stack, error, question
 
 import labelled
 import reports
@@ -153,7 +154,11 @@ def test_the_command_writes_a_report_and_compares(
     assert run_eval.main([*base, "--compare", str(tmp_path / "nothing.json")]) == 2
 
 
-def test_fake_input_never_reaches_the_results_folder(tmp_path: Path) -> None:
+def test_fake_input_never_reaches_the_results_folder(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    # a broken guard must not write into the real folder
+    monkeypatch.setattr(reports, "RESULTS_DIR", tmp_path / "results")
     folder = labelled_set(tmp_path / "set", None, count=1)
     stack = Stack()
     args = ["--labelled", str(folder), "--out", str(reports.RESULTS_DIR), "--fake"]
@@ -193,3 +198,137 @@ def test_a_report_that_cannot_be_stored_fails_but_is_still_compared(
     assert code == 2 and "fake report is not stored" in printed.err
     (line,) = [x for x in printed.out.split("\n") if x.startswith(run_eval.REPORT_LINE)]
     assert json.loads(line.removeprefix(run_eval.REPORT_LINE))["metrics"]["n_ideas"] == 1
+
+
+# --- edge cases: run_eval against failing peers (all input here is FAKE) ---
+
+
+Break = Callable[[httpx.Request], httpx.Response | None]
+
+
+class Broken(Router):
+    """The harness's services, with some answers replaced."""
+
+    def __init__(self, m3: Orchestrator, fault: Break) -> None:
+        super().__init__(m3)
+        self.fault = fault
+
+    async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+        answer = self.fault(request)
+        return answer if answer is not None else await super().handle_async_request(request)
+
+
+def broken_harness(m3: Orchestrator, fault: Break) -> run_eval.Harness:
+    transport = Broken(m3, fault)
+    clients = [
+        ServiceClient(f"http://{name}", transport=transport, retries=0)
+        for name in ("orchestrator", "profile", "agentops")
+    ]
+    return run_eval.Harness(*clients, tag="t", poll_s=0.01, trace_wait_s=0.5, timeout_s=10)
+
+
+def once(host: str, matches: Callable[[httpx.Request], bool], response: httpx.Response) -> Break:
+    done: list[int] = []
+
+    def fault(request: httpx.Request) -> httpx.Response | None:
+        if not done and request.url.host == host and matches(request):
+            done.append(1)
+            return response
+        return None
+
+    return fault
+
+
+def polling(request: httpx.Request) -> bool:
+    return request.method == "GET" and request.url.path.startswith("/runs/")
+
+
+@pytest.mark.parametrize(
+    "host, matches, response, expected",
+    [
+        ("orchestrator", polling, error(409, "CONFLICT"), "CONFLICT (HTTP 409)"),
+        ("orchestrator", polling, error(503, "UNAVAILABLE"), "UNAVAILABLE (HTTP 503)"),
+        ("orchestrator", polling, httpx.Response(200, json={"x": 1}), "INVALID_RESPONSE"),
+        ("orchestrator", lambda r: r.method == "POST", httpx.Response(200, text="<html>"),
+         "INVALID_RESPONSE"),
+        ("profile", lambda r: True, httpx.Response(201, json={"id": "x"}), "INVALID_RESPONSE"),
+        ("agentops", lambda r: True, error(503, "STORAGE_UNAVAILABLE"), "STORAGE_UNAVAILABLE"),
+        ("agentops", lambda r: True, httpx.Response(200, json={"no": "list"}),
+         "INVALID_RESPONSE"),
+        ("agentops", lambda r: True, httpx.Response(200, json=[]), "incomplete"),
+    ],
+)  # fmt: skip
+async def test_a_failing_peer_costs_one_idea_not_the_run(
+    tmp_path: Path,
+    host: str,
+    matches: Callable[[httpx.Request], bool],
+    response: httpx.Response,
+    expected: str,
+) -> None:
+    folder = labelled_set(tmp_path / "set", None, count=2)
+    # the empty trace is asked for until the wait ends, so that fault stays on for one idea
+    if expected == "incomplete":
+        first: list[str] = []
+
+        def fault(request: httpx.Request) -> httpx.Response | None:
+            if request.url.host != host:
+                return None
+            first.append(request.url.path)
+            return httpx.Response(200, json=[]) if request.url.path == first[0] else None
+
+    else:
+        fault = once(host, matches, response)
+    m3 = Orchestrator(Stack())
+
+    report = await run_eval.evaluate(folder, broken_harness(m3, fault), fake=True, sha="a")
+
+    bad, good = report["ideas"]
+    assert expected in bad["error"] and bad["verdict"] is None
+    assert good["error"] is None
+    await m3.runner.close(1)
+
+
+@pytest.mark.parametrize("status", [409, 503])
+async def test_a_refused_clarify_answer_is_that_ideas_error(tmp_path: Path, status: int) -> None:
+    folder = labelled_set(tmp_path / "set", None, count=1)
+    stack = Stack()
+    stack.questions = [question("q1", "differentiation")]
+    m3 = Orchestrator(stack)
+    fault = once("orchestrator", lambda r: r.url.path.endswith("/answer"), error(status, "NOPE"))
+
+    report = await run_eval.evaluate(folder, broken_harness(m3, fault), fake=True, sha="a")
+
+    assert report["ideas"][0]["error"] == f"NOPE (HTTP {status})"
+    await m3.runner.close(1)
+
+
+@pytest.mark.parametrize(
+    "tool, reply", [("search_kb", '{"unexpected": 1}'), ("scan", '{"flagged": [1]}')]
+)
+async def test_a_trace_with_a_hostile_reply_never_ends_the_whole_evaluation(
+    tmp_path: Path, tool: str, reply: str
+) -> None:
+    """``Harness.run``: a failure is an entry with ``error``, never an exception."""
+    folder = labelled_set(tmp_path / "set", None, count=1)
+    m3 = Orchestrator(Stack())
+
+    class Tampering(Router):
+        async def handle_async_request(self, request: httpx.Request) -> httpx.Response:
+            answer = await super().handle_async_request(request)
+            if request.url.host != "agentops":
+                return answer
+            records = json.loads(answer.content)
+            for record in records:
+                if record["tool"] == tool and record["reply"]:
+                    record["reply"] = reply
+            return httpx.Response(200, json=records)
+
+    clients = [
+        ServiceClient(f"http://{name}", transport=Tampering(m3), retries=0)
+        for name in ("orchestrator", "profile", "agentops")
+    ]
+    it = run_eval.Harness(*clients, tag="t", poll_s=0.01, trace_wait_s=1, timeout_s=10)
+
+    report = await run_eval.evaluate(folder, it, fake=True, sha="a")
+
+    assert len(report["ideas"]) == 1

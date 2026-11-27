@@ -171,11 +171,13 @@ async def _cached(r: ValidateContext) -> Verdict | None:
     return verdict
 
 
-async def rail[C: BaseCheckpoint](r: RunContext[C], text: str) -> InputRailResponse:
+async def rail[C: BaseCheckpoint](
+    r: RunContext[C], text: str, tool: str = "input_rail"
+) -> InputRailResponse:
     """The input rail fails closed: without it no model sees the text (M12-3)."""
     try:
         reply: InputRailResponse = await r.call(
-            "critic", "/rail/input", body=InputRailRequest(text=text), tool="input_rail",
+            "critic", "/rail/input", body=InputRailRequest(text=text), tool=tool,
             agent="critic", response_model=InputRailResponse,
             summary=lambda x: {"allowed": x.allowed},
         )  # fmt: skip

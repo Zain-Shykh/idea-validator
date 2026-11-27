@@ -132,8 +132,12 @@ class Harness:
         card = status.result.verdicts[0]
         if card.from_cache:
             raise IdeaError("the verdict came from the cache, so nothing was evaluated")
-        entry.update(self._scored(card, records))
-        entry["behaviour"] = eval_metrics.behaviour(records, card, status.spend, status.budget)
+        try:
+            checks = eval_metrics.behaviour(records, card, status.spend, status.budget)
+            scored = self._scored(card, records)
+        except (KeyError, TypeError, ValueError, AttributeError) as exc:
+            raise IdeaError(f"the trace cannot be read: {type(exc).__name__}") from exc
+        entry.update(scored, behaviour=checks)
         entry["cost_usd"] = status.spend.cost_usd
 
     async def _wait(self, run_id: str) -> RunStatus:
@@ -301,7 +305,8 @@ def main(argv: Sequence[str] | None = None, harness: Harness | None = None) -> i
                 parser.error("--results needs --compare")
             return compare_files(reports.read_report(args.results), args.compare)
         if args.compare:  # an unusable baseline must not cost a whole run first
-            reports.read_report(args.compare)
+            baseline = reports.read_report(args.compare)
+            eval_metrics.compare(baseline, baseline)
         fake = args.fake or reports.made_up(args.labelled)
         reports.guard(args.out / "eval.json", fake)
         sha = reports.git_sha()
@@ -332,5 +337,15 @@ def main(argv: Sequence[str] | None = None, harness: Harness | None = None) -> i
         return 2
 
 
+def cli() -> int:
+    """Exit 1 means "worse than the baseline", so a crash must not produce it."""
+    try:
+        return main()
+    except Exception as exc:
+        # the type only: a message may quote idea text
+        print(f"error: the evaluation crashed: {type(exc).__name__}", file=sys.stderr)
+        return 2
+
+
 if __name__ == "__main__":
-    sys.exit(main())
+    sys.exit(cli())

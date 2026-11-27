@@ -150,3 +150,35 @@ def test_the_command_refuses_unsound_input(tmp_path: Path) -> None:
     results.write_text(json.dumps({"kind": "drift"}))
     assert tune.main([*args, *out]) == 2
     assert not (tmp_path / "out").exists()
+
+
+# --- edge cases: tune (all input here is FAKE) ---
+
+
+@pytest.mark.parametrize(
+    "ideas",
+    [None, [1], ["x"], [{}], [{"idea_id": "a", "request": 5}], []],
+)
+def test_tune_refuses_a_hostile_report_with_exit_2(tmp_path: Path, ideas: Any) -> None:
+    results = tmp_path / "FAKE_eval.json"
+    results.write_text(json.dumps({"kind": "eval", "fake": True, "ideas": ideas}))
+    labels = tmp_path / "FAKE_resolved.csv"
+    labels.write_text("idea_id,verdict,labelled_by,resolution\n")
+    out = tmp_path / "out"
+    args = ["--results", str(results), "--labels", str(labels), "--out", str(out)]
+    assert tune.main(args) == 2
+    assert not out.exists()
+
+
+@pytest.mark.parametrize("config", ["thresholds: [", "{}", "- 1"])
+def test_tune_with_a_broken_rules_file_gives_exit_2(tmp_path: Path, config: str) -> None:
+    results = tmp_path / "FAKE_eval.json"
+    results.write_text(json.dumps({"kind": "eval", "fake": True, "ideas": []}))
+    labels = tmp_path / "FAKE_resolved.csv"
+    labels.write_text("idea_id,verdict,labelled_by,resolution\n")
+    rules = tmp_path / "verdict.yaml"
+    rules.write_text(config)
+    out = tmp_path / "out"
+    args = ["--results", str(results), "--labels", str(labels), "--out", str(out)]
+    assert tune.main([*args, "--config", str(rules)]) == 2
+    assert not out.exists()

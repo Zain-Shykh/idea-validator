@@ -336,7 +336,9 @@ class Runner:
         for question_id, text in asked.items():
             # an answer is student text like the idea, so it passes the same rail
             try:
-                reply = await validate.rail(r, given[question_id])
+                # its own name: an attempt that is refused or not stored leaves calls that
+                # replay must not expect to make again
+                reply = await validate.rail(r, given[question_id], tool="answer_rail")
             except RunFailedError as exc:
                 raise _unavailable("the input check") from exc
             if not reply.allowed:

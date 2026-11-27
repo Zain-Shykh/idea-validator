@@ -35,6 +35,7 @@ from common.contracts.orchestrator import AnswerRequest, ApproveRequest
 from common.contracts.profile import CachedVerdict, IdeaVersion, IdeaVersionCreate
 from common.http import ServiceError
 from common.registry import RegistryError
+from common.service import ApiError
 from common.trace import TraceClient
 from orchestrator.services.downstream import Peers
 from orchestrator.services.rules import load_rules
@@ -64,6 +65,10 @@ DECISIONS = frozenset(
 )
 _FAILURE = re.compile(r"^(?:ServiceError|scorer failed): ([A-Z0-9_]+)")
 MAX_PAUSES = 4
+# an answer attempt that was refused or not stored leaves these behind
+ANSWER_RAIL = "answer_rail"
+# a call the recorded run cancelled stays unanswered this long, for replay to cancel it too
+CANCELLED_WAIT_S = 5.0
 
 
 class ReplayError(Exception):
@@ -92,12 +97,16 @@ class Recording:
 
     def __init__(self, records: Sequence[TraceRecord]) -> None:
         self.calls: dict[str, list[TraceRecord]] = {}
+        # calls that were abandoned before any reply, e.g. when a parallel scorer failed the run
+        self.cancelled: dict[str, int] = {}
         for record in records:
             if record.agent != AGENT or record.kind is not TraceKind.TOOL_CALL or not record.tool:
                 continue
             # a record with neither a reply nor a failure is bookkeeping, not a call
             if record.reply is not None or _FAILURE.match(record.error or ""):
                 self.calls.setdefault(record.tool, []).append(record)
+            elif (record.error or "").startswith("CancelledError"):
+                self.cancelled[record.tool] = self.cancelled.get(record.tool, 0) + 1
         self.differences: list[str] = []
 
     def memo(self, tool: str) -> str | None:
@@ -105,6 +114,13 @@ class Recording:
         if queue and queue[0].cache_hit and queue[0].input is None:
             return queue.pop(0).reply
         return None
+
+    def abandoned(self, tool: str) -> bool:
+        """True once for each cancelled call, when no answered call of ``tool`` is left."""
+        if self.calls.get(tool) or not self.cancelled.get(tool):
+            return False
+        self.cancelled[tool] -= 1
+        return True
 
     def take(self, tools: Sequence[str], sent: str | None) -> TraceRecord:
         """The next call of one of ``tools``: the one with the same request, else the oldest."""
@@ -115,7 +131,11 @@ class Recording:
             self.differences.append(f"{tools[0]}: a call the recorded run did not make")
             raise ServiceError("REPLAY_MISSING", "no recorded reply", 400)
         wanted = _canonical(sent)
-        found = next((r for r in queued if _canonical(r.input) == wanted), None)
+        same = [r for r in queued if _canonical(r.input) == wanted]
+        # of several answer attempts with one text, the last is the one that took effect
+        if same and same[-1].tool == ANSWER_RAIL:
+            same.reverse()
+        found = same[0] if same else None
         if found is None:
             found = queued[0]
             self.differences.append(f"{found.tool}: the request differs from the recorded one")
@@ -123,7 +143,11 @@ class Recording:
         return found
 
     def unused(self) -> list[str]:
-        return [f"{t}: {len(q)} recorded call(s) not made" for t, q in self.calls.items() if q]
+        return [
+            f"{t}: {len(q)} recorded call(s) not made"
+            for t, q in self.calls.items()
+            if q and t != ANSWER_RAIL
+        ]
 
 
 def _failure(record: TraceRecord) -> ServiceError:
@@ -171,7 +195,12 @@ class ReplayPeers(Peers):
         if tool is None:
             self.recording.differences.append(f"{peer} {path}: a call replay does not know")
             raise ServiceError("REPLAY_MISSING", "unknown call", 400)
-        record = self.recording.take([tool], sent)
+        if self.recording.abandoned(tool):
+            await asyncio.sleep(CANCELLED_WAIT_S)
+            self.recording.differences.append(f"{tool}: cancelled in the recorded run only")
+            raise ServiceError("REPLAY_MISSING", "no recorded reply", 400)
+        tools = [tool, ANSWER_RAIL] if tool == "input_rail" else [tool]
+        record = self.recording.take(tools, sent)
         if record.reply is None:
             raise _failure(record)
         return TypeAdapter(model).validate_json(record.reply)
@@ -329,11 +358,14 @@ async def replay(
         produced.extend(batch)
 
     tracer = TraceClient(sink=sink, stream=io.StringIO())
-    asked = [
-        json.loads(r.input or "{}").get("version")
-        for r in mine
-        if r.tool in ("prelim_verdict", "final_verdict") and r.kind is TraceKind.TOOL_CALL
-    ]
+    try:
+        asked = [
+            int(json.loads(r.input or "")["version"])
+            for r in mine
+            if r.tool in ("prelim_verdict", "final_verdict") and r.kind is TraceKind.TOOL_CALL
+        ]
+    except (ValueError, KeyError, TypeError, RecursionError) as exc:
+        raise ReplayError("a recorded verdict request cannot be read") from exc
     silent = Silent()
     deps = Deps(
         settings=settings,
@@ -360,7 +392,11 @@ async def replay(
                 runner.apply_decision(r, cp.pending.approval, approvals.pop(0))
             elif cp.status is RunState.AWAITING_INPUT and answers:
                 assert cp.pending is not None
-                await runner.apply_answers(r, cp.pending, answers.pop(0))
+                try:
+                    await runner.apply_answers(r, cp.pending, answers.pop(0))
+                except ApiError as exc:
+                    recording.differences.append(f"the recorded answer is refused: {exc.code}")
+                    break
             else:
                 break
             r.set_status(RunState.RUNNING)
@@ -437,6 +473,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         # a validation error quotes the record: name the kind only
         detail = str(exc) if isinstance(exc, ReplayError | OSError) else type(exc).__name__
         print(f"error: {detail}", file=sys.stderr)
+        return 2
+    except Exception as exc:  # exit 1 means "differs": a crash must not read as that
+        print(f"error: replay crashed: {type(exc).__name__}", file=sys.stderr)
         return 2
     finally:
         logging.disable(before)

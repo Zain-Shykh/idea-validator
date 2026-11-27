@@ -78,6 +78,15 @@ def load_ideas(path: Path = IDEAS) -> list[LabelledIdea]:
 
 
 def _rows(path: Path, columns: Sequence[str], known: Collection[str]) -> dict[str, dict[str, str]]:
+    try:
+        return _parse_rows(path, columns, known)
+    except csv.Error as exc:
+        raise LabelError(f"{path}: not a usable CSV file: {exc}") from exc
+
+
+def _parse_rows(
+    path: Path, columns: Sequence[str], known: Collection[str]
+) -> dict[str, dict[str, str]]:
     reader = csv.DictReader(_read(path).splitlines())
     if tuple(reader.fieldnames or ()) != tuple(columns):
         raise LabelError(f"{path}: the first line must be {','.join(columns)}")

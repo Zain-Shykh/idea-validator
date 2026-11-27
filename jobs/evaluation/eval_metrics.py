@@ -167,7 +167,7 @@ def _number(value: Any) -> bool:
 def compare(current: Mapping[str, Any], baseline: Mapping[str, Any]) -> list[str]:
     """Why ``current`` is worse than ``baseline``; empty when it is not. Anything that cannot be
     checked is a failure, never a pass. Raises ``ReportError`` for an unusable report."""
-    for name, report in (("report", current), ("baseline", baseline)):
+    for name, report in (("baseline", baseline), ("report", current)):
         if report.get("kind") != "eval" or not isinstance(report.get("metrics"), dict):
             raise ReportError(f"the {name} is not an evaluation report")
         if not isinstance(report.get("fake"), bool):

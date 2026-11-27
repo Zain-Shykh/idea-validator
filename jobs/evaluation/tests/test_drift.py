@@ -1,8 +1,10 @@
 """``drift.py`` (spec Z10, A4 #11). Cards, niches and verdicts here are made up."""
 
+import copy
 import json
 import math
-from datetime import UTC, datetime, timedelta
+from collections.abc import Callable
+from datetime import UTC, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -122,8 +124,10 @@ def test_the_report_is_written_stored_and_served(
 
 
 def test_a_fake_report_is_not_stored_nor_put_in_results(
-    database: AgentOpsSettings, tmp_path: Path
+    database: AgentOpsSettings, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    # a broken guard must not write into the real folder
+    monkeypatch.setattr(reports, "RESULTS_DIR", tmp_path / "results")
     assert drift.main(["--fake"], kb(stats_reply)) == 2  # the default folder is eval/results
     assert drift.main(["--fake", "--out", str(tmp_path / "f")], kb(stats_reply)) == 0
     assert list((tmp_path / "f").glob("FAKE-drift-*.json"))
@@ -151,3 +155,96 @@ def test_without_the_database_there_is_no_report(
     monkeypatch.delenv("KB_URL", raising=False)
     assert drift.main(["--out", str(tmp_path / "out")]) == 2
     assert not (tmp_path / "out").exists()
+
+
+# --- edge cases: drift (all input here is FAKE) ---
+
+
+def test_the_window_edges_are_half_open_and_zones_are_respected() -> None:
+    def at(n: int, age: timedelta, zone: Any = UTC) -> Any:
+        found = row(n, 0, "GO")
+        when = NOW - age
+        found.finished_at = when.astimezone(zone) if zone else when.replace(tzinfo=None)
+        return found
+
+    second = timedelta(seconds=1)
+    far = timezone(timedelta(hours=-12))
+    mix = drift.verdict_mix(
+        [
+            at(1, timedelta(days=7) - second, far),
+            at(2, timedelta(days=7)),
+            at(3, timedelta(days=35) - second, None),
+            at(4, timedelta(days=35)),
+        ],
+        NOW,
+    )
+    assert mix["current"] == {"GO": 1} and mix["baseline"] == {"GO": 2}
+
+
+@pytest.mark.parametrize(
+    "current, baseline, measured",
+    [(10, 10, True), (9, 50, False), (50, 9, False), (0, 0, False)],
+)
+def test_psi_needs_ten_verdicts_in_both_windows(
+    current: int, baseline: int, measured: bool
+) -> None:
+    rows = [row(n, 1, "GO") for n in range(current)]
+    rows += [row(1000 + n, 20, "GO") for n in range(baseline)]
+    assert (drift.verdict_mix(rows, NOW)["psi"] is not None) is measured
+
+
+def drift_kb(handler: Callable[[httpx.Request], httpx.Response]) -> ServiceClient:
+    return ServiceClient("http://kb", transport=httpx.MockTransport(handler), retries=0)
+
+
+@pytest.mark.parametrize(
+    "answer",
+    [
+        lambda _: httpx.Response(503),
+        lambda _: httpx.Response(200, text="<html>"),
+        lambda _: httpx.Response(200, json={"kb_version": 1}),
+    ],
+)
+def test_a_bad_knowledge_base_reply_writes_nothing(
+    tmp_path: Path, answer: Callable[[httpx.Request], httpx.Response]
+) -> None:
+    assert drift.main(["--out", str(tmp_path / "out"), "--fake"], drift_kb(answer)) == 2
+    assert not (tmp_path / "out").exists()
+
+
+def test_an_unmigrated_database_writes_nothing(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("AGENTOPS_DATABASE_URL", f"sqlite:///{tmp_path}/empty.db")
+    kb = drift_kb(lambda _: httpx.Response(200, json=STATS.model_dump(mode="json")))
+    assert drift.main(["--out", str(tmp_path / "out"), "--fake"], kb) == 2
+    assert not (tmp_path / "out").exists()
+
+
+def test_a_fake_drift_report_is_never_stored(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    url = f"sqlite:///{tmp_path}/ops.db"
+    monkeypatch.setenv("AGENTOPS_DATABASE_URL", url)
+    upgrade(IndexRepository(url).engine.url)
+    kb = drift_kb(lambda _: httpx.Response(200, json=STATS.model_dump(mode="json")))
+
+    assert drift.main(["--out", str(tmp_path / "out"), "--fake"], kb) == 0
+
+    index = IndexRepository(url)
+    assert index.latest_report("drift") is None
+    index.dispose()
+    assert [p.name.startswith("FAKE-drift-") for p in (tmp_path / "out").iterdir()] == [True]
+
+
+def test_coverage_with_no_niches_and_a_previous_report_without_coverage() -> None:
+    empty = copy.deepcopy(STATS)
+    empty.cards_by_niche = {}
+    found = drift.coverage(empty, {"kb_version": "old"})
+    assert found["covered_share"] is None and found["change"] is None
+    assert found["newly_thin"] == []
+
+
+def test_a_naive_clock_is_never_used() -> None:
+    report = drift.build_report(STATS, [], None, now=datetime.now(UTC), sha="s", fake=True)
+    assert datetime.fromisoformat(report["created_at"]).tzinfo is not None

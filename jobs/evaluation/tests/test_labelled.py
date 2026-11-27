@@ -106,3 +106,45 @@ def test_resolved_must_say_who_labelled(tmp_path: Path) -> None:
         labelled.load_resolved(path, {"x1"})
     path.write_text("﻿idea_id,verdict,labelled_by,resolution\nx1,GO,zain,\n")
     assert labelled.load_resolved(path, {"x1"}) == {"x1": VerdictLabel.GO}
+
+
+# --- edge cases: label files (all input here is FAKE) ---
+
+
+def test_a_label_file_the_csv_reader_rejects_is_a_label_error(tmp_path: Path) -> None:
+    """An escaping ``csv.Error`` ends ``run_eval`` with exit 1, which means "regression"."""
+    path = tmp_path / "FAKE_labels.csv"
+    path.write_text('idea_id,verdict,note\nx1,GO,"' + "a" * 200_000 + '"\n')
+    with pytest.raises(labelled.LabelError):
+        labelled.load_labels(path, {"x1"})
+
+
+@pytest.mark.parametrize(
+    "content, message",
+    [
+        (b"", "no ideas"),
+        (b"\xff\xfe\x00", "cannot read"),
+        (b"{not json}\n", "not JSON"),
+        (b"[1]\n", ":1:"),
+        (b'{"idea_id": "a"}\n', ":1:"),
+    ],
+)
+def test_unusable_idea_files_are_refused(tmp_path: Path, content: bytes, message: str) -> None:
+    path = tmp_path / "ideas.jsonl"
+    path.write_bytes(content)
+    with pytest.raises(labelled.LabelError, match=message):
+        labelled.load_ideas(path)
+
+
+def test_a_repeated_idea_id_and_bad_files_give_exit_2(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    line = labelled.load_ideas()[0].model_dump_json() + "\n"
+    path = tmp_path / "ideas.jsonl"
+    path.write_text(line * 2)
+    assert labelled.main(["--ideas", str(path), "--dir", str(tmp_path)]) == 2
+    assert "twice" in capsys.readouterr().err
+    path.write_text(line)
+    # nothing labelled yet: open, not an error
+    assert labelled.main(["--ideas", str(path), "--dir", str(tmp_path)]) == 1
+    assert "labels_zain.csv does not exist yet" in capsys.readouterr().out

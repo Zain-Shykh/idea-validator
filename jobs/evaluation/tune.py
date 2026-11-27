@@ -21,6 +21,7 @@ from itertools import permutations, product
 from pathlib import Path
 from typing import Any
 
+import yaml
 from pydantic import ValidationError
 
 import eval_metrics
@@ -312,7 +313,7 @@ def main(argv: Sequence[str] | None = None) -> int:
         path = reports.write_report(args.out, "tune", report)
         reports.write_text(path.with_suffix(".md"), markdown(report))
     except (
-        TuneError, labelled.LabelError, reports.OutputError, OSError, ValueError,
+        TuneError, labelled.LabelError, reports.OutputError, OSError, ValueError, yaml.YAMLError,
     ) as exc:  # fmt: skip
         print(f"error: {exc}", file=sys.stderr)
         return 2

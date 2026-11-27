@@ -6,16 +6,23 @@
 #   scripts/check_eval.sh --report r.json [--baseline b]   # compare a report that exists
 #
 # Cluster mode needs kubectl. IMAGE_TAG (default: this commit) names the evaluation image.
-set -euo pipefail
+set -Eeuo pipefail  # -E: functions inherit the trap
+# whatever else fails (kubectl exits 1 on most errors) must not read as a regression
+trap 'exit 2' ERR
 cd "$(dirname "$0")/.."
+
+usage() {
+  echo "usage: $0 [--report FILE] [--baseline FILE]" >&2
+  exit 2
+}
 
 baseline=eval/results/baseline.json
 report=
 while [ $# -gt 0 ]; do
   case "$1" in
-    --baseline) baseline=${2:?--baseline needs a file}; shift 2 ;;
-    --report) report=${2:?--report needs a file}; shift 2 ;;
-    *) echo "usage: $0 [--report FILE] [--baseline FILE]" >&2; exit 2 ;;
+    --baseline) [ -n "${2:-}" ] || usage; baseline=$2; shift 2 ;;
+    --report) [ -n "${2:-}" ] || usage; report=$2; shift 2 ;;
+    *) usage ;;
   esac
 done
 if [ ! -f "$baseline" ]; then
@@ -56,8 +63,11 @@ grep -v '^REPORT_JSON ' "$log" || true
 # keep the report: tune.py needs it, and it becomes the next baseline
 if grep -q '^REPORT_JSON ' "$log"; then
   out=${EVAL_REPORT_OUT:-eval/results/eval-$tag.json}
-  sed -n 's/^REPORT_JSON //p' "$log" >"$out"
-  echo "report: $out"
+  line=$(sed -n 's/^REPORT_JSON //p' "$log" | tail -n 1)
+  case "$line" in
+    *'"fake": true'*) echo "the report is fake: not saved" >&2 ;;
+    *) printf '%s\n' "$line" >"$out"; echo "report: $out" ;;
+  esac
 fi
 case "$state" in
   *Complete*) exit 0 ;;

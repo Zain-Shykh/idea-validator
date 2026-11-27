@@ -9,6 +9,9 @@ from pathlib import Path
 
 import pytest
 
+import reports
+import run_eval
+
 ROOT = Path(__file__).resolve().parents[3]
 SCRIPT = ROOT / "scripts/check_eval.sh"
 FIXTURES = Path(__file__).parent / "fixtures"
@@ -97,3 +100,101 @@ def test_cluster_mode_passes_the_jobs_result_on(
     calls = log.read_text()
     assert "idea-validator-evaluation:abc1234" in calls and "set-by-overlay" not in calls
     assert "delete job eval --ignore-not-found" in calls
+
+
+# --- exit 1 is reserved for a regression ---------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "args",
+    [("--report",), ("--baseline",), ("--report", ""), ("--nonsense",), ("stray",)],
+)
+def test_wrong_arguments_are_not_reported_as_a_regression(args: tuple[str, ...]) -> None:
+    done = run(*args)
+    assert done.returncode not in (0, 1), done.stderr
+
+
+def test_a_report_file_that_does_not_exist_gives_2() -> None:
+    done = run("--report", "no-such-FAKE.json", "--baseline", str(BASELINE))
+    assert done.returncode == 2, done.stderr
+
+
+@pytest.mark.parametrize("failing", ["create configmap", "delete job", "get job", "get pods"])
+def test_a_kubectl_failure_is_not_reported_as_a_regression(tmp_path: Path, failing: str) -> None:
+    """kubectl exits 1 on most errors; so does ``get pods`` when the deadline removed the pod."""
+    kubectl = tmp_path / "kubectl"
+    broken = f'case "$*" in *"{failing}"*) echo "error from server" >&2; exit 1 ;; esac\n'
+    kubectl.write_text(KUBECTL.replace('case "$*" in', broken + 'case "$*" in', 1))
+    kubectl.chmod(0o755)
+    done = run(
+        "--baseline", str(BASELINE),
+        PATH=f"{tmp_path}:{os.environ['PATH']}", KUBECTL_LOG=str(tmp_path / "calls.log"),
+        JOB_STATE="Failed", POD_EXIT="2", IMAGE_TAG="abc1234", EVAL_TIMEOUT_S="1",
+        EVAL_POLL_S="1", EVAL_REPORT_OUT=str(tmp_path / "saved.json"),
+    )  # fmt: skip
+    assert done.returncode not in (0, 1), done.stderr
+
+
+# --- edge cases: reports and the fake guard (all input here is FAKE) ---
+
+
+def test_a_fake_report_cannot_reach_results_by_a_roundabout_path(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    link = tmp_path / "elsewhere"
+    link.symlink_to(reports.RESULTS_DIR, target_is_directory=True)
+    monkeypatch.chdir(reports.ROOT / "jobs")
+    for folder in (link, Path("../eval/results"), reports.RESULTS_DIR / "sub/../sub"):
+        with pytest.raises(reports.OutputError, match="fake"):
+            reports.guard(folder / "x.json", True)
+    with pytest.raises(reports.OutputError, match="not stored"):
+        reports.store({"fake": True}, tmp_path / "x.json")
+
+
+@pytest.mark.parametrize("sha", ["../../x", "a b", "a" * 65, "x\ny"])
+def test_a_hostile_git_sha_never_becomes_a_file_name(
+    monkeypatch: pytest.MonkeyPatch, sha: str
+) -> None:
+    monkeypatch.setenv("GIT_SHA", sha)
+    assert reports.git_sha() == "unknown"
+
+
+@pytest.mark.parametrize("content", [b"", b"[1]", b"\xff", b"[" * 100_000, b"null"])
+def test_an_unreadable_report_or_baseline_gives_exit_2(tmp_path: Path, content: bytes) -> None:
+    path = tmp_path / "FAKE_report.json"
+    path.write_bytes(content)
+    good = Path(__file__).parent / "fixtures/FAKE_report_same.json"
+    assert run_eval.main(["--results", str(path), "--compare", str(good)]) == 2
+    assert run_eval.main(["--results", str(good), "--compare", str(path)]) == 2
+
+
+def test_a_fake_report_from_a_job_is_not_saved(tmp_path: Path) -> None:
+    kubectl = tmp_path / "kubectl"
+    kubectl.write_text(KUBECTL.replace('{"kind": "eval"}', '{"fake": true, "kind": "eval"}'))
+    kubectl.chmod(0o755)
+    saved = tmp_path / "saved.json"
+    done = run(
+        "--baseline", str(BASELINE),
+        PATH=f"{tmp_path}:{os.environ['PATH']}", KUBECTL_LOG=str(tmp_path / "calls.log"),
+        JOB_STATE="Complete", IMAGE_TAG="abc1234", EVAL_TIMEOUT_S="1", EVAL_POLL_S="1",
+        EVAL_REPORT_OUT=str(saved),
+    )  # fmt: skip
+    assert done.returncode == 0 and "not saved" in done.stderr and not saved.exists()
+
+
+def test_a_crash_of_the_evaluation_is_not_a_regression(monkeypatch: pytest.MonkeyPatch) -> None:
+    def crash(*_: object) -> int:
+        raise RuntimeError("idea text")
+
+    monkeypatch.setattr(run_eval, "main", crash)
+    assert run_eval.cli() == 2
+
+
+def test_a_readable_but_unusable_baseline_stops_before_any_run(
+    tmp_path: Path, capsys: pytest.CaptureFixture[str]
+) -> None:
+    path = tmp_path / "FAKE_empty.json"
+    path.write_text("{}")
+    assert run_eval.main(["--compare", str(path), "--out", str(tmp_path)]) == 2
+    # the baseline is the complaint, not the missing service URLs
+    assert "baseline" in capsys.readouterr().err
