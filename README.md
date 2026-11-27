@@ -9,7 +9,7 @@ An interactive **multi-agent system that helps a student choose a project**. It 
 
 Semester project for **CS4032 Software Construction and Development** (FAST-NUCES) by **Zain** and **Ahmad**.
 
-**Status:** shared contracts (Z0) and the seven AI-core services are built. The Verdict Engine (Z2, rules in [`config/verdict.yaml`](config/verdict.yaml)), AgentOps (Z3), the scorer (Z4, base model), the validators (Z5), the critic (Z6) and the orchestrator's Validate workflow (Z7) are real; ideation is still a stub (Z8). The Profile service, Knowledge Base, scouts, tool layer and gateway are not built yet, so a Validate run only works against the fakes in the tests (setup in [`docs/setup.md`](docs/setup.md) §7). Progress: [`docs/checklist.md`](docs/checklist.md).
+**Status:** shared contracts (Z0) and the seven AI-core services are built. The Verdict Engine (Z2, rules in [`config/verdict.yaml`](config/verdict.yaml)), AgentOps (Z3), the scorer (Z4, base model), the validators (Z5), the critic (Z6), ideation and the orchestrator's Discover, Validate, challenge and what-if workflows (Z7, Z8) are real. The Profile service, Knowledge Base, niche analyst, scouts, tool layer and gateway are not built yet, so runs only work against the fakes in the tests (setup in [`docs/setup.md`](docs/setup.md) §7). Progress: [`docs/checklist.md`](docs/checklist.md).
 
 ---
 

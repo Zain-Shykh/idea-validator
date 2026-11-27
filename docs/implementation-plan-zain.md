@@ -365,7 +365,7 @@ flowchart LR
 
 ## Z8 — M8 Ideation + Discover workflow + challenge / what-if
 
-- **Status:** In progress · **Spec:** `docs/specs/Z8-ideation-discover.md` · **Branch:** `feat/z8-ideation-discover`
+- **Status:** In review · **Spec:** `docs/specs/Z8-ideation-discover.md` · **Branch:** `feat/z8-ideation-discover`
 - **Requirements:** M8-1..5, WF-D1..D9, U2, U7, U8, U9 (versions), VE-12, VE-14, API-P6 (orchestrator side), AVOID-1, AVOID-7
 - **Depends on:** Z7; M7 via `FakeAnalyst` until A6. **Unblocks:** S5.
 
@@ -379,18 +379,23 @@ flowchart LR
 **Deliverables.** `services/ideation/**`, `services/orchestrator/**` (discover, challenge, whatif), cassettes.
 
 **Acceptance criteria.**
-- [ ] Debate never exceeds 3 rounds (test with a skeptic that always objects); ideas with an accepted fatal objection are dropped and emitted as `idea_dropped` events with the evidence.
-- [ ] Every surviving idea has ≥ 1 existing gap evidence id; ideas without them are rejected.
-- [ ] A renamed copy of a fixture product is dropped as duplicate (AVOID-7); an idea needing more hours than available gets a feasibility objection.
-- [ ] Discover result is ranked (GO > PIVOT > NO-GO > IE, then score) with a verdict and one-line reason per idea (U2).
-- [ ] Challenge: supported claim → `defended` with rationale; unsupported → claim removed, verdict recomputed by M11, new version stored.
-- [ ] What-if: proposals come from M11's candidate list (each with new score/verdict); applying one creates version v+1 and its verdict is computed by a new Validate run (scorers + engine), not by editing numbers.
-- [ ] Two different profiles on the same idea yield different verdicts where the Description says they should (200 h team vs 20 h solo; U1 "changes later recommendations").
+- [x] Debate never exceeds 3 rounds (test with a skeptic that always objects); ideas with an accepted fatal objection are dropped and emitted as `idea_dropped` events with the evidence.
+- [x] Every surviving idea has ≥ 1 existing gap evidence id; ideas without them are rejected.
+- [x] A renamed copy of a fixture product is dropped as duplicate (AVOID-7); an idea needing more hours than available gets a feasibility objection.
+- [x] Discover result is ranked (GO > PIVOT > NO-GO > IE, then score) with a verdict and one-line reason per idea (U2).
+- [x] Challenge: supported claim → `defended` with rationale; unsupported → claim removed, verdict recomputed by M11, new version stored.
+- [x] What-if: proposals come from M11's candidate list (each with new score/verdict); applying one creates version v+1 and its verdict is computed by a new Validate run (scorers + engine), not by editing numbers.
+- [x] Two different profiles on the same idea yield different verdicts where the Description says they should (200 h team vs 20 h solo; U1 "changes later recommendations").
 
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
 | 2026-11-27 16:57 | Started | Branch `feat/z8-ideation-discover` from `feat/z7-orchestrator-validate` (PR #17 unmerged) |
+| 2026-11-27 16:58 | Spec | `docs/specs/Z8-ideation-discover.md` Part A (commit time) |
+| 2026-11-27 16:58 | Plan | Part B (commit time) |
+| 2026-11-27 20:01 | Interrupted | Usage limit; untested M8 work saved (`99be1b9`). Resumed in a second session |
+| 2026-11-27 20:31 | Implemented | M8, Discover, challenge, what-if, behaviour tests, packaging |
+| 2026-11-27 21:18 | Tests | Testing subagent: 4 bugs, all fixed; 1801 tests pass, coverage 98 % |
 
 ---
 

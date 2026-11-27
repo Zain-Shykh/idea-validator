@@ -6,7 +6,7 @@
 | Owner | Zain |
 | Author | Claude Code headless session |
 | Branch | `feat/z8-ideation-discover` (parent `feat/z7-orchestrator-validate`, PR #17 unmerged) |
-| Status | Plan ready |
+| Status | Implemented, in review |
 | Requirement IDs | `M8-1..5, WF-D1..D9, U2, U7, U8, U9 (versions), VE-12, VE-14, API-P6 (orchestrator side), AVOID-1, AVOID-7` |
 | Architecture refs | `architecture.md §6.4, §6.6, §7.1–7.2, §11, §12.2–12.3, §12.5`, ADR-001, ADR-004 |
 | Depends on | Z7 (real). Fakes: M2, M4, M5 (cassettes), M6, M7 (`FakeAnalyst`), gateway |
@@ -168,21 +168,88 @@ Coverage target: ≥ 90 % of `services/orchestrator/src` and `services/ideation/
 ### B1. Task breakdown
 | # | Task | Files | Verification | Done |
 |---|------|-------|--------------|------|
-| 1 | Idea text sections and shared idea rules; use them in M3, M9, M10 (Z7 follow-up) | `common/{idea_text,idea_rules}.py`, `validators/services/{engine,features}.py`, `scorer/services/prompt.py`, `orchestrator/services/validate.py` | `pytest libs/common services/validators services/scorer services/orchestrator` | [ ] |
-| 2 | Real M8 agents, `gap_analyst@v2`, app and settings | `services/ideation/**`, `prompts/`, `config/registry.lock.json` | `pytest services/ideation`; `python scripts/check_registry.py` | [ ] |
-| 3 | Discover: state machine, checkpoint, downstream calls, steps, child runs, shared budget, ranking | `orchestrator/**` | `pytest services/orchestrator` | [ ] |
-| 4 | Challenge and what-if | `orchestrator/services/revise.py`, routes | `test_challenge.py`, `test_whatif.py` | [ ] |
-| 5 | Behaviour tests with real M8, M9, M11, M12 and cassettes | `eval/behaviour/test_discover.py`, cassettes | `pytest eval/behaviour` | [ ] |
-| 6 | Packaging: images, compose, manifests, `.env.example` | `services/{ideation,orchestrator}`, `k8s/base`, dev overlay | build, run, kubeconform; images removed | [ ] |
-| 7 | Testing subagent, fixes | tests | full suite | [ ] |
-| 8 | Docs, issue, PR | `docs/**`, README | — | [ ] |
+| 1 | Idea text sections and shared idea rules; use them in M3, M9, M10 (Z7 follow-up) | `common/{idea_text,idea_rules}.py`, `validators/services/{engine,features}.py`, `scorer/services/prompt.py`, `orchestrator/services/validate.py` | `pytest libs/common services/validators services/scorer services/orchestrator` | [x] |
+| 2 | Real M8 agents, `gap_analyst@v2`, app and settings | `services/ideation/**`, `prompts/`, `config/registry.lock.json` | `pytest services/ideation`; `python scripts/check_registry.py` | [x] |
+| 3 | Discover: state machine, checkpoint, downstream calls, steps, child runs, shared budget, ranking | `orchestrator/**` | `pytest services/orchestrator` | [x] |
+| 4 | Challenge and what-if | `orchestrator/services/revise.py`, routes | `test_challenge.py`, `test_whatif.py` | [x] |
+| 5 | Behaviour tests with real M8, M9, M11, M12 and cassettes | `eval/behaviour/test_discover.py`, cassettes | `pytest eval/behaviour` | [x] |
+| 6 | Packaging: images, compose, manifests, `.env.example` | `services/{ideation,orchestrator}`, `k8s/base`, dev overlay | build, run, kubeconform; images removed | [x] |
+| 7 | Testing subagent, fixes | tests | full suite | [x] |
+| 8 | Docs, issue, PR | `docs/**`, README | — | [x] |
 
 ### B2. Commit plan
 1. `docs(spec)`, 2. `docs(plan)`, 3. `fix(common): keep appended answers when idea text is shortened`, 4. `feat(ideation): …`, 5. `feat(orchestrator): discover workflow`, 6. `feat(orchestrator): challenge and what-if`, 7. `test: behaviour …`, 8. `build: …`, 9. `fix: …` (test report), 10. `docs(Z8): …`. Push after every task.
 
 ### B3. Definition of Done (phase)
-- [ ] All A4 criteria pass.
-- [ ] ruff, ruff format and mypy clean; coverage target met.
-- [ ] Changed images build, run non-root and are removed; manifests validate.
-- [ ] Checklist, plan, decisions, deviations, AI log updated.
+- [x] All A4 criteria pass.
+- [x] ruff, ruff format and mypy clean; coverage target met.
+- [x] Changed images build, run non-root and are removed; manifests validate.
+- [x] Checklist, plan, decisions, deviations, AI log updated.
 - [ ] PR opened against `feat/z7-orchestrator-validate`; never merged.
+
+---
+
+## Part C — Implementation and test report
+
+### C1. What was built
+| Files | Content |
+|-------|---------|
+| `services/ideation/src/ideation/**`, `prompts/gap_analyst@v2.md` | Intake, ideator, gap analyst, skeptic and concretizer: one prompt, one schema and one traced call each; ids not shown are removed; flagged evidence is withheld; app, readiness, M6 client |
+| `services/orchestrator/.../services/discover.py` | The nine Discover steps, code filters, child runs, ranking |
+| `…/services/revise.py` | Challenge and what-if (list, apply) |
+| `…/services/{state_machine,run,runner,validate,results}.py` | Discover table and checkpoint; one step loop for both workflows; shared budget and mirrored events; children never wait |
+| `…/repositories/{profile,memo}.py`, `api/routes.py`, `settings.py`, `downstream.py` | New M2 calls (and M7 peer), proposal store, routes, knobs |
+| `libs/common/src/common/{idea_text,idea_rules}.py`, M9, M10 | Appended answers and changes survive shortening; rules M3 and M9 share |
+| M8 Dockerfile, requirements (`pyyaml==6.0.4`), compose and manifest; M3 compose; `.env.example`; dev overlay tags | Packaging |
+| `services/{ideation,orchestrator}/tests/**`, `libs/common/tests/`, `eval/behaviour/{test_discover,behaviour_stack}.py`, `discover_agents.jsonl` | Tests |
+
+No shared contract changed. The work took two sessions: the first stopped on a usage limit and left the M8 agents untested (`99be1b9`). The second found 17 failing tests, a mypy error and unformatted files in it, from two causes in M8 (the readiness dependency ran before body validation; a trace step had no run id) and one outdated registry test, and fixed them in `3173ce1`.
+
+### C2. Deviations from spec / architecture
+| What | Why | Logged in deviations.md as |
+|------|-----|---------------------------|
+| Code filters before the Skeptic, two shortcuts, non-interactive children, `gap_analyst@v2` | see the row | D-018 |
+| Where a verdict's engine input and the what-if proposals are kept; one new M2 read | not specified; M2 does not exist | D-019 |
+| Challenge and what-if routes implemented; `ANALYST_URL`; M8 mounts prompts | Z8 deliverables | D-020 |
+
+A4 #16 was reworded (Z8-17). Added during testing, beyond A5-A7: a repeated apply starts a stranded run, and shortening cuts a clarify question before its answer (Z8-19).
+
+### C3. Test report
+**Testing subagent** (`agent-skills:test-engineer`, one run, test files only; no Docker builds, which ran separately). Before its tests: 1724 passed, coverage 96 %. It added `test_z8_recovery.py` (an M2 outage at every write of a Discover run, a challenge and an apply), `test_z8_bounds.py`, `ideation/tests/unit/test_app.py` and `test_idea_text_bounds.py`, and made the fake M2 honour `Idempotency-Key`. On the code it tested: ruff, format and mypy clean; 1789 passed, 5 failed; coverage 98 %; kubeconform 27/27.
+
+| # | Severity | Bug | Fix |
+|---|----------|-----|-----|
+| 1 | High | A repeated what-if apply answered 202 for a QUEUED run that nothing drove (after a Redis or checkpoint failure) | the repeat starts it (`Runner.ensure_started`) |
+| 2 | Medium | With long questions, all clarify answers were cut from the 1200 characters M10 sees | the question is cut first; questions are one line |
+| 3 | Low | A challenge's new run copied the source run's spend | starts at zero; also carries this idea's id and text |
+| 4 | Low | M7's `niche_id` reached the Ideator prompt unscanned | flagged niches are dropped |
+
+All fixed in `4a33f4f`. Before that, the automated security review found that niche names and gap statements reached the Ideator prompt unscanned (fixed after `b9e72d1`). Also fixed from the report: tests added for A4 #6 (no endpoint accepts a verdict) and #13 (Discover cards; an engine reply for another run), and M8's lookups now run concurrently (a suspicion, Z8-20). The outage tests went from about 105 s to 45 s each.
+
+**Final results** (`4a33f4f`):
+- `ruff check .`, `ruff format --check .`, `mypy libs services` (118 files): clean.
+- `pytest -q` with coverage: **1801 passed, 6 deselected**; 98 % of orchestrator and ideation `src`, `idea_text` and `idea_rules` together (target 90 %); `discover.py` 98 %, `revise.py` 97 %, `agents.py` 98 %.
+- `python scripts/check_registry.py`: ok (17 entries).
+- `kubectl kustomize k8s/overlays/dev | kubeconform -strict`: 27 valid. `docker compose config`: ok.
+
+**Not tested:** real M2, M6 and M7 (they do not exist); real models (no key; hand-written cassettes, so agent quality is unknown); the real-Redis integration test (not rerun: the event stream did not change); the cluster.
+
+### C4. Measurements
+Images built from `4a33f4f` (the last commit that changes code), each run with `--read-only` and no peers, then removed:
+
+| Service | Size | uid | `/health` | `/ready` | Memory, idle |
+|---------|------|-----|-----------|----------|--------------|
+| ideation | 212 MB | 10001 | 200 | 200 (`KB_URL`, gateway backend, mounted prompts); `/skeptic` with no evidence answered 200 with no model call | 47 MiB |
+| orchestrator | 221 MB | 10001 | 200 | 503 (no Redis or peers); challenge without `X-User-Id` was 422 | 54 MiB |
+| validators | 212 MB | 10001 | 200 | 503 (no peers configured) | 45 MiB |
+| scorer | 212 MB | 10001 | 200 | 503 (no model) | 45 MiB |
+
+`docker stop`: ideation 0.6 s, orchestrator 0.9 s; validators and scorer exited with code 0. No run was carried out inside the containers. The first build attempt was stopped by a 10-minute limit: downloads from PyPI were very slow that evening (orchestrator alone took 16 minutes). Run time with real models is not measured (Z11).
+
+### C5. Follow-ups
+- **Ahmad (A1):** implement `GET /internal/ideas/{id}/versions/{n}/verdict` and `GET /internal/profiles/{user_id}`; `POST /internal/ideas` returns version 1; honour `Idempotency-Key` on every write; M2 should check or rail the profile's free text (`skills`, `interests`), which reaches M8 prompts. A6: `/niches/match` and `/gaps` per `contracts/analyst.py`. A8: forward `X-User-Id` on the two `/ideas` routes.
+- **Z10:** with a real judge, check how often a strict challenge removes a claim whose reason summarises more cards than it cites; tune `ORCH_DUPLICATE_SIMILARITY` on real retrieval scores and the effort bands; record real agent cassettes.
+- **Z11:** measure run time and steps of a five-idea Discover against `max_steps` 80.
+- If a challenge fails after M2 stored the new verdict, and the judge then answers `supported` on the retry, the stored v2 stays although the reply says "defended"; it cannot be challenged until a removal completes (not reproduced).
+- A drop event may repeat if the process dies inside the SKEPTIC step.
+- Zain's earlier follow-ups still open: steps after the last checkpoint are not counted if a step re-runs; no user cancel endpoint; one orchestrator replica.
