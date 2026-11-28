@@ -21,7 +21,7 @@
 | Z8 | M8 Ideation + Discover + challenge / what-if | In review | [Z8](specs/Z8-ideation-discover.md) | [#19](https://github.com/Zain-Shykh/idea-validator/pull/19) | 2026-11-27 | — |
 | Z9 | M10t Fine-tuning pipeline + model comparison | Blocked | [Z9](specs/Z9-finetuning.md) | [#21](https://github.com/Zain-Shykh/idea-validator/pull/21) | 2026-11-27 | — |
 | Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | Blocked | — | — | — | — |
-| Z11 | Cluster integration, measurements, end-to-end acceptance | In progress | [Z11](specs/Z11-integration-acceptance.md) | — | 2026-11-28 | — |
+| Z11 | Cluster integration, measurements, end-to-end acceptance | Blocked | [Z11](specs/Z11-integration-acceptance.md) | — | 2026-11-28 | — |
 | Z12 | Report and submission (shared with Ahmad) | Not started | — | — | — | — |
 
 Status values: `Not started` · `In progress` · `In review` (PR open) · `Done` (merged) · `Blocked` (say why in the log).
@@ -234,7 +234,7 @@ flowchart LR
 - [x] With the base model, `/score` returns schema-valid `DimensionScore` for 10 fixture (idea, evidence) pairs across all six rubrics. *(live on minikube, llama.cpp)*
 - [x] Cassette tests: invalid JSON → exactly one retry → fallback called; timeout → fallback; fallback recorded in trace (`model=scorer-hosted`) and `ideaval_scorer_fallbacks_total` increments. *(live hosted call not verified: no key, no M5)*
 - [x] Evidence ids not in the provided set are stripped; if none remain the response is an abstention (score null, confidence 0).
-- [ ] Pod runs on minikube: model imported into PVC by the Job, sidecar loads it, `/ready` only after the model answers a probe prompt. ***Blocker (disk):*** *the full path with the real model needs ≈ 4.3 GB in the node; 4.4 GB were free with a 2 GB floor. Checked separately: Job → PVC with a stand-in file; sidecar and probe with the real model through a mount (spec C3).*
+- [x] Pod runs on minikube: model imported into PVC by the Job, sidecar loads it, `/ready` only after the model answers a probe prompt. *(Closed in Z11 with the real base model: `docs/evidence/cluster-z11.md` section 1.)*
 - [x] p50 latency per score and pod memory measured and written into the spec's test report. *(p50 35.3 s; llama 1124 Mi, wrapper 46 Mi)*
 
 **Progress log.**
@@ -484,7 +484,7 @@ flowchart LR
 
 ## Z11 — Cluster integration, measurements, end-to-end acceptance
 
-- **Status:** In progress · **Spec:** `docs/specs/Z11-integration-acceptance.md` · **Branch:** `feat/z11-integration`
+- **Status:** Blocked (Ahmad's services and UI, Gemini key and human labels do not exist: U1–U10, SS-10..16, GIT-4 and sizing of the other services are open; owner runbook in spec C6) · **Spec:** `docs/specs/Z11-integration-acceptance.md` · **Branch:** `feat/z11-integration`
 - **Requirements:** U1–U10 (end-to-end on the cluster), K8S-5 (requests/limits from measurements), K8S-11, M3-5, AO-6, SS-10..16, GIT-4 (merge conflict with Ahmad)
 - **Depends on:** S4, S5, S6; Ahmad's A8/A9/A10. **Unblocks:** S7.
 
@@ -498,15 +498,19 @@ flowchart LR
 
 **Acceptance criteria.**
 - [ ] Each of U1–U10 demonstrated on the cluster; checklist rows ticked with evidence links.
-- [ ] Requests/limits for Zain's workloads updated from measurements; numbers + method in `docs/evidence/resources.md`.
+- [ ] Requests/limits for Zain's workloads updated from measurements; numbers + method in `docs/evidence/resources.md`. *(Open: done for the scorer pod only, the one workload that did real work; method and numbers are written. The others need real services.)*
 - [ ] Screenshots SS-10..16 saved with captions in `docs/evidence/screenshots/captions.md`.
-- [ ] No fake used outside tests (grep check).
+- [x] No fake used outside tests (grep check). *(`eval/behaviour/test_no_fakes.py`; the cluster stand-in was applied by hand and removed.)*
 - [ ] Merge-conflict PR resolved and screenshotted (SS-2, with Ahmad).
 
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
 | 2026-11-28 03:13 | Started | Branch `feat/z11-integration` from `feat/z10-evaluation-tuning` (unmerged draft PR #23). Partly blocked from the start: no A-phase service, Gemini key or human labels |
+| 2026-11-28 03:14 | Spec and plan | `dbf547f`, `fa9a9e2` |
+| 2026-11-28 03:51 | Cluster deploy, two fixes, stand-in | First session; it stopped on a usage limit while verifying |
+| 2026-11-28 07:28 | Implementation and cluster checks done | Resumed: stand-in report fix, load and sampling tools, load runs, scorer sizing, `validators` liveness fix, evidence |
+| 2026-11-28 07:54 | Tests | Testing subagent: 6 findings fixed; 2385 passed, 2 skipped; 7 integration passed |
 
 ---
 

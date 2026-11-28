@@ -1236,7 +1236,7 @@ Initial resource plan (to be **replaced with measurements** from `kubectl top po
 |----------|----------------------|--------------------|
 | Python API services (each) | 50m / 128Mi | 500m / 384Mi |
 | kb (ONNX models) | 100m / 384Mi | 1 / 1Gi |
-| scorer wrapper / llama.cpp | 50m / 96Mi · 500m / 1.5Gi | 500m / 256Mi · 2 / 2.5Gi |
+| scorer wrapper / llama.cpp (**measured**, Z11, D-025) | 10m / 64Mi · 1850m / 2176Mi | 500m / 128Mi · 2 / 2720Mi |
 | postgres | 100m / 256Mi | 1 / 1Gi |
 | redis | 50m / 64Mi | 250m / 256Mi |
 | ui (nginx) | 10m / 32Mi | 100m / 64Mi |
