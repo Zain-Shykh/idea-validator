@@ -1,83 +1,50 @@
-"""M11 stub: the rules arrive in Z2. Until then no verdict is computed, so every request gets
-INSUFFICIENT_EVIDENCE: a canned GO would be a decision nothing made (AVOID-3).
-"""
+"""HTTP only: parse, hand over to the engine, map errors. All rules are in ``verdict.engine``."""
 
-from fastapi import APIRouter
+from typing import Annotated
 
-from common.contracts.core import (
-    GateResult,
-    Gates,
-    Sensitivity,
-    Stability,
-    Thresholds,
-    Verdict,
-    VerdictLabel,
-    VerdictRequest,
-    Versions,
-    Weights,
-)
+from fastapi import APIRouter, Depends, Request
+
+from common.contracts.core import Verdict, VerdictRequest, Versions
 from common.contracts.verdict import VerdictConfigResponse, WhatIfRequest, WhatIfResponse
-
-ENGINE_VERSION = "m11@stub"
-MISSING = "verdict rules are not implemented yet (Z2)"
+from common.service import ApiError
+from verdict.config import VerdictConfig
+from verdict.engine import apply_changes, decide
 
 router = APIRouter()
 
 
-def stub_verdict(request: VerdictRequest) -> Verdict:
-    not_checked = GateResult.NOT_CHECKED
-    return Verdict(
-        idea_id=request.idea_id,
-        version=request.version,
-        run_id=request.run_id,
-        verdict=VerdictLabel.INSUFFICIENT_EVIDENCE,
-        stability=Stability.STABLE,
-        score=None,
-        confidence=0,
-        gates=Gates(
-            evidence=not_checked,
-            feasibility=not_checked,
-            risk=not_checked,
-            duplicate=not_checked,
-        ),
-        # placeholders so the card has a valid shape; Z2 reads them from config/verdict.yaml
-        weights=Weights(
-            demand_pain=15,
-            competition=15,
-            differentiation=15,
-            feasibility=25,
-            risk=10,
-            learning=20,
-        ),
-        thresholds=Thresholds(T_go=70, T_no=50, floor=1.5),
-        scores=request.scores,
-        weakest_dimension=None,
-        what_would_make_go=[],
-        sensitivity=Sensitivity(runs=0, flipped=0),
-        versions=Versions(
-            engine=ENGINE_VERSION,
-            rubrics=request.rubric_set,
-            profile_weights="stub",
-            prompts=request.prompt_versions,
-            kb_version=request.kb_version,
-        ),
-        missing=[MISSING],
-    )
+def active_config(request: Request) -> VerdictConfig:
+    config: VerdictConfig | None = request.app.state.config
+    if config is None:
+        raise ApiError(503, "NOT_READY", "No valid verdict config is loaded")
+    return config
+
+
+Config = Annotated[VerdictConfig, Depends(active_config)]
 
 
 @router.post("/verdict")
-async def verdict(request: VerdictRequest) -> Verdict:
-    return stub_verdict(request)
+async def verdict(request: VerdictRequest, config: Config) -> Verdict:
+    return decide(request, config)
 
 
 @router.post("/whatif")
-async def whatif(request: WhatIfRequest) -> WhatIfResponse:
-    return WhatIfResponse(verdict=stub_verdict(request) if request.mode == "apply" else None)
+async def whatif(request: WhatIfRequest, config: Config) -> WhatIfResponse:
+    if request.mode == "search":
+        return WhatIfResponse(candidates=decide(request, config).what_would_make_go)
+    try:
+        return WhatIfResponse(verdict=apply_changes(request, request.changes, config))
+    except ValueError as exc:
+        raise ApiError(422, "VALIDATION_ERROR", str(exc)) from exc
 
 
 @router.get("/config")
-async def config() -> VerdictConfigResponse:
+async def active_rules(config: Config) -> VerdictConfigResponse:
     return VerdictConfigResponse(
-        versions=Versions(engine=ENGINE_VERSION, rubrics="stub", profile_weights="stub"),
-        config={"stub": True},
+        versions=Versions(
+            engine=f"m11@{config.version}",
+            rubrics="per-request",  # M11 gets the rubric set with every request
+            profile_weights=config.weights_version,
+        ),
+        config=config.model_dump(mode="json"),
     )

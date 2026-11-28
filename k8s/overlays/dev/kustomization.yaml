@@ -17,7 +17,7 @@ images:
   - name: ghcr.io/zain-shykh/idea-validator-scorer
     newTag: "11276f4"
   - name: ghcr.io/zain-shykh/idea-validator-verdict
-    newTag: "11276f4"
+    newTag: "bedf5d8"
   - name: ghcr.io/zain-shykh/idea-validator-critic
     newTag: "11276f4"
   - name: ghcr.io/zain-shykh/idea-validator-agentops

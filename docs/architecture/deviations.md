@@ -12,6 +12,7 @@
 | D-003 | 2026-11-27 | Z0 | Zain | `step_id` (§15 Tracing): per-run counter in M3 → time-ordered unique integer from `common.trace` (a caller may still pass its own); `parent_step` travels in `X-Parent-Step` as designed | Other services create child steps and have no access to M3's counter | AO-1, DATA-6: ids are unique and roughly ordered, not consecutive | M13 (Z3) orders by `ts`, then `step_id` |
 | D-004 | 2026-11-27 | Z1 | Zain | `.dockerignore` per service (§20, conventions §5, plan Z1) → one root `.dockerignore` (decision Z0-10) | With the repo root as build context Docker ignores `services/<svc>/.dockerignore` | DOCK-2 still met. Ahmad's services need no own file | None |
 | D-005 | 2026-11-27 | Z1 | Zain | M13 report endpoints in the §5 catalogue (`/drift`, `/eval/results`) → `/drift/latest`, `/eval/latest` | §5 and §7.2 disagreed; §7.2 is the API table | API-I7, AO-4; §5 corrected | Z10 implements these paths |
+| D-006 | 2026-11-27 | Z2 | Zain | Feasibility gate (§13.1) has pass/fail only → third outcome `not_checked` when `est_effort_hours` is null: later gates still run, and if none fails the verdict is INSUFFICIENT_EVIDENCE | The contract allows a missing estimate; the engine must not guess | VE-4b, VE-15, U10 | Z5 should always provide an estimate or this abstains |
 
 <!-- Template row:
 | D-001 | 2026-12-02 | Z2 | Zain | `whatif` step 0.5 → 0.25 | worked example needed finer steps | VE-14 | none |

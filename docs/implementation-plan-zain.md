@@ -12,7 +12,7 @@
 |-------|-------|--------|------|----|---------|-----------|
 | Z0 | Shared contracts, `libs/common`, repo tooling | In review | [Z0](specs/Z0-contracts-common.md) | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) | 2026-11-27 07:47 | — |
 | Z1 | Walking skeleton of Zain's services | In review | [Z1](specs/Z1-walking-skeleton.md) | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) | 2026-11-27 08:09 | — |
-| Z2 | M11 Verdict Engine | Not started | — | — | — | — |
+| Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | — |
 | Z3 | Rubrics, prompts registry, M13 AgenticOps core | Not started | — | — | — | — |
 | Z4 | M10 Scorer serving (base model + fallback) | Not started | — | — | — | — |
 | Z5 | M9 Validation agents (4 scorers) | Not started | — | — | — | — |
@@ -137,7 +137,7 @@ flowchart LR
 
 ## Z2 — M11 Verdict Engine
 
-- **Status:** Not started · **Spec:** `docs/specs/Z2-verdict-engine.md` · **Branch:** `feat/z2-verdict-engine`
+- **Status:** In review · **Spec:** `docs/specs/Z2-verdict-engine.md` · **Branch:** `feat/z2-verdict-engine`
 - **Requirements:** M11-1..5, VE-1..16, U6, U7 (engine side), U10, API-I4, K8S-4 (ConfigMap), CI-2
 - **Depends on:** Z0, Z1. **Unblocks:** real verdict cards for the UI; Z7.
 
@@ -153,20 +153,24 @@ flowchart LR
 **Deliverables.** `services/verdict/**`, `config/verdict.yaml`, `k8s/base/verdict.yaml` update, tests.
 
 **Acceptance criteria.**
-- [ ] Every case in architecture §13.2 test matrix exists as a unit test and passes.
-- [ ] Worked example (VE-16): 70.5 → GO; −20 % feasibility weight → 69.87 → PIVOT → result `GO` + `BORDERLINE` with that flip listed; what-if includes competition 2.0 → 3.0 → 73.5 GO, stable (73.07 under the flip run).
-- [ ] Exactly 14 sensitivity runs for score-decided verdicts; redistributed weights always sum to 100 (± 1e-9).
-- [ ] Each gate failure produces the required statement: IE says what is missing; feasibility states the hours gap; risk names the blocker; duplicate names the product; duplicate gate passes when differentiation ≥ 3.
-- [ ] Confidence formula and 0.5 abstention threshold tested at the edge (0.4999 / 0.5).
-- [ ] Determinism: hypothesis property tests (same input → identical JSON; score monotonic in each dimension).
-- [ ] No import of any LLM/HTTP library in `engine.py` (test asserts module imports).
-- [ ] Changing `config/verdict.yaml` (e.g. T_go 75) changes behaviour without code change; invalid config → `/ready` 503.
-- [ ] `services/verdict` coverage ≥ 95 %; ruff + mypy clean.
+- [x] Every case in architecture §13.2 test matrix exists as a unit test and passes.
+- [x] Worked example (VE-16): 70.5 → GO; −20 % feasibility weight → 69.87 → PIVOT → result `GO` + `BORDERLINE` with that flip listed; what-if includes competition 2.0 → 3.0 → 73.5 GO, stable (73.07 under the flip run).
+- [x] Exactly 14 sensitivity runs for score-decided verdicts; redistributed weights always sum to 100 (± 1e-9).
+- [x] Each gate failure produces the required statement: IE says what is missing; feasibility states the hours gap; risk names the blocker; duplicate names the product; duplicate gate passes when differentiation ≥ 3.
+- [x] Confidence formula and 0.5 abstention threshold tested at the edge (0.4999 / 0.5).
+- [x] Determinism: hypothesis property tests (same input → identical JSON; score monotonic in each dimension).
+- [x] No import of any LLM/HTTP library in `engine.py` (test asserts module imports).
+- [x] Changing `config/verdict.yaml` (e.g. T_go 75) changes behaviour without code change; invalid config → `/ready` 503.
+- [x] `services/verdict` coverage ≥ 95 %; ruff + mypy clean.
 
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 08:44 | Phase started | Branch `feat/z2-verdict-engine` from `feat/z1-walking-skeleton` (PR #5) |
+| 2026-11-27 08:44 | Spec and plan pushed | `docs/specs/Z2-verdict-engine.md` Parts A, B |
+| 2026-11-27 08:49 | Implementation pushed | engine, API, `verdict-config` ConfigMap; 535 tests |
+| 2026-11-27 09:02 | Tests and fixes pushed | testing subagent: 3 bugs + smaller issues fixed; 587 tests, verdict coverage 100 %; image `bedf5d8` checked on Docker and minikube |
+| 2026-11-27 09:07 | PR opened | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) (base `feat/z1-walking-skeleton`, closes #6) |
 
 ---
 

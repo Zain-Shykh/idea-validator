@@ -108,3 +108,23 @@ def test_configured_urls_of_deployed_services_resolve() -> None:
     assert env["VERDICT_URL"] == "http://verdict:8000"
     assert env["AGENTOPS_URL"] == "http://agentops:8000"
     assert env["REDIS_HOST"] == "redis"
+
+
+def test_verdict_rules_come_from_a_generated_configmap() -> None:
+    """M11-3, K8S-4: one rules file, mounted in the cluster and in compose, not baked in."""
+    assert "../../config" in docs("k8s/base/kustomization.yaml")[0]["resources"]
+    (generator,) = docs("config/kustomization.yaml")[0]["configMapGenerator"]
+    assert generator == {"name": "verdict-config", "files": ["verdict.yaml"]}
+
+    deployment = docs("k8s/base/verdict.yaml")[0]["spec"]
+    assert deployment["replicas"] == 2
+    pod = deployment["template"]["spec"]
+    (mount,) = pod["containers"][0]["volumeMounts"]
+    assert (mount["mountPath"], mount["readOnly"]) == ("/etc/verdict", True)
+    assert pod["volumes"] == [{"name": mount["name"], "configMap": {"name": "verdict-config"}}]
+
+    dockerfile = (ROOT / "services/verdict/Dockerfile").read_text()
+    path = "/etc/verdict/verdict.yaml"
+    assert f"VERDICT_CONFIG_PATH={path}" in dockerfile and "COPY config" not in dockerfile
+    spec = docs("services/verdict/compose.yaml")[0]["services"]["verdict"]
+    assert spec["volumes"] == [f"../../config/verdict.yaml:{path}:ro"]

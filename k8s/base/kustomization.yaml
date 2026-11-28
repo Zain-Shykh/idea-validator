@@ -12,6 +12,7 @@ resources:
   - verdict.yaml
   - critic.yaml
   - agentops.yaml
+  - ../../config # verdict-config (M11)
 configMapGenerator:
   - name: app-config
     literals:
