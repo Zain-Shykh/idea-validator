@@ -94,6 +94,8 @@ Host ports: see `docs/architecture/architecture.md` §19 (gateway 8001 … agent
 
 Evaluation, tuning, replay and drift commands (and their env vars): [`jobs/evaluation/README.md`](../jobs/evaluation/README.md). On the cluster, `scripts/check_eval.sh` needs the Secret `db`, the evaluation image and `eval/results/baseline.json`.
 
+Load and resource sizing (K8S-5): `scripts/load_validate.py` (needs `ORCHESTRATOR_URL`, `PROFILE_URL`, `AGENTOPS_URL`) wrapped by `scripts/sample_resources.py` (`KUBE_CONTEXT`, `NAMESPACE`). Commands and the cold-cache step for model servers: [`evidence/resources.md`](evidence/resources.md). `scripts/standins/` replaces M2, M5 and M6 for cluster checks only; its numbers are no result.
+
 AgentOps integration tests use a throwaway database whose name ends in `_test`; they create and **drop** it:
 ```bash
 AGENTOPS_TEST_DATABASE_URL=postgresql+psycopg://ideaval:localdev@127.0.0.1:5432/ops_test \

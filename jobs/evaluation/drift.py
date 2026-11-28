@@ -146,6 +146,7 @@ def main(argv: Sequence[str] | None = None, kb: ServiceClient | None = None) -> 
         name = f"drift-{now:%Y%m%dT%H%M%SZ}"
         reports.guard(args.out / f"{name}.json", args.fake)
         stats = asyncio.run(kb_stats(kb))
+        fake = args.fake or stats.kb_version == reports.STAND_IN_KB
         index = reports.database()
         try:
             rows = index.all()
@@ -154,10 +155,10 @@ def main(argv: Sequence[str] | None = None, kb: ServiceClient | None = None) -> 
             index.dispose()
         report = build_report(
             stats, rows, previous.metrics if previous else None,
-            now=now, sha=reports.git_sha(), fake=args.fake,
+            now=now, sha=reports.git_sha(), fake=fake,
         )  # fmt: skip
         path = reports.write_report(args.out, name, report)
-        if not args.fake:
+        if not fake:
             reports.store(report, path)
     except ServiceError as exc:
         print(f"error: the knowledge base is not available: {exc.summary}", file=sys.stderr)

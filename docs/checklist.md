@@ -7,12 +7,12 @@
 
 | Owner | Rows | Done | Partial |
 |-------|-----:|-----:|--------:|
-| Zain | 89 | 66 | 16 |
+| Zain | 89 | 68 | 20 |
 | Ahmad | 77 | 0 | 0 |
-| Both | 54 | 0 | 31 |
-| **Total** | **220** | **66** | **47** |
+| Both | 54 | 0 | 34 |
+| **Total** | **220** | **68** | **54** |
 
-_Last updated: 2026-11-28 (Z0–Z8 in review, Z9 blocked; summary recounted from the rows)._
+_Last updated: 2026-11-28 (Z0–Z8 in review, Z9–Z11 blocked; summary recounted from the rows)._
 
 ## Phase completion
 
@@ -173,7 +173,7 @@ _Last updated: 2026-11-28 (Z0–Z8 in review, Z9 blocked; summary recounted from
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [~] | M10-1 | Fine-tuned 1B–3B (LoRA/QLoRA) in own container | Zain | Z4, Z9 | Z4: own container serving the base model. Z9: switch to `scorer-lora@v1` prepared; no tuned weights |
+| [~] | M10-1 | Fine-tuned 1B–3B (LoRA/QLoRA) in own container | Zain | Z4, Z9 | Z4: own container serving the base model. Z9: switch to `scorer-lora@v1` prepared; no tuned weights; Z11: base model served on the cluster from the import path |
 | [x] | M10-2 | POST /score, /health, /ready | Zain | Z4 | Z4: `services/scorer`, `test_api.py`; probes green on minikube |
 | [x] | M10-3 | Schema validation, retry once, hosted fallback logged | Zain | Z4 | Z4: `eval/behaviour/test_scorer_cassettes.py` (live hosted call not verified: no key, M5 not built) |
 | [~] | M10-4 | Comparison base vs fine-tuned vs hosted | Zain | Z9 | Z9: `evaluate.py`; no results |
@@ -298,8 +298,8 @@ _Last updated: 2026-11-28 (Z0–Z8 in review, Z9 blocked; summary recounted from
 | [x] | AO-1 | Tracing under one run id + replay command | Zain | Z3, Z7, Z10 | Z0 client; Z3 storage; Z7 M3 tracing; Z10 replay (`agentops.replay`, `test_replay.py`, `test_replay_edges.py`; Validate runs, D-022) |
 | [~] | AO-2 | Budgets (tokens, pages, steps, cost) in orchestrator and tool layer | Both | Z7, A2 | Z3 caps; Z7 orchestrator enforcement (`test_budget.py`); tool layer A2 |
 | [~] | AO-3 | Prompt and rubric registry; verdict records versions | Zain | Z3 | Z3: registry + version check; versions on verdicts since Z2; Z10 gives the evaluation a version bump needs, not run yet |
-| [~] | AO-4 | Evaluation harness (agreement, confusion matrix, behaviour) as K8s Job + nightly Jenkins | Both | Z10, A10 | Z10: harness, behaviour checks, `k8s/base/eval-job.yaml`, `scripts/check_eval.sh` (`test_run_eval.py`, `test_check_eval.py`); not run in a cluster; nightly Jenkins is A10 |
-| [~] | AO-5 | Drift reports after each ingestion | Zain | Z10 | Z10: drift job and endpoint, tested on stand-in data; ingestion (A4) does not exist yet |
+| [~] | AO-4 | Evaluation harness (agreement, confusion matrix, behaviour) as K8s Job + nightly Jenkins | Both | Z10, A10 | Z10: harness, behaviour checks, `k8s/base/eval-job.yaml`, `scripts/check_eval.sh` (`test_run_eval.py`, `test_check_eval.py`); not run in a cluster; nightly Jenkins is A10; Z11: eval Job ran in the cluster (no M2: exit 2; stand-in: fake report); no real result, Jenkins A10 |
+| [~] | AO-5 | Drift reports after each ingestion | Zain | Z10 | Z10: drift job and endpoint, tested on stand-in data; ingestion (A4) does not exist yet; Z11: drift Job ran in the cluster on the stand-in only |
 | [~] | AO-6 | Dashboard (cost/verdict, latency/agent, cache hit, fallbacks, approvals, blocked injections) | Both | Z3, A9 | Z3: `/summary` and Prometheus metrics; dashboard page A9 |
 | [x] | AO-7 | Behaviour tests: invalid JSON, tool timeout, empty source, poisoned page | Zain | Z10 | `eval/behaviour/test_failures.py` (the four cases, sockets refused); cassettes hand-written except `scorer_base.jsonl`; CI wiring is A0 |
 
@@ -353,9 +353,9 @@ _Last updated: 2026-11-28 (Z0–Z8 in review, Z9 blocked; summary recounted from
 | [ ] | JEN-4 | SCM polling or tunnel | Ahmad | A0 | |
 | [~] | K8S-1 | Deployments + Services for all modules | Both | Z1, A1 | Z1: `k8s/base/<svc>.yaml` for Zain's 7; A1 pending |
 | [ ] | K8S-2 | StatefulSet/PVC for Postgres, Redis, vector store | Ahmad | A0, A4 | |
-| [ ] | K8S-3 | CronJobs (scouts, ingestion) + Jobs (eval, model import) | Both | A3, A4, Z9, Z10 | |
+| [~] | K8S-3 | CronJobs (scouts, ingestion) + Jobs (eval, model import) | Both | A3, A4, Z9, Z10 | Z11: model-import Job, eval Job and drift CronJob ran on minikube (`docs/evidence/cluster-z11.md`; eval and drift only without real M2/M6); scouts and ingestion A3, A4 |
 | [~] | K8S-4 | ConfigMaps (weights, thresholds, budgets, rubrics) + Secrets | Both | Z2, Z3, A0 | Z2 verdict-config; Z3 budgets, rubrics, prompts ConfigMaps; Secrets and the rest A0 |
-| [~] | K8S-5 | Probes everywhere; requests/limits from measurements | Both | Z11, A10 | Z1: probes and initial requests/limits on Zain's 7; measured values in Z11, A10 |
+| [~] | K8S-5 | Probes everywhere; requests/limits from measurements | Both | Z11, A10 | Z1: probes and initial requests/limits on Zain's 7; measured values in Z11, A10; Z11: scorer pod sized from measurements (`docs/evidence/resources.md`); every other workload still needs real load |
 | [ ] | K8S-6 | HPA on gateway | Ahmad | A8, A10 | |
 | [ ] | K8S-7 | NetworkPolicy default-deny; only M5 egress; ui → api only | Ahmad | A0, A2 | |
 | [ ] | K8S-8 | RollingUpdate maxUnavailable 0; rollback demonstrated | Ahmad | A10 | |

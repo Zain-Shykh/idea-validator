@@ -1,0 +1,114 @@
+# STAND-IN for M2, M5 and M6 (see standin.py). Applied by hand with run.sh for a cluster check and
+# removed afterwards. NEVER add it to k8s/: eval/behaviour/test_no_fakes.py fails if it is there.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: standin
+  labels: &labels
+    app: standin
+    # allow-intra-namespace (§17.3)
+    tier: backend
+    idea-validator/stand-in: "true"
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: standin
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: standin
+          # run.sh sets the tag: the orchestrator image already holds FastAPI and libs/common
+          image: ghcr.io/zain-shykh/idea-validator-orchestrator:set-by-run-sh
+          imagePullPolicy: IfNotPresent
+          command: ["python", "/standin/standin.py"]
+          env:
+            - name: STANDIN_CARDS_DIR
+              value: /standin-cards
+          ports:
+            - containerPort: 8000
+          volumeMounts:
+            - name: code
+              mountPath: /standin
+              readOnly: true
+            - name: cards
+              mountPath: /standin-cards
+              readOnly: true
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 50m
+              memory: 96Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+      volumes:
+        - name: code
+          configMap:
+            name: standin-code
+        - name: cards
+          configMap:
+            name: standin-cards
+---
+# the names Zain's services look for in app-config, so no setting of theirs changes
+apiVersion: v1
+kind: Service
+metadata:
+  name: profile
+  labels:
+    idea-validator/stand-in: "true"
+spec:
+  selector:
+    app: standin
+  ports:
+    - port: 8000
+      targetPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kb
+  labels:
+    idea-validator/stand-in: "true"
+spec:
+  selector:
+    app: standin
+  ports:
+    - port: 8000
+      targetPort: 8000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tools
+  labels:
+    idea-validator/stand-in: "true"
+spec:
+  selector:
+    app: standin
+  ports:
+    - port: 8000
+      targetPort: 8000

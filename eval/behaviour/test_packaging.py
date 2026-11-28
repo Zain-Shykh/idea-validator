@@ -10,6 +10,14 @@ from typing import Any
 import pytest
 import yaml
 
+from sample_resources import (
+    CPU_STEP_M,
+    HEADROOM,
+    LIMIT_FACTOR,
+    MEMORY_STEP_MI,
+    round_up,
+)
+
 ROOT = Path(__file__).resolve().parents[2]
 SERVICES = ("orchestrator", "ideation", "validators", "scorer", "verdict", "critic", "agentops")
 
@@ -231,6 +239,8 @@ def test_scorer_pod_serves_the_model_from_the_pvc() -> None:
     assert env["SCORER_MODEL_URL"] == f"http://{args['--host']}:{args['--port']}"
     assert args["--host"] == "127.0.0.1" and "ports" not in llama
     assert int(args["--threads"]) == int(llama["resources"]["limits"]["cpu"])
+    # unbounded host memory would make the measured limit meaningless
+    assert args["--cache-ram"] == "0"
     for spec in (pod, job["spec"]["template"]["spec"]):
         claims = [v for v in spec["volumes"] if "persistentVolumeClaim" in v]
         assert claims == [{"name": "models", "persistentVolumeClaim": {"claimName": "models"}}]
@@ -244,6 +254,23 @@ def test_scorer_pod_serves_the_model_from_the_pvc() -> None:
     dockerfile = (ROOT / "services/scorer/Dockerfile").read_text()
     for volume, variable in (("rubrics", "RUBRICS"), ("prompts", "PROMPTS")):
         assert f"SCORER_{variable}_DIR={mounts[volume]}" in dockerfile
+
+
+def test_scorer_resources_are_the_measured_ones() -> None:
+    """K8S-5: the table of docs/evidence/resources.md, which says how they were measured."""
+    pod = docs("k8s/base/scorer.yaml")[0]["spec"]["template"]["spec"]
+    found = {
+        c["name"]: (*c["resources"]["requests"].values(), *c["resources"]["limits"].values())
+        for c in pod["containers"]
+    }
+    assert found == {
+        "scorer": ("10m", "64Mi", "500m", "128Mi"),
+        "llama": ("1850m", "2176Mi", "2", "2720Mi"),
+    }
+    evidence = (ROOT / "docs/evidence/resources.md").read_text()
+    for name, values in found.items():
+        cpu, memory, cpu_limit, memory_limit = values
+        assert f"| {name} (set) | {cpu} / {memory} | {cpu_limit} / {memory_limit} |" in evidence
 
 
 def test_no_model_weights_are_tracked_and_the_model_image_is_pinned() -> None:
@@ -260,6 +287,16 @@ def test_no_model_weights_are_tracked_and_the_model_image_is_pinned() -> None:
     # --chmod also applies to the folder COPY creates: without x, the Job cannot read the model
     modes = re.findall(r"--chmod=0?([0-7]{3})", text)
     assert modes and all(int(digit, 8) & 5 == 5 for mode in modes for digit in mode)
+
+
+def test_a_busy_validators_pod_is_not_restarted() -> None:
+    """Found under load (Z11): liveness (3 s, three times) killed the pod mid-burst, and every
+    run in progress lost its scores."""
+    probe = docs("k8s/base/validators.yaml")[0]["spec"]["template"]["spec"]["containers"][0][
+        "livenessProbe"
+    ]
+    assert probe["timeoutSeconds"] >= 10
+    assert probe["periodSeconds"] * probe["failureThreshold"] >= 120
 
 
 def test_validators_get_rubrics_and_prompts_and_one_scorer_slot() -> None:
@@ -378,3 +415,56 @@ def test_evaluation_jobs_are_hardened_and_bounded(path: str, kind: str) -> None:
 def test_the_eval_job_is_not_applied_with_the_base() -> None:
     resources = docs("k8s/base/kustomization.yaml")[0]["resources"]
     assert "drift-cronjob.yaml" in resources and "eval-job.yaml" not in resources
+
+
+def test_the_seven_deployments_run_images_of_one_commit() -> None:
+    """Z11, A4 #2."""
+    images = docs("k8s/overlays/dev/kustomization.yaml")[0]["images"]
+    tags = {i["newTag"] for i in images if not i["name"].endswith("-evaluation")}
+    assert len(tags) == 1
+
+
+@pytest.mark.parametrize(
+    ("service", "maps"),
+    [
+        ("orchestrator", {"budgets", "prompts", "rubrics"}),
+        ("ideation", {"prompts"}),
+        ("validators", {"prompts", "rubrics"}),
+        ("scorer", {"prompts", "rubrics"}),
+        ("verdict", {"verdict-config"}),
+        ("critic", {"budgets", "prompts"}),
+        ("agentops", {"budgets", "prompts", "rubrics", "verdict-config"}),
+    ],
+)
+def test_each_deployment_mounts_its_config_maps_and_app_config(
+    service: str, maps: set[str]
+) -> None:
+    """Z11, A4 #2."""
+    pod = docs(f"k8s/base/{service}.yaml")[0]["spec"]["template"]["spec"]
+    found = set()
+    for volume in pod["volumes"]:
+        sources = volume.get("projected", {}).get("sources", [volume])
+        found |= {s["configMap"]["name"] for s in sources if "configMap" in s}
+    assert found == maps
+    assert {"configMapRef": {"name": "app-config"}} in pod["containers"][0]["envFrom"]
+
+
+def test_the_rule_rows_of_the_resource_evidence_follow_the_rule() -> None:
+    """Z11, A4 #7-8: recompute "rule on the cold run" from the measured cold-run rows."""
+    text = (ROOT / "docs/evidence/resources.md").read_text()
+    rows = [[c.strip().strip("*") for c in line.split("|")[1:-1]] for line in text.splitlines()]
+    cold = {
+        "llama": next(r for r in rows if r and r[0].startswith("10 `/score`")),
+        "scorer": next(r for r in rows if r and r[0] == "same"),
+    }
+    for name, row in cold.items():
+        cpu_p50, cpu_p95, _ = (float(x) for x in row[3].strip("*").split(" / "))
+        mem_p50, mem_p95, _ = (float(x) for x in row[4].strip("*").split(" / "))
+        expected = [
+            f"{round_up(cpu_p50 * HEADROOM, CPU_STEP_M)}m / "
+            f"{round_up(mem_p50 * HEADROOM, MEMORY_STEP_MI)}Mi",
+            f"{round_up(cpu_p95 * LIMIT_FACTOR, CPU_STEP_M)}m / "
+            f"{round_up(mem_p95 * LIMIT_FACTOR, MEMORY_STEP_MI)}Mi",
+        ]
+        (stated,) = [r for r in rows if r and r[0] == f"{name}, rule on the cold run"]
+        assert stated[1:] == expected, name

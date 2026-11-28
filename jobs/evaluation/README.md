@@ -10,7 +10,7 @@
 | `python jobs/evaluation/run_eval.py [--compare eval/results/baseline.json]` | `ORCHESTRATOR_URL`, `PROFILE_URL`, `AGENTOPS_URL`; `resolved.csv` for agreement | run every labelled idea; matrix, κ, false GO on NO-GO, behaviour checks → `eval/results/eval-<sha>.json` |
 | `python jobs/evaluation/tune.py --results eval/results/eval-<sha>.json` | that report + `resolved.csv`; no model | grid + 5-fold CV → `tune-<sha>.json` and `.md`. Never edits the rules |
 | `python jobs/evaluation/drift.py` | `KB_URL`, `POSTGRES_*` or `AGENTOPS_DATABASE_URL` | freshness, coverage, verdict-mix PSI → `eval_runs` + `drift-*.json`; `GET /drift/latest` |
-| `scripts/check_eval.sh` | cluster + `eval/results/baseline.json` | run the eval Job; exit 1 on a regression (`--report FILE` compares without a cluster) |
+| `scripts/check_eval.sh` | cluster + `eval/results/baseline.json` | run the eval Job; exit 1 on a regression (`--report FILE` compares without a cluster). `KUBE_CONTEXT=idea-validator` pins the cluster |
 
 **Replay a run** (AO-1; no service, Redis or model). From the repository:
 

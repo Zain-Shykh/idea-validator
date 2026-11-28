@@ -12,6 +12,7 @@ known-first-party = [
     "common", "orchestrator", "ideation", "validators", "scorer", "verdict", "critic", "agentops",
     "dataset", "build_dataset", "draft_labels", "review", "split", "evaluate",
     "labelled", "eval_metrics", "eval_paths", "reports", "run_eval", "tune", "drift",
+    "standin", "load_validate", "sample_resources",
 ]
 
 [tool.ruff.lint.flake8-bugbear]
@@ -20,7 +21,7 @@ extend-immutable-calls = ["fastapi.Depends", "fastapi.Query", "fastapi.Header"]
 [tool.mypy]
 python_version = "3.12"
 plugins = ["pydantic.mypy"]
-mypy_path = "libs/common/src:services/orchestrator/src:services/ideation/src:services/validators/src:services/scorer/src:services/verdict/src:services/critic/src:services/agentops/src:jobs/finetune:jobs/evaluation"
+mypy_path = "scripts:scripts/standins:libs/common/src:services/orchestrator/src:services/ideation/src:services/validators/src:services/scorer/src:services/verdict/src:services/critic/src:services/agentops/src:jobs/finetune:jobs/evaluation"
 explicit_package_bases = true
 disallow_untyped_defs = true
 disallow_incomplete_defs = true
@@ -37,7 +38,7 @@ follow_imports = "skip"
 ignore_missing_imports = true
 
 [tool.pytest.ini_options]
-testpaths = ["libs", "services", "jobs", "eval"]
+testpaths = ["libs", "services", "jobs", "eval", "scripts"]
 # service packages are not installed: images copy src/ and tests import it from here
 pythonpath = [
     "services/orchestrator/src",
@@ -57,6 +58,8 @@ pythonpath = [
     "jobs/finetune",  # the fine-tuning scripts (M10t)
     "jobs/finetune/tests",  # test builders (finetune_factories)
     "jobs/evaluation",  # the evaluation, tuning and drift jobs (M13)
+    "scripts",  # the load and sampling tools
+    "scripts/standins",  # the cluster stand-in for M2, M5 and M6 (tests only import it)
 ]
 addopts = "--import-mode=importlib -m 'not integration and not cluster'"
 asyncio_mode = "auto"

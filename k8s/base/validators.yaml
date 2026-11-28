@@ -63,7 +63,11 @@ spec:
               port: 8000
             initialDelaySeconds: 5
             periodSeconds: 20
-            timeoutSeconds: 3
+            # a burst of runs keeps the one event loop at its CPU limit and /health waits with
+            # it. A restart throws every score in progress away, so only about two minutes
+            # without an answer count as dead (spec Z11, C3)
+            timeoutSeconds: 10
+            failureThreshold: 6
           # initial plan (architecture §17.2); replaced by measurements in Z11
           resources:
             requests:

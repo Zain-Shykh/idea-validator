@@ -248,3 +248,28 @@ def test_coverage_with_no_niches_and_a_previous_report_without_coverage() -> Non
 def test_a_naive_clock_is_never_used() -> None:
     report = drift.build_report(STATS, [], None, now=datetime.now(UTC), sha="s", fake=True)
     assert datetime.fromisoformat(report["created_at"]).tzinfo is not None
+
+
+def test_a_stand_in_knowledge_base_makes_the_report_fake(
+    database: AgentOpsSettings, tmp_path: Path
+) -> None:
+    """The CronJob passes no ``--fake``."""
+    stats = STATS.model_copy(update={"kb_version": "stand-in"})
+    reply = kb(lambda _: httpx.Response(200, content=stats.model_dump_json()))
+    assert drift.main(["--out", str(tmp_path / "out")], reply) == 0
+    assert [p.name.startswith("FAKE-drift-") for p in (tmp_path / "out").iterdir()] == [True]
+    with TestClient(build_app(database)) as api:
+        assert api.get("/drift/latest").status_code == 404
+
+
+def test_an_unflagged_stand_in_drift_run_never_reaches_the_results_folder(
+    database: AgentOpsSettings, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``--out`` defaults to eval/results; the early guard cannot know yet that this is fake."""
+    monkeypatch.setattr(reports, "RESULTS_DIR", tmp_path / "results")
+    stats = STATS.model_copy(update={"kb_version": "stand-in"})
+    reply = kb(lambda _: httpx.Response(200, content=stats.model_dump_json()))
+    assert drift.main(["--out", str(reports.RESULTS_DIR)], reply) == 2
+    assert not reports.RESULTS_DIR.exists()
+    with TestClient(build_app(database)) as api:
+        assert api.get("/drift/latest").status_code == 404

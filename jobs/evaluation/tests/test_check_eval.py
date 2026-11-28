@@ -68,6 +68,7 @@ echo "$*" >> "$KUBECTL_LOG"
 case "$*" in
   *"create configmap"*) echo "kind: ConfigMap" ;;
   *"apply -f -"*) cat >> "$KUBECTL_LOG" ;;
+  *"get cronjob drift-report"*) printf '%s' "${APP_CONFIG-app-config-abc123}" ;;
   *"get job eval"*) echo "$JOB_STATE" ;;
   *"get pods"*) echo "$POD_EXIT" ;;
   *logs*) echo "the job's log"; echo 'REPORT_JSON {"kind": "eval"}' ;;
@@ -100,6 +101,60 @@ def test_cluster_mode_passes_the_jobs_result_on(
     calls = log.read_text()
     assert "idea-validator-evaluation:abc1234" in calls and "set-by-overlay" not in calls
     assert "delete job eval --ignore-not-found" in calls
+
+
+@pytest.mark.parametrize("context", ["idea-validator", ""])
+def test_every_cluster_command_uses_the_named_context(tmp_path: Path, context: str) -> None:
+    """Without it the Job would go to whichever cluster is current."""
+    kubectl = tmp_path / "kubectl"
+    kubectl.write_text(KUBECTL)
+    kubectl.chmod(0o755)
+    log = tmp_path / "calls.log"
+    done = run(
+        "--baseline", str(BASELINE),
+        PATH=f"{tmp_path}:{os.environ['PATH']}", KUBECTL_LOG=str(log), JOB_STATE="Failed",
+        POD_EXIT="2", IMAGE_TAG="abc1234", EVAL_TIMEOUT_S="1", EVAL_POLL_S="1",
+        EVAL_REPORT_OUT=str(tmp_path / "saved.json"), KUBE_CONTEXT=context,
+    )  # fmt: skip
+    assert done.returncode == 2, done.stderr
+    # the stand-in also logs the applied manifest; the calls are the lines naming the namespace
+    calls = [line for line in log.read_text().splitlines() if "-n idea-validator " in line]
+    assert len(calls) >= 6
+    for line in calls:
+        assert line.startswith(f"--context {context} -n " if context else "-n "), line
+
+
+def test_the_job_mounts_the_deployed_app_config(tmp_path: Path) -> None:
+    """Kustomize adds a hash to the ConfigMap's name; the Job is applied without Kustomize, so
+    the plain name leaves its pod in CreateContainerConfigError (found on the cluster, Z11)."""
+    kubectl = tmp_path / "kubectl"
+    kubectl.write_text(KUBECTL)
+    kubectl.chmod(0o755)
+    log = tmp_path / "calls.log"
+    env = dict(
+        PATH=f"{tmp_path}:{os.environ['PATH']}", KUBECTL_LOG=str(log), JOB_STATE="Complete",
+        IMAGE_TAG="abc1234", EVAL_TIMEOUT_S="1", EVAL_POLL_S="1",
+        EVAL_REPORT_OUT=str(tmp_path / "saved.json"),
+    )  # fmt: skip
+    assert run("--baseline", str(BASELINE), **env).returncode == 0
+    applied = log.read_text()
+    assert "name: app-config-abc123" in applied
+    assert "name: app-config\n" not in applied
+
+
+@pytest.mark.parametrize("found", ["", "redis", "app-config-x\nrm"])
+def test_without_a_deployed_app_config_no_job_is_created(tmp_path: Path, found: str) -> None:
+    kubectl = tmp_path / "kubectl"
+    kubectl.write_text(KUBECTL)
+    kubectl.chmod(0o755)
+    log = tmp_path / "calls.log"
+    done = run(
+        "--baseline", str(BASELINE),
+        PATH=f"{tmp_path}:{os.environ['PATH']}", KUBECTL_LOG=str(log), IMAGE_TAG="abc1234",
+        APP_CONFIG=found,
+    )  # fmt: skip
+    assert done.returncode == 2 and "app-config" in done.stderr
+    assert "delete job" not in log.read_text()
 
 
 # --- exit 1 is reserved for a regression ---------------------------------------------------------

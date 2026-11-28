@@ -10,18 +10,18 @@ resources:
 namespace: idea-validator
 images:
   - name: ghcr.io/zain-shykh/idea-validator-orchestrator
-    newTag: "4a33f4f"
+    newTag: "fa9a9e2"
   - name: ghcr.io/zain-shykh/idea-validator-ideation
-    newTag: "4a33f4f"
+    newTag: "fa9a9e2"
   - name: ghcr.io/zain-shykh/idea-validator-validators
-    newTag: "4a33f4f"
+    newTag: "fa9a9e2"
   - name: ghcr.io/zain-shykh/idea-validator-scorer
-    newTag: "4a33f4f"
+    newTag: "fa9a9e2"
   - name: ghcr.io/zain-shykh/idea-validator-verdict
-    newTag: "bedf5d8"
+    newTag: "fa9a9e2"
   - name: ghcr.io/zain-shykh/idea-validator-critic
-    newTag: "85f47f9"
+    newTag: "fa9a9e2"
   - name: ghcr.io/zain-shykh/idea-validator-evaluation
-    newTag: "870ed03"
+    newTag: "7214dd8"
   - name: ghcr.io/zain-shykh/idea-validator-agentops
-    newTag: "9d8410a"
+    newTag: "fa9a9e2"
