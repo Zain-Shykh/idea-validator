@@ -17,7 +17,7 @@
 | Z4 | M10 Scorer serving (base model + fallback) | In review | [Z4](specs/Z4-scorer-serving.md) | [#11](https://github.com/Zain-Shykh/idea-validator/pull/11) | 2026-11-27 10:43 | — |
 | Z5 | M9 Validation agents (4 scorers) | In review | [Z5](specs/Z5-validators.md) | [#13](https://github.com/Zain-Shykh/idea-validator/pull/13) | 2026-11-27 11:46 | — |
 | Z6 | M12 Critic and Guardrails | In review | [Z6](specs/Z6-critic-guardrails.md) | [#15](https://github.com/Zain-Shykh/idea-validator/pull/15) | 2026-11-27 12:25 | — |
-| Z7 | M3 Orchestrator: run lifecycle + Validate | Not started | — | — | — | — |
+| Z7 | M3 Orchestrator: run lifecycle + Validate | In review | [Z7](specs/Z7-orchestrator-validate.md) | [#17](https://github.com/Zain-Shykh/idea-validator/pull/17) | 2026-11-27 15:55 | — |
 | Z8 | M8 Ideation + Discover + challenge / what-if | Not started | — | — | — | — |
 | Z9 | M10t Fine-tuning pipeline + model comparison | Not started | — | — | — | — |
 | Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | Not started | — | — | — | — |
@@ -323,7 +323,7 @@ flowchart LR
 
 ## Z7 — M3 Orchestrator: run lifecycle + Validate workflow
 
-- **Status:** Not started · **Spec:** `docs/specs/Z7-orchestrator-validate.md` · **Branch:** `feat/z7-orchestrator-validate`
+- **Status:** In review · **Spec:** `docs/specs/Z7-orchestrator-validate.md` · **Branch:** `feat/z7-orchestrator-validate`
 - **Requirements:** M3-1..6, WF-V1..V9, U3, U4, U5, U6, U10, AO-1, AO-2, M2-4, M2-5, AVOID-1, AVOID-2, AVOID-3
 - **Depends on:** Z2, Z5, Z6 (real), M2/M4/M6 fakes until S3/S4. **Unblocks:** S4 (Validate end-to-end), Ahmad's gateway/UI integration.
 
@@ -340,21 +340,26 @@ flowchart LR
 **Deliverables.** `services/orchestrator/**` (validate path), fakes for M2/M4/M6, cassettes.
 
 **Acceptance criteria.**
-- [ ] State-machine unit tests cover every transition in architecture §6.1/§6.2, including invalid transitions (409).
-- [ ] Happy path with fakes → COMPLETED with a schema-valid verdict card stored and a trace whose decisions match the path.
-- [ ] Budget test: deep search estimate over remaining budget → `AWAITING_APPROVAL` event with stated cost; approve → continues and spends; decline → continues without, possibly IE with `missing`.
-- [ ] Clarify test: a question whose two answers give the same verdict is **not** asked; one that flips the verdict is asked; after the answer only affected scorers re-run (trace shows `cache_hit` for others).
-- [ ] Profile change re-run: only feasibility/learning scorer re-executes.
-- [ ] Verdict cache hit on identical re-run (same versions); miss after rubric set or profile version change (AVOID-2).
-- [ ] Scorer timeout / invalid JSON → retries then abstain; run still completes (behaviour cassettes).
-- [ ] Kill-and-resume test: orchestrator restarted while `AWAITING_APPROVAL` → resume works after approval.
-- [ ] Event stream contains agent, tool call and spend updates in order (U3) — validated against `RunEvent`.
-- [ ] No code path lets a model output set or alter `verdict` (test asserts verdict only from M11 response).
+- [x] State-machine unit tests cover every transition in architecture §6.1/§6.2, including invalid transitions (409).
+- [x] Happy path with fakes → COMPLETED with a schema-valid verdict card stored and a trace whose decisions match the path.
+- [x] Budget test: deep search estimate over remaining budget → `AWAITING_APPROVAL` event with stated cost; approve → continues and spends; decline → continues without, possibly IE with `missing`.
+- [x] Clarify test: a question whose two answers give the same verdict is **not** asked; one that flips the verdict is asked; after the answer only affected scorers re-run (trace shows `cache_hit` for others).
+- [x] Profile change re-run: only feasibility/learning scorer re-executes.
+- [x] Verdict cache hit on identical re-run (same versions); miss after rubric set or profile version change (AVOID-2).
+- [x] Scorer timeout / invalid JSON → retries then abstain; run still completes (behaviour cassettes). A timeout is not retried (D-010, D-017).
+- [x] Kill-and-resume test: orchestrator restarted while `AWAITING_APPROVAL` → resume works after approval.
+- [x] Event stream contains agent, tool call and spend updates in order (U3) — validated against `RunEvent`.
+- [x] No code path lets a model output set or alter `verdict` (test asserts verdict only from M11 response).
 
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 15:55 | Started | Branch `feat/z7-orchestrator-validate` from `feat/z6-critic-guardrails` (PR #15 unmerged) |
+| 2026-11-27 15:55 | Spec | `docs/specs/Z7-orchestrator-validate.md` Part A |
+| 2026-11-27 15:56 | Plan | Part B |
+| 2026-11-27 16:19 | Implemented | State machine, run API, tests, behaviour tests; image built and run against fake services |
+| 2026-11-27 16:41 | Tests | Testing subagent: 11 bugs, all fixed; 1562 tests pass, orchestrator coverage 97 %, real-Redis test passes |
+| 2026-11-27 16:46 | PR | #17 against `feat/z6-critic-guardrails` (closes #16) |
 
 ---
 

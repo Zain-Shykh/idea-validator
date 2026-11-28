@@ -22,7 +22,7 @@ ROUTES: dict[str, dict[str, set[str]]] = {
             "/ideas/{}/challenge",
             "/ideas/{}/whatif",
         },
-        "get": set(),
+        "get": {"/runs/{}"},
     },
     "ideation": {
         "post": {"/intake", "/ideate", "/gap-analyze", "/skeptic", "/concretize"},

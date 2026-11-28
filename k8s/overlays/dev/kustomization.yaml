@@ -10,7 +10,7 @@ resources:
 namespace: idea-validator
 images:
   - name: ghcr.io/zain-shykh/idea-validator-orchestrator
-    newTag: "11276f4"
+    newTag: "e862c4e"
   - name: ghcr.io/zain-shykh/idea-validator-ideation
     newTag: "11276f4"
   - name: ghcr.io/zain-shykh/idea-validator-validators

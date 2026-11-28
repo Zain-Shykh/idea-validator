@@ -7,12 +7,12 @@
 
 | Owner | Rows | Done | Partial |
 |-------|-----:|-----:|--------:|
-| Zain | 89 | 42 | 14 |
+| Zain | 89 | 54 | 12 |
 | Ahmad | 77 | 0 | 0 |
-| Both | 54 | 0 | 18 |
-| **Total** | **220** | **42** | **32** |
+| Both | 54 | 0 | 25 |
+| **Total** | **220** | **54** | **37** |
 
-_Last updated: 2026-11-27 (Z0–Z6 in review; summary recounted from the rows)._
+_Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 
 ## Phase completion
 
@@ -52,21 +52,21 @@ _Last updated: 2026-11-27 (Z0–Z6 in review; summary recounted from the rows)._
 |:----:|----|-------------|-------|-------|----------|
 | [ ] | U1 | Sign up, log in, save profile; profile changes later recommendations | Both | A7, A8, A9, Z8 | |
 | [ ] | U2 | Discover: ranked ideas each with verdict + short reason | Both | Z8, A9 | |
-| [ ] | U3 | Watch agents live: running agent, tool calls, spend | Both | Z7, A8, A9 | |
-| [ ] | U4 | Approve/decline expensive deep search; cost stated, waits | Both | Z7, Z6, A9 | |
-| [ ] | U5 | Validate own idea; only result-changing questions asked | Both | Z7, Z8, A9 | |
-| [ ] | U6 | Verdict card: verdict, gates, six scores + evidence links, weights, confidence, stability | Both | Z2, A9 | |
+| [~] | U3 | Watch agents live: running agent, tool calls, spend | Both | Z7, A8, A9 | Z7: ordered `RunEvent`s with agent, tool calls and spend (`services/orchestrator/tests/unit/test_validate.py::test_event_stream`); gateway SSE and UI in A8, A9 |
+| [~] | U4 | Approve/decline expensive deep search; cost stated, waits | Both | Z7, Z6, A9 | Z7: cost stated, waits, approve/decline recorded (`test_budget.py`); fake scouts; UI A9 |
+| [~] | U5 | Validate own idea; only result-changing questions asked | Both | Z7, Z8, A9 | Z7: only flipping questions asked (`test_clarify.py`); real intake agent Z8, UI A9 |
+| [~] | U6 | Verdict card: verdict, gates, six scores + evidence links, weights, confidence, stability | Both | Z2, A9 | Z2 card; Z7 stores and publishes it with evidence ids (`test_validate.py::test_happy_path`); UI A9 |
 | [ ] | U7 | What would make this GO: concrete changes, apply one, v2 computed by engine | Both | Z2, Z8, A9 | |
 | [ ] | U8 | Challenge a claim: critic defends or removes | Both | Z6, Z8, A9 | |
 | [ ] | U9 | History, versions, compare two ideas on six dimensions | Ahmad | A7, A9 | |
-| [ ] | U10 | INSUFFICIENT EVIDENCE card says what was missing, does not guess | Both | Z2, A9 | |
+| [~] | U10 | INSUFFICIENT EVIDENCE card says what was missing, does not guess | Both | Z2, A9 | Z2 `missing`; Z7 carries it through a declined deep search (`test_budget.py`); UI A9 |
 
 ## Workflows
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
 | [ ] | WF-D1..D9 | Discover workflow (niches, ideator, gap analyst, skeptic, critic, ≤3 rounds, validate survivors, ranked result) | Zain | Z8 | |
-| [~] | WF-V1..V9 | Validate workflow (intake/clarify, evidence + scout on demand, 4 parallel scorers, features, verdict, challenge, stability, card) | Zain | Z7 | Z5: WF-V3 (parallel-safe scorers, own rubrics) and WF-V4 (features computed by code) in M9; workflow in Z7 |
+| [~] | WF-V1..V9 | Validate workflow (intake/clarify, evidence + scout on demand, 4 parallel scorers, features, verdict, challenge, stability, card) | Zain | Z7 | Z5: WF-V3/V4 in M9; Z7: all steps in M3 (`test_validate.py`, `eval/behaviour/test_orchestrator.py` with real M9, M11, M12, M13); real intake and skeptic Z8, real KB and scouts Ahmad |
 
 ## M1 Web UI and API Gateway
 
@@ -88,20 +88,20 @@ _Last updated: 2026-11-27 (Z0–Z6 in review; summary recounted from the rows)._
 | [ ] | M2-1 | Postgres: users, profiles, ideas, versions, runs | Ahmad | A7 | |
 | [ ] | M2-2 | Redis cache for verdicts and retrieval with TTL | Ahmad | A7, A4 | |
 | [ ] | M2-3 | Migrations | Ahmad | A7 | |
-| [~] | M2-4 | Cache keys include profile + rubric versions | Both | Z0, Z7, A7 | Z0: `common.cache_keys.verdict_key` (`test_cache_keys.py`, D-001); use in Z7, A7 |
-| [~] | M2-5 | Cache hits visible | Both | Z3, Z7, A9 | Z3: M13 aggregates the cache hit rate and `ideaval_cache_requests_total` (`test_summary.py`); M2, M3 and UI badge later |
+| [~] | M2-4 | Cache keys include profile + rubric versions | Both | Z0, Z7, A7 | Z0 `verdict_key`; Z7 builds it with all versions (`test_cache.py`); M2 storage A7 |
+| [~] | M2-5 | Cache hits visible | Both | Z3, Z7, A9 | Z3 metrics; Z7 `cache_hit` events, trace records and `from_cache` (`test_cache.py`); M2 and UI badge later |
 | [ ] | M2-6 | Layered backend (routes, services, repositories) | Ahmad | A7 | |
 
 ## M3 Orchestrator
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | M3-1 | Discover + Validate as testable state machines | Zain | Z7, Z8 | |
-| [ ] | M3-2 | Parallel agents | Zain | Z7 | |
-| [ ] | M3-3 | Retries and timeouts | Zain | Z7 | |
-| [ ] | M3-4 | Stop at budget and ask the user | Zain | Z7 | |
-| [ ] | M3-5 | Re-run only what changed | Zain | Z7 | |
-| [ ] | M3-6 | Every decision traced | Zain | Z7 | |
+| [~] | M3-1 | Discover + Validate as testable state machines | Zain | Z7, Z8 | Z7: Validate (`test_state_machine.py`, `test_resume.py`); Discover Z8 |
+| [x] | M3-2 | Parallel agents | Zain | Z7 | Z7: `test_validate.py::test_scorers_run_in_parallel` |
+| [x] | M3-3 | Retries and timeouts | Zain | Z7 | Z7: `test_scoring.py`, `test_lifecycle.py` (every call has a time limit) |
+| [x] | M3-4 | Stop at budget and ask the user | Zain | Z7 | Z7: `test_budget.py` (fake M2 and M4) |
+| [x] | M3-5 | Re-run only what changed | Zain | Z7 | Z7: `test_cache.py::test_profile_change_rescores_feasibility_only`, `test_clarify.py` |
+| [x] | M3-6 | Every decision traced | Zain | Z7 | Z7: `test_validate.py::test_trace_records`, step decisions equal the path |
 
 ## M4 Scouts
 
@@ -164,7 +164,7 @@ _Last updated: 2026-11-27 (Z0–Z6 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [~] | M9-1 | Four scorers in parallel (six dimensions) | Zain | Z5, Z7 | Z5: four scorers, six dimensions, parallel-safe (`eval/behaviour/test_validators.py`); parallel calls by M3 in Z7; one CPU model is serialised (D-010) |
+| [x] | M9-1 | Four scorers in parallel (six dimensions) | Zain | Z5, Z7 | Z5: four scorers; Z7: called in parallel (`test_validate.py`); one CPU model serialises scoring (D-010) |
 | [x] | M9-2 | Own rubric, tools, output schema each | Zain | Z5 | Z5: own rubrics, KB/analyst queries and feature schema per scorer (`services/validators/src/validators/scorers/`; D-012) |
 | [x] | M9-3 | Computed features + model judgment | Zain | Z5 | Z5: `test_features.py`, `test_gate_inputs.py`; model judgment through M10 (fake KB and analyst) |
 | [x] | M9-4 | Every score cites evidence ids, else abstain | Zain | Z5 | Z5: `test_scoring.py::test_scores_cite_only_retrieved_ids`, `test_validators.py::test_empty_source_abstains` (fake KB) |
@@ -197,14 +197,14 @@ _Last updated: 2026-11-27 (Z0–Z6 in review; summary recounted from the rows)._
 | [x] | M12-1 | Claim check against evidence (/check) | Zain | Z6 | Z6: `test_check.py`, `eval/behaviour/test_critic.py` (fake KB, hand-written cassettes) |
 | [x] | M12-2 | Injection defence (fetched text is data) | Zain | Z6 | Z6: `eval/behaviour/test_critic_injection.py`, `test_injection.py`; own rules only (D-013) |
 | [x] | M12-3 | Input rail | Zain | Z6 | Z6: `services/critic/tests/unit/test_rail.py`, `test_adversarial.py` |
-| [~] | M12-4 | Approval above budget | Zain | Z6, Z7 | Z6: rule and `/policy/approval` (`test_policy.py`); M3 asking and recording approval is Z7 |
+| [x] | M12-4 | Approval above budget | Zain | Z6, Z7 | Z6 rule; Z7: M3 asks and records the decision (`test_budget.py`) |
 
 ## M13 AgenticOps
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
 | [x] | M13-1 | Tracing per run (/trace, /runs/{id}/trace) | Zain | Z3 | `services/agentops`, `test_trace.py::test_thousand_records_ten_runs`, `test_postgres.py`; client from Z0 |
-| [~] | M13-2 | Budgets | Zain | Z3, Z7 | Z3: `config/budgets.yaml` + `load_budgets` (`test_registry.py`); enforcement Z7/A2 |
+| [x] | M13-2 | Budgets | Zain | Z3, Z7 | Z3 budget file; Z7 enforcement in M3 (`test_budget.py`); M5 enforcement is A2 (AO-2) |
 | [x] | M13-3 | Prompt and rubric registry | Zain | Z3 | `common/registry.py`, `scripts/check_registry.py`, `GET /registry` (`test_check_registry.py`, `test_api.py`); CI wiring proposed for A0 |
 | [ ] | M13-4 | Evaluation harness | Zain | Z10 | |
 | [ ] | M13-5 | Drift reports | Zain | Z10 | |
@@ -241,8 +241,8 @@ _Last updated: 2026-11-27 (Z0–Z6 in review; summary recounted from the rows)._
 | [ ] | API-P1 | POST /auth/register, /auth/login | Ahmad | A8 | |
 | [ ] | API-P2 | GET, PUT /profile | Ahmad | A8 | |
 | [ ] | API-P3 | POST /discover, /validate | Both | A8, Z7 | |
-| [ ] | API-P4 | GET /runs/{id}, /runs/{id}/events (SSE) | Both | A8, Z7 | |
-| [ ] | API-P5 | POST /runs/{id}/answer, /approve | Both | A8, Z7 | |
+| [~] | API-P4 | GET /runs/{id}, /runs/{id}/events (SSE) | Both | A8, Z7 | Z7: M3 `GET /runs/{id}` and the event stream; gateway and SSE A8 |
+| [~] | API-P5 | POST /runs/{id}/answer, /approve | Both | A8, Z7 | Z7: M3 answer and approve (`test_api.py`); gateway A8 |
 | [ ] | API-P6 | POST /ideas/{id}/challenge, /whatif | Both | A8, Z8 | |
 | [ ] | API-P7 | GET /ideas, /ideas/{id}/versions, /compare | Ahmad | A7, A8 | |
 | [~] | API-P8 | GET /metrics | Both | Z0, A8 | Z0: `/metrics` in `create_app`; gateway in A8 |
@@ -258,7 +258,7 @@ _Last updated: 2026-11-27 (Z0–Z6 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | VE-1 | LLM never decides the verdict | Zain | Z2, Z7 | |
+| [x] | VE-1 | LLM never decides the verdict | Zain | Z2, Z7 | Z2 engine; Z7: `test_verdict_guard.py` |
 | [x] | VE-2 | Six dimensions 0–5 + confidence + evidence ids, versioned rubric | Zain | Z3, Z5 | Z3 rubrics; Z5 six scores with confidence and KB evidence ids, `test_api.py::test_five_ideas_give_six_dimensions` (fake KB; real KB at S3) |
 | [x] | VE-3 | Dimension definitions in rubrics | Zain | Z3 | `rubrics/*.yaml` (Z3), applied by the four scorers (Z5) |
 | [x] | VE-4a | Evidence gate (≥3 sources, ≥2 platforms) → IE | Zain | Z2 | `test_gates.py` |
@@ -272,7 +272,7 @@ _Last updated: 2026-11-27 (Z0–Z6 in review; summary recounted from the rows)._
 | [x] | VE-9 | NO-GO below T_no | Zain | Z2 | `test_scoring.py` |
 | [ ] | VE-10 | T_go 70, T_no 50, floor 1.5 then tuned | Zain | Z2, Z10 | |
 | [x] | VE-11 | Confidence formula, < 0.5 → IE | Zain | Z2 | `test_scoring.py::test_confidence_*` |
-| [ ] | VE-12 | Challenge penalties (−0.5 each, max −1.0, conf −0.1) | Zain | Z2, Z7 | |
+| [x] | VE-12 | Challenge penalties (−0.5 each, max −1.0, conf −0.1) | Zain | Z2, Z7 | Z2 penalties (`services/verdict/tests/unit/test_challenge.py`); Z7 passes only critic-supported objections (`test_validate.py`); the challenge endpoint is Z8 (API-P6) |
 | [x] | VE-13 | Sensitivity (±20 % weights, ±1 least-confident) → BORDERLINE | Zain | Z2 | `test_sensitivity.py` |
 | [ ] | VE-14 | What would make this GO (smallest change, re-run → new version) | Zain | Z2, Z8 | |
 | [x] | VE-15 | Decision order per Fig. 4 | Zain | Z2 | `test_gates.py::test_first_failing_gate_decides` |
@@ -295,8 +295,8 @@ _Last updated: 2026-11-27 (Z0–Z6 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [~] | AO-1 | Tracing under one run id + replay command | Zain | Z3, Z7, Z10 | Z0 client; Z3 storage and `GET /runs/{id}/trace`; replay Z10 |
-| [~] | AO-2 | Budgets (tokens, pages, steps, cost) in orchestrator and tool layer | Both | Z7, A2 | Z3: budget caps file; enforcement Z7, A2 |
+| [~] | AO-1 | Tracing under one run id + replay command | Zain | Z3, Z7, Z10 | Z0 client; Z3 storage; Z7: M3 traces every step and decision under the run id; replay Z10 |
+| [~] | AO-2 | Budgets (tokens, pages, steps, cost) in orchestrator and tool layer | Both | Z7, A2 | Z3 caps; Z7 orchestrator enforcement (`test_budget.py`); tool layer A2 |
 | [~] | AO-3 | Prompt and rubric registry; verdict records versions | Zain | Z3 | Z3: registry + version check; versions on verdicts since Z2; "new evaluation" per bump needs Z10 |
 | [ ] | AO-4 | Evaluation harness (agreement, confusion matrix, behaviour) as K8s Job + nightly Jenkins | Both | Z10, A10 | |
 | [ ] | AO-5 | Drift reports after each ingestion | Zain | Z10 | |
@@ -378,9 +378,9 @@ _Last updated: 2026-11-27 (Z0–Z6 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | AVOID-1 | No unbounded prompt/retries/rounds/spend | Zain | Z7, Z8 | |
-| [~] | AVOID-2 | Verdict cache key includes profile + rubric version | Zain | Z0, Z7 | Z0: `verdict_key` requires every version (`test_cache_keys.py`); use in Z7 |
-| [ ] | AVOID-3 | Model never decides/adjusts verdict | Zain | Z2, Z7 | |
+| [~] | AVOID-1 | No unbounded prompt/retries/rounds/spend | Zain | Z7, Z8 | Z7: bounded retries, time limits, one clarify round, one deep search, budgets (`test_scoring.py`, `test_budget.py`); debate rounds Z8 |
+| [x] | AVOID-2 | Verdict cache key includes profile + rubric version | Zain | Z0, Z7 | Z0 key; Z7 use and no caching of degraded results (`test_cache.py`, `test_edge_cases.py`) |
+| [x] | AVOID-3 | Model never decides/adjusts verdict | Zain | Z2, Z7 | Z2; Z7: `test_verdict_guard.py` |
 | [~] | AVOID-4 | No score/claim without evidence id; competitors from KB only | Zain | Z5 | Z5 (M9): `test_validators.py::test_invented_competitor_name_never_leaves_m9`; claims in Z6, ideation in Z8 |
 | [ ] | AVOID-5 | No model/scout calls from browser; no localhost in images | Both | A9, all | |
 | [ ] | AVOID-6 | Retrieval tested by metrics; chunks keep card id | Ahmad | A4, A5 | |
