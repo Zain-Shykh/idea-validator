@@ -23,6 +23,7 @@ echo "Phase ${phase}: headless session started (permission mode: ${PERMISSION_MO
 echo "Log: ${log}   (live: tail -f ${log} | jq -r 'select(.type==\"assistant\") | .message.content[]? | select(.type==\"text\") | .text')"
 
 claude -p "$prompt" \
+  --model "${MODEL:-claude-sonnet-5-5}" --effort "${EFFORT:-medium}" --strict-mcp-config \
   --permission-mode "${PERMISSION_MODE:-auto}" \
   -n "phase-${phase}" \
   --output-format stream-json --verbose > "$log"
