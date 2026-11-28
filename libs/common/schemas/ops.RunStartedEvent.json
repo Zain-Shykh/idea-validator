@@ -1,0 +1,29 @@
+{
+  "$defs": {
+    "Workflow": {
+      "enum": [
+        "discover",
+        "validate"
+      ],
+      "title": "Workflow",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "user_id": {
+      "minLength": 1,
+      "title": "User Id",
+      "type": "string"
+    },
+    "workflow": {
+      "$ref": "#/$defs/Workflow"
+    }
+  },
+  "required": [
+    "workflow",
+    "user_id"
+  ],
+  "title": "RunStartedEvent",
+  "type": "object"
+}

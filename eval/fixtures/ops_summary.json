@@ -14,36 +14,42 @@
     {
       "agent": "demand_scorer",
       "calls": 18,
+      "p50_ms": 1890,
       "avg_ms": 2100,
       "p95_ms": 4200
     },
     {
       "agent": "competition_scorer",
       "calls": 18,
+      "p50_ms": 3510,
       "avg_ms": 3900,
       "p95_ms": 7800
     },
     {
       "agent": "feasibility_scorer",
       "calls": 18,
+      "p50_ms": 3330,
       "avg_ms": 3700,
       "p95_ms": 7400
     },
     {
       "agent": "risk_scorer",
       "calls": 18,
+      "p50_ms": 1710,
       "avg_ms": 1900,
       "p95_ms": 3800
     },
     {
       "agent": "skeptic",
       "calls": 18,
+      "p50_ms": 2340,
       "avg_ms": 2600,
       "p95_ms": 5200
     },
     {
       "agent": "critic",
       "calls": 18,
+      "p50_ms": 1260,
       "avg_ms": 1400,
       "p95_ms": 2800
     }
@@ -56,5 +62,9 @@
     "declined": 1
   },
   "blocked_injections": 4,
-  "budget_stops": 0
+  "budget_stops": 0,
+  "runs_by_status": {
+    "COMPLETED": 13,
+    "FAILED": 1
+  }
 }

@@ -18,6 +18,12 @@
           "title": "Calls",
           "type": "integer"
         },
+        "p50_ms": {
+          "default": 0,
+          "minimum": 0,
+          "title": "P50 Ms",
+          "type": "number"
+        },
         "p95_ms": {
           "minimum": 0,
           "title": "P95 Ms",
@@ -32,6 +38,21 @@
       ],
       "title": "AgentLatency",
       "type": "object"
+    },
+    "RunState": {
+      "description": "Run lifecycle (architecture \u00a76.1).",
+      "enum": [
+        "QUEUED",
+        "RUNNING",
+        "AWAITING_INPUT",
+        "AWAITING_APPROVAL",
+        "COMPLETED",
+        "FAILED",
+        "BUDGET_STOPPED",
+        "CANCELLED"
+      ],
+      "title": "RunState",
+      "type": "string"
     },
     "VerdictLabel": {
       "enum": [
@@ -95,6 +116,17 @@
       "format": "date-time",
       "title": "Generated At",
       "type": "string"
+    },
+    "runs_by_status": {
+      "additionalProperties": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "propertyNames": {
+        "$ref": "#/$defs/RunState"
+      },
+      "title": "Runs By Status",
+      "type": "object"
     },
     "runs_total": {
       "minimum": 0,

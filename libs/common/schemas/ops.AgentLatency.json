@@ -16,6 +16,12 @@
       "title": "Calls",
       "type": "integer"
     },
+    "p50_ms": {
+      "default": 0,
+      "minimum": 0,
+      "title": "P50 Ms",
+      "type": "number"
+    },
     "p95_ms": {
       "minimum": 0,
       "title": "P95 Ms",

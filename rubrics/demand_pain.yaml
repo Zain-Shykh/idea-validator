@@ -1,0 +1,27 @@
+# DATA-8 rubric. Any change needs a higher `version` here and in manifest.yaml (new rubric_set),
+# then `python scripts/check_registry.py --update` (AO-3).
+dimension: demand_pain
+version: 1
+scale: "0-5, higher is better for the student. Higher means many independent sources show the same strong, recurring problem. With no usable evidence the scorer abstains: it never gives 0 for missing evidence."
+anchors:
+  5: "Five or more independent sources on 2+ platforms describe the same recurring problem in strong terms, with growth in the last 6 months."
+  4: "Four or more independent sources on 2+ platforms describe the same recurring problem; growth is flat or unknown."
+  3: "Two or three independent sources describe the problem; no clear growth."
+  2: "Two or three sources mention the problem only mildly or in passing, or they all come from one platform."
+  1: "A single weak or old mention of the problem."
+  0: "The evidence is on the topic but shows no unmet need: users report the problem as solved or as not bothering them."
+features: [n_sources, n_platforms, complaint_count, trend_growth, recency_days]
+output_schema: score, confidence, evidence_ids, reason
+examples:
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_a501#c0] (hackernews) \"I rebuild flashcards from slides every week and it takes hours.\" [card_a502#c0] (github) \"Please add slide import, I ask every term.\" [card_a503#c0] (hackernews) \"Same pain: typing cards from lecture decks is the worst part.\" [card_a504#c0] (github) \"Fifth request this month for PDF slides to cards.\" [card_a505#c0] (yc) \"Students churn because making cards is too slow.\""
+    expected: {"score": 5, "confidence": 0.85, "evidence_ids": ["card_a501#c0", "card_a502#c0", "card_a503#c0", "card_a504#c0", "card_a505#c0"], "reason": "Five sources on three platforms repeat the same slow-card-making pain (card_a501#c0, card_a502#c0, card_a503#c0, card_a504#c0, card_a505#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_a401#c0] (hackernews) \"Making cards from slides eats my evenings.\" [card_a402#c0] (github) \"Slide import would save me hours.\" [card_a403#c0] (github) \"We need decks from PDFs.\" [card_a404#c0] (hackernews) \"I stopped using cards because creating them is slow.\""
+    expected: {"score": 4, "confidence": 0.75, "evidence_ids": ["card_a401#c0", "card_a402#c0", "card_a403#c0", "card_a404#c0"], "reason": "Four sources on two platforms report the problem, with no sign of growth (card_a401#c0, card_a402#c0, card_a403#c0, card_a404#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_a301#c0] (hackernews) \"Wish I could turn slides into cards.\" [card_a302#c0] (github) \"Slide import would be nice.\" [card_a303#c0] (hackernews) \"Creating cards is tedious.\""
+    expected: {"score": 3, "confidence": 0.65, "evidence_ids": ["card_a301#c0", "card_a302#c0", "card_a303#c0"], "reason": "Three sources mention the problem without clear growth (card_a301#c0, card_a302#c0, card_a303#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_a201#c0] (hackernews) \"Card making is a bit slow, not a big deal.\" [card_a202#c0] (hackernews) \"I sometimes wish for slide import.\""
+    expected: {"score": 2, "confidence": 0.5, "evidence_ids": ["card_a201#c0", "card_a202#c0"], "reason": "Two mild mentions from one platform (card_a201#c0, card_a202#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_a101#c0] (github) \"Old request: maybe import slides someday.\""
+    expected: {"score": 1, "confidence": 0.35, "evidence_ids": ["card_a101#c0"], "reason": "One weak and old mention (card_a101#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_a001#c0] (hackernews) \"Slide import in my current app works fine, nothing missing.\" [card_a002#c0] (github) \"Closed: built-in import already solves this.\""
+    expected: {"score": 0, "confidence": 0.5, "evidence_ids": ["card_a001#c0", "card_a002#c0"], "reason": "The evidence says the need is already met (card_a001#c0, card_a002#c0)."}

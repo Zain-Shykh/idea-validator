@@ -7,12 +7,12 @@
 
 | Owner | Rows | Done | Partial |
 |-------|-----:|-----:|--------:|
-| Zain | 89 | 7 | 5 |
+| Zain | 89 | 30 | 7 |
 | Ahmad | 77 | 0 | 0 |
-| Both | 54 | 0 | 12 |
-| **Total** | **220** | **7** | **17** |
+| Both | 54 | 0 | 17 |
+| **Total** | **220** | **30** | **24** |
 
-_Last updated: 2026-11-27 (Z0, Z1, Z2 in review)._
+_Last updated: 2026-11-27 (Z0–Z3 in review; summary recounted from the rows)._
 
 ## Phase completion
 
@@ -89,7 +89,7 @@ _Last updated: 2026-11-27 (Z0, Z1, Z2 in review)._
 | [ ] | M2-2 | Redis cache for verdicts and retrieval with TTL | Ahmad | A7, A4 | |
 | [ ] | M2-3 | Migrations | Ahmad | A7 | |
 | [~] | M2-4 | Cache keys include profile + rubric versions | Both | Z0, Z7, A7 | Z0: `common.cache_keys.verdict_key` (`test_cache_keys.py`, D-001); use in Z7, A7 |
-| [ ] | M2-5 | Cache hits visible | Both | Z3, Z7, A9 | |
+| [~] | M2-5 | Cache hits visible | Both | Z3, Z7, A9 | Z3: M13 aggregates the cache hit rate and `ideaval_cache_requests_total` (`test_summary.py`); M2, M3 and UI badge later |
 | [ ] | M2-6 | Layered backend (routes, services, repositories) | Ahmad | A7 | |
 
 ## M3 Orchestrator
@@ -203,12 +203,12 @@ _Last updated: 2026-11-27 (Z0, Z1, Z2 in review)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [~] | M13-1 | Tracing per run (/trace, /runs/{id}/trace) | Zain | Z3 | Z0: client side `common.trace` (`test_trace.py`); `/trace` API in Z3 |
-| [ ] | M13-2 | Budgets | Zain | Z3, Z7 | |
-| [ ] | M13-3 | Prompt and rubric registry | Zain | Z3 | |
+| [x] | M13-1 | Tracing per run (/trace, /runs/{id}/trace) | Zain | Z3 | `services/agentops`, `test_trace.py::test_thousand_records_ten_runs`, `test_postgres.py`; client from Z0 |
+| [~] | M13-2 | Budgets | Zain | Z3, Z7 | Z3: `config/budgets.yaml` + `load_budgets` (`test_registry.py`); enforcement Z7/A2 |
+| [x] | M13-3 | Prompt and rubric registry | Zain | Z3 | `common/registry.py`, `scripts/check_registry.py`, `GET /registry` (`test_check_registry.py`, `test_api.py`); CI wiring proposed for A0 |
 | [ ] | M13-4 | Evaluation harness | Zain | Z10 | |
 | [ ] | M13-5 | Drift reports | Zain | Z10 | |
-| [ ] | M13-6 | Dashboard | Both | Z3, A9 | |
+| [~] | M13-6 | Dashboard | Both | Z3, A9 | Z3: `GET /summary` (`test_summary.py`); UI page A9 |
 
 ## M14 Platform
 
@@ -231,7 +231,7 @@ _Last updated: 2026-11-27 (Z0, Z1, Z2 in review)._
 | [x] | DATA-5 | Verdict schema (+missing, gate_details, flips) | Zain | Z0, Z2 | `test_contracts.py::test_guide_example_validates` |
 | [x] | DATA-6 | Trace record schema | Zain | Z0 | `test_contracts.py::test_guide_example_validates` |
 | [~] | DATA-7 | Fine-tuning JSONL format | Zain | Z9 | Z0: `FineTuneExample` schema; data in Z9 |
-| [~] | DATA-8 | Rubric files: anchors 0–5 + example per level | Zain | Z3 | Z0: `Rubric` schema (anchors 0-5); rubric files and example per level in Z3 |
+| [x] | DATA-8 | Rubric files: anchors 0–5 + example per level | Zain | Z3 | `rubrics/*.yaml`, `test_registry.py::test_repo_rubrics_are_complete` |
 | [ ] | DATA-9 | Storage model (app, kb, ops, Redis, files) | Both | A4, A7, Z3 | |
 
 ## API
@@ -251,7 +251,7 @@ _Last updated: 2026-11-27 (Z0, Z1, Z2 in review)._
 | [ ] | API-I3 | M10 POST /score | Zain | Z4 | |
 | [x] | API-I4 | M11 POST /verdict, /whatif | Zain | Z2 | `test_api.py` |
 | [ ] | API-I5 | M12 POST /check | Zain | Z6 | |
-| [ ] | API-I6 | M13 POST /trace, GET /runs/{id}/trace | Zain | Z3 | |
+| [x] | API-I6 | M13 POST /trace, GET /runs/{id}/trace | Zain | Z3 | `test_trace.py`, minikube smoke (spec Z3 C3) |
 | [~] | API-I7 | /health, /ready everywhere | Both | Z1, A1 | Z0: `/health`, `/ready` in `create_app`; services in Z1, A1 |
 
 ## Verdict rules
@@ -259,7 +259,7 @@ _Last updated: 2026-11-27 (Z0, Z1, Z2 in review)._
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
 | [ ] | VE-1 | LLM never decides the verdict | Zain | Z2, Z7 | |
-| [ ] | VE-2 | Six dimensions 0–5 + confidence + evidence ids, versioned rubric | Zain | Z3, Z5 | |
+| [~] | VE-2 | Six dimensions 0–5 + confidence + evidence ids, versioned rubric | Zain | Z3, Z5 | Z3: six versioned rubrics; scores with evidence ids in Z5 |
 | [ ] | VE-3 | Dimension definitions in rubrics | Zain | Z3 | |
 | [x] | VE-4a | Evidence gate (≥3 sources, ≥2 platforms) → IE | Zain | Z2 | `test_gates.py` |
 | [x] | VE-4b | Feasibility gate → NO-GO with hours gap | Zain | Z2 | `test_gates.py` |
@@ -295,12 +295,12 @@ _Last updated: 2026-11-27 (Z0, Z1, Z2 in review)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [~] | AO-1 | Tracing under one run id + replay command | Zain | Z3, Z7, Z10 | Z0: run id propagation and trace client; storage Z3, replay Z10 |
-| [ ] | AO-2 | Budgets (tokens, pages, steps, cost) in orchestrator and tool layer | Both | Z7, A2 | |
-| [ ] | AO-3 | Prompt and rubric registry; verdict records versions | Zain | Z3 | |
+| [~] | AO-1 | Tracing under one run id + replay command | Zain | Z3, Z7, Z10 | Z0 client; Z3 storage and `GET /runs/{id}/trace`; replay Z10 |
+| [~] | AO-2 | Budgets (tokens, pages, steps, cost) in orchestrator and tool layer | Both | Z7, A2 | Z3: budget caps file; enforcement Z7, A2 |
+| [~] | AO-3 | Prompt and rubric registry; verdict records versions | Zain | Z3 | Z3: registry + version check; versions on verdicts since Z2; "new evaluation" per bump needs Z10 |
 | [ ] | AO-4 | Evaluation harness (agreement, confusion matrix, behaviour) as K8s Job + nightly Jenkins | Both | Z10, A10 | |
 | [ ] | AO-5 | Drift reports after each ingestion | Zain | Z10 | |
-| [ ] | AO-6 | Dashboard (cost/verdict, latency/agent, cache hit, fallbacks, approvals, blocked injections) | Both | Z3, A9 | |
+| [~] | AO-6 | Dashboard (cost/verdict, latency/agent, cache hit, fallbacks, approvals, blocked injections) | Both | Z3, A9 | Z3: `/summary` and Prometheus metrics; dashboard page A9 |
 | [ ] | AO-7 | Behaviour tests: invalid JSON, tool timeout, empty source, poisoned page | Zain | Z10 | |
 
 ## Verdict tuning and evaluation
@@ -354,7 +354,7 @@ _Last updated: 2026-11-27 (Z0, Z1, Z2 in review)._
 | [~] | K8S-1 | Deployments + Services for all modules | Both | Z1, A1 | Z1: `k8s/base/<svc>.yaml` for Zain's 7; A1 pending |
 | [ ] | K8S-2 | StatefulSet/PVC for Postgres, Redis, vector store | Ahmad | A0, A4 | |
 | [ ] | K8S-3 | CronJobs (scouts, ingestion) + Jobs (eval, model import) | Both | A3, A4, Z9, Z10 | |
-| [ ] | K8S-4 | ConfigMaps (weights, thresholds, budgets, rubrics) + Secrets | Both | Z2, Z3, A0 | |
+| [~] | K8S-4 | ConfigMaps (weights, thresholds, budgets, rubrics) + Secrets | Both | Z2, Z3, A0 | Z2 verdict-config; Z3 budgets, rubrics, prompts ConfigMaps; Secrets and the rest A0 |
 | [~] | K8S-5 | Probes everywhere; requests/limits from measurements | Both | Z11, A10 | Z1: probes and initial requests/limits on Zain's 7; measured values in Z11, A10 |
 | [ ] | K8S-6 | HPA on gateway | Ahmad | A8, A10 | |
 | [ ] | K8S-7 | NetworkPolicy default-deny; only M5 egress; ui → api only | Ahmad | A0, A2 | |
@@ -362,7 +362,7 @@ _Last updated: 2026-11-27 (Z0, Z1, Z2 in review)._
 | [ ] | K8S-9 | Ingress single entry | Ahmad | A0 | |
 | [ ] | K8S-10 | NetworkPolicy test (fail from non-M5, works from M5) | Ahmad | A2, A10 | |
 | [~] | K8S-11 | Non-root, pinned image on every workload | Both | all | Z1: Zain's 7 (`test_packaging.py::test_manifest_workload_standards`); other workloads pending |
-| [ ] | K8S-12 | Traces to stdout + trace volume; metrics; dashboard | Zain | Z3 | |
+| [~] | K8S-12 | Traces to stdout + trace volume; metrics; dashboard | Zain | Z3 | Z0 stdout JSON lines; Z3 PVC `traces`, metrics, `/summary`; dashboard page A9 |
 
 ## Submission
 

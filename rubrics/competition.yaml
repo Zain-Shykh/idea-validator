@@ -1,0 +1,27 @@
+# DATA-8 rubric. Any change needs a higher `version` here and in manifest.yaml (new rubric_set),
+# then `python scripts/check_registry.py --update` (AO-3).
+dimension: competition
+version: 1
+scale: "0-5, higher is better for the student. Higher means few or weak direct competitors, so there is room to enter. With no usable evidence the scorer abstains: it never gives 0 for missing evidence."
+anchors:
+  5: "No direct competitor among the retrieved product cards; only distant or abandoned alternatives."
+  4: "One small or weak direct competitor, unfunded or inactive."
+  3: "A few direct competitors, none dominant and at most one funded."
+  2: "Several direct competitors, at least two of them funded or clearly active."
+  1: "Many direct competitors including a well-funded leader with the same core features."
+  0: "The niche is saturated: dominant, well-funded products already cover the idea completely, often for free."
+features: [n_competitors, funded_competitors, max_similarity, gap_coverage]
+output_schema: score, confidence, evidence_ids, reason
+examples:
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_b501#c0] (hackernews) \"Generic note app, last updated five years ago, no flashcards.\""
+    expected: {"score": 5, "confidence": 0.6, "evidence_ids": ["card_b501#c0"], "reason": "Only a distant, abandoned alternative was found (card_b501#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_b401#c0] (github) \"A hobby slide-to-card script, no commits this year.\""
+    expected: {"score": 4, "confidence": 0.65, "evidence_ids": ["card_b401#c0"], "reason": "One weak, inactive competitor (card_b401#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_b301#c0] (hackernews) \"A small card app that imports slides.\" [card_b302#c0] (yc) \"A seed-funded study tool with card export.\" [card_b303#c0] (github) \"Open source deck converter.\""
+    expected: {"score": 3, "confidence": 0.7, "evidence_ids": ["card_b301#c0", "card_b302#c0", "card_b303#c0"], "reason": "A few competitors, one funded, none dominant (card_b301#c0, card_b302#c0, card_b303#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_b201#c0] (yc) \"Funded app turning lecture slides into cards.\" [card_b202#c0] (yc) \"Second funded study assistant with card generation.\" [card_b203#c0] (hackernews) \"Active paid slide-to-card service.\""
+    expected: {"score": 2, "confidence": 0.75, "evidence_ids": ["card_b201#c0", "card_b202#c0", "card_b203#c0"], "reason": "Several active competitors, two funded (card_b201#c0, card_b202#c0, card_b203#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_b101#c0] (yc) \"Well-funded leader generates cards from slides for millions of students.\" [card_b102#c0] (hackernews) \"Many alternatives to the leader exist.\" [card_b103#c0] (yc) \"Another funded generator.\""
+    expected: {"score": 1, "confidence": 0.75, "evidence_ids": ["card_b101#c0", "card_b102#c0", "card_b103#c0"], "reason": "A well-funded leader and many followers (card_b101#c0, card_b102#c0, card_b103#c0)."}
+  - input: "IDEA: Flashcards generated from a student's own lecture slides. EVIDENCE: [card_b001#c0] (yc) \"The dominant free product already turns any slides into cards, with sharing and spaced repetition.\" [card_b002#c0] (yc) \"Three funded companies offer the same for free.\""
+    expected: {"score": 0, "confidence": 0.8, "evidence_ids": ["card_b001#c0", "card_b002#c0"], "reason": "Dominant free products cover the whole idea (card_b001#c0, card_b002#c0)."}

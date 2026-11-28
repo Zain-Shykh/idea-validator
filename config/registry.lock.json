@@ -1,0 +1,68 @@
+{
+  "config/budgets": {
+    "sha256": "4663e508b1f5f9c5b0f45a32f9f6d11c5d66e75dfb0e439cb76aca3d4a4dd761",
+    "version": "v1"
+  },
+  "config/verdict": {
+    "sha256": "66abd4becb1848522b3a1f3f1c8b0daf71f09558c5185a6beae7d1d1962fa4a1",
+    "version": "v1",
+    "weights_sha256": "761e83bd6173b1761dbef219896885307d742f380ebbfdd1bb84d45538ee879f",
+    "weights_version": "w1"
+  },
+  "prompt/concretizer": {
+    "sha256": "9fe1ce19fb31df5da6bc28123adb0ebde9609acafd830d01ed48d6c76ef11320",
+    "version": "v1"
+  },
+  "prompt/critic_check": {
+    "sha256": "cb32b3e124c20c78797f14b095052ffc655cf15ea62ac09f87b347da152ae4a8",
+    "version": "v1"
+  },
+  "prompt/gap_analyst": {
+    "sha256": "5a1dd4af43f0ea6635a2eeac7d1c398d4b1bf786e3aa0f013be12a5b52708cbf",
+    "version": "v1"
+  },
+  "prompt/ideator": {
+    "sha256": "e638c4833b555b212ff65021fa62670d72c2fc9a915d071d4b3b01d4528ba65c",
+    "version": "v1"
+  },
+  "prompt/intake": {
+    "sha256": "25a22cd43d31a23deae828cc8866e4604f35a695bf8682d1df3f2927b97fea4c",
+    "version": "v1"
+  },
+  "prompt/scorer": {
+    "sha256": "d35737302582629324f81d356d99b4eb187a9722c4c215812076cbbd45f4876f",
+    "version": "v1"
+  },
+  "prompt/skeptic": {
+    "sha256": "bb03454231dcb979d43c6935551386ad68d92b3d1e62315ccb63c2b5ed85cb67",
+    "version": "v1"
+  },
+  "rubric/competition": {
+    "sha256": "34e798aabf8ff2e6b15465d5b39281dc6df0c12241dc6e34aa1771822b6318e8",
+    "version": "v1"
+  },
+  "rubric/demand_pain": {
+    "sha256": "54b8c7b641f22409b65384661627cfdbbfa2a06c3d1dfaaba1767561298551df",
+    "version": "v1"
+  },
+  "rubric/differentiation": {
+    "sha256": "acb4fef41ca15aadce938239168f4bbc1eda374eaf600bc826d95810cc35c47c",
+    "version": "v1"
+  },
+  "rubric/feasibility": {
+    "sha256": "7f4170879cd97b42f1948c2590fc05ce2b2606ddc8d754a316fdb946c933bd80",
+    "version": "v1"
+  },
+  "rubric/learning": {
+    "sha256": "953bffa3b7ea20b65765c5ec7e11fb9037f0ec3bf93baad972c9514e1242aa37",
+    "version": "v1"
+  },
+  "rubric/manifest": {
+    "sha256": "b7d042aac73c3d8e5a75d19bb81f95076579d4125881078f5d2af00b0b608336",
+    "version": "r1"
+  },
+  "rubric/risk": {
+    "sha256": "7468d1fa9b829da4b017d599440724a37279bf452fba1d8b019da257b61a8461",
+    "version": "v1"
+  }
+}

@@ -1,0 +1,27 @@
+# DATA-8 rubric. Any change needs a higher `version` here and in manifest.yaml (new rubric_set),
+# then `python scripts/check_registry.py --update` (AO-3).
+dimension: learning
+version: 1
+scale: "0-5, higher is better for the student. Higher means it teaches skills the student wants and shows well on a CV. With no usable evidence the scorer abstains: it never gives 0 for missing evidence."
+anchors:
+  5: "Teaches several sought-after skills that match the student's interests, and gives a demonstrable result that stands out."
+  4: "Teaches at least one sought-after skill that matches an interest, with a demonstrable result."
+  3: "Some useful learning; either the interest match or the portfolio value is only average."
+  2: "Mostly repeats what the student already knows, or is far from the stated interests."
+  1: "Very little new learning and a result that is common in student portfolios."
+  0: "The evidence shows the work is almost entirely configuration of an existing tool: nothing to learn or show."
+features: [skill_overlap, new_skills, interest_match, compute_fit]
+output_schema: score, confidence, evidence_ids, reason
+examples:
+  - input: "IDEA: Student: Python and React, interested in education and machine learning. EVIDENCE: [card_f501#c0] (github) \"Building it taught us OCR, retrieval and evaluation of a language model.\""
+    expected: {"score": 5, "confidence": 0.7, "evidence_ids": ["card_f501#c0"], "reason": "Similar builds teach several wanted skills with a standout demo (card_f501#c0)."}
+  - input: "IDEA: Student: Python and React, interested in education and machine learning. EVIDENCE: [card_f401#c0] (github) \"A good way to learn retrieval, and people liked the demo.\""
+    expected: {"score": 4, "confidence": 0.7, "evidence_ids": ["card_f401#c0"], "reason": "One wanted skill and a demonstrable result (card_f401#c0)."}
+  - input: "IDEA: Student: Python and React, interested in education and machine learning. EVIDENCE: [card_f301#c0] (hackernews) \"Mostly CRUD plus a little text processing.\""
+    expected: {"score": 3, "confidence": 0.6, "evidence_ids": ["card_f301#c0"], "reason": "Some learning, average portfolio value (card_f301#c0)."}
+  - input: "IDEA: Student: Python and React, interested in education and machine learning. EVIDENCE: [card_f201#c0] (hackernews) \"It is a standard React form app with a database.\""
+    expected: {"score": 2, "confidence": 0.6, "evidence_ids": ["card_f201#c0"], "reason": "It repeats existing skills (card_f201#c0)."}
+  - input: "IDEA: Student: Python and React, interested in education and machine learning. EVIDENCE: [card_f101#c0] (hackernews) \"Yet another to-do style card list, seen in every portfolio.\""
+    expected: {"score": 1, "confidence": 0.55, "evidence_ids": ["card_f101#c0"], "reason": "Little new learning and a very common result (card_f101#c0)."}
+  - input: "IDEA: Student: Python and React, interested in education and machine learning. EVIDENCE: [card_f001#c0] (github) \"Setup is only switching on a plugin in an existing app.\""
+    expected: {"score": 0, "confidence": 0.6, "evidence_ids": ["card_f001#c0"], "reason": "It is configuration only (card_f001#c0)."}

@@ -1,0 +1,25 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "approval_id": {
+      "minLength": 1,
+      "title": "Approval Id",
+      "type": "string"
+    },
+    "decision": {
+      "enum": [
+        "pending",
+        "approved",
+        "declined"
+      ],
+      "title": "Decision",
+      "type": "string"
+    }
+  },
+  "required": [
+    "approval_id",
+    "decision"
+  ],
+  "title": "ApprovalEvent",
+  "type": "object"
+}

@@ -1,11 +1,42 @@
 # Local development only (LOC-2); included by the root docker-compose.yml.
+# Needs the root file's postgres service: `docker compose up postgres agentops-migrate agentops`.
+x-agentops: &agentops
+  image: idea-validator-agentops:${IMAGE_TAG:-dev}
+  environment:
+    LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    POSTGRES_HOST: postgres
+    POSTGRES_USER: ${POSTGRES_USER:-ideaval}
+    # development default only, as for the postgres service
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-localdev}
+    OPS_DB: ${OPS_DB:-ops}
+
 services:
-  agentops:
+  agentops-migrate:
+    <<: *agentops
     build:
       context: ../..
       dockerfile: services/agentops/Dockerfile
-    image: idea-validator-agentops:${IMAGE_TAG:-dev}
+    command: ["python", "-m", "agentops.migrate"]
+    # the postgres service lives in the root file, so wait by retrying
+    restart: on-failure
+    healthcheck:
+      disable: true
+
+  agentops:
+    <<: *agentops
+    build:
+      context: ../..
+      dockerfile: services/agentops/Dockerfile
+    depends_on:
+      agentops-migrate:
+        condition: service_completed_successfully
     ports:
       - "127.0.0.1:8013:8000"
-    environment:
-      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - traces:/data/traces
+      - ../../rubrics:/etc/rubrics:ro
+      - ../../prompts:/etc/prompts:ro
+      - ../../config:/etc/ideaval-config:ro
+
+volumes:
+  traces:

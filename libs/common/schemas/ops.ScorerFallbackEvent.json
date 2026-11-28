@@ -1,0 +1,28 @@
+{
+  "$defs": {
+    "Dimension": {
+      "description": "The six dimensions. Declaration order is the fixed iteration order of the engine.",
+      "enum": [
+        "demand_pain",
+        "competition",
+        "differentiation",
+        "feasibility",
+        "risk",
+        "learning"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "dimension": {
+      "$ref": "#/$defs/Dimension"
+    }
+  },
+  "required": [
+    "dimension"
+  ],
+  "title": "ScorerFallbackEvent",
+  "type": "object"
+}

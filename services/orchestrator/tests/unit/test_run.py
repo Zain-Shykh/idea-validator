@@ -8,7 +8,9 @@ import pytest
 from fastapi.testclient import TestClient
 from redis.exceptions import ConnectionError as RedisConnectionError
 
-from agentops.main import app as agentops_app
+from agentops.main import build_app as build_agentops
+from agentops.migrate import upgrade
+from agentops.settings import AgentOpsSettings
 from common.contracts.core import RunEvent, RunEventType, TraceRecord, Verdict, VerdictLabel
 from common.contracts.orchestrator import (
     ChallengeResponse,
@@ -416,10 +418,15 @@ async def test_concurrent_runs_do_not_mix_events_or_correlation_ids(redis: FakeR
 
 
 def test_one_decision_trace_is_flushed_to_agentops_at_shutdown(
-    redis: FakeRedis, monkeypatch: pytest.MonkeyPatch
+    redis: FakeRedis, monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    """Spec A5. The batch is also checked against the real AgentOps stub."""
+    """Spec A5. The batch is also checked against the real AgentOps app (SQLite index)."""
     delivered: list[TraceRecord] = []
+    database = f"sqlite:///{tmp_path}/ops.db"
+    upgrade(database)
+    agentops_app = build_agentops(
+        AgentOpsSettings(database_url=database, traces_dir=str(tmp_path / "traces"))
+    )
 
     async def sink(batch: list[TraceRecord]) -> None:
         async with ServiceClient(

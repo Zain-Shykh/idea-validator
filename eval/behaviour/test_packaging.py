@@ -51,10 +51,12 @@ def test_compose_fragment_is_included_and_has_its_port(service: str) -> None:
 
 
 @pytest.mark.parametrize(
-    "path", [f"k8s/base/{s}.yaml" for s in SERVICES] + ["k8s/overlays/dev/redis.yaml"]
+    "path",
+    [f"k8s/base/{s}.yaml" for s in SERVICES]
+    + ["k8s/overlays/dev/redis.yaml", "k8s/overlays/dev/postgres.yaml"],
 )
 def test_manifest_workload_standards(path: str) -> None:
-    deployment, service = docs(path)
+    deployment, service = [d for d in docs(path) if d["kind"] != "PersistentVolumeClaim"]
     assert (deployment["kind"], service["kind"]) == ("Deployment", "Service")
     pod = deployment["spec"]["template"]["spec"]
     assert pod["securityContext"]["runAsNonRoot"] is True
@@ -113,8 +115,8 @@ def test_configured_urls_of_deployed_services_resolve() -> None:
 def test_verdict_rules_come_from_a_generated_configmap() -> None:
     """M11-3, K8S-4: one rules file, mounted in the cluster and in compose, not baked in."""
     assert "../../config" in docs("k8s/base/kustomization.yaml")[0]["resources"]
-    (generator,) = docs("config/kustomization.yaml")[0]["configMapGenerator"]
-    assert generator == {"name": "verdict-config", "files": ["verdict.yaml"]}
+    generators = docs("config/kustomization.yaml")[0]["configMapGenerator"]
+    assert {"name": "verdict-config", "files": ["verdict.yaml"]} in generators
 
     deployment = docs("k8s/base/verdict.yaml")[0]["spec"]
     assert deployment["replicas"] == 2
@@ -128,3 +130,68 @@ def test_verdict_rules_come_from_a_generated_configmap() -> None:
     assert f"VERDICT_CONFIG_PATH={path}" in dockerfile and "COPY config" not in dockerfile
     spec = docs("services/verdict/compose.yaml")[0]["services"]["verdict"]
     assert spec["volumes"] == [f"../../config/verdict.yaml:{path}:ro"]
+
+
+def test_registry_files_reach_agentops_through_configmaps() -> None:
+    """K8S-4, K8S-12: every rubric and prompt is in a generated ConfigMap; traces go to a PVC."""
+    base = docs("k8s/base/kustomization.yaml")[0]["resources"]
+    assert {"../../config", "../../rubrics", "../../prompts"} <= set(base)
+    (rubrics,) = docs("rubrics/kustomization.yaml")[0]["configMapGenerator"]
+    on_disk = {p.name for p in (ROOT / "rubrics").glob("*.yaml")} - {"kustomization.yaml"}
+    assert set(rubrics["files"]) == on_disk
+    (prompts,) = docs("prompts/kustomization.yaml")[0]["configMapGenerator"]
+    expected = {f"{p.name.split('@')[0]}.md={p.name}" for p in (ROOT / "prompts").glob("*.md")}
+    assert set(prompts["files"]) == expected
+    generators = docs("config/kustomization.yaml")[0]["configMapGenerator"]
+    assert {"name": "budgets", "files": ["budgets.yaml"]} in generators
+
+    deployment, claim, _ = docs("k8s/base/agentops.yaml")
+    assert (claim["kind"], claim["metadata"]["name"]) == ("PersistentVolumeClaim", "traces")
+    pod = deployment["spec"]["template"]["spec"]
+    (init,) = pod["initContainers"]
+    (container,) = pod["containers"]
+    assert init["command"] == ["python", "-m", "agentops.migrate"]
+    assert init["image"] == container["image"] and init["resources"] and init["securityContext"]
+    mounts = {m["name"]: m["mountPath"] for m in container["volumeMounts"]}
+    dockerfile = (ROOT / "services/agentops/Dockerfile").read_text()
+    for volume, variable in (
+        ("traces", "TRACES"),
+        ("rubrics", "RUBRICS"),
+        ("prompts", "PROMPTS"),
+        ("rules", "CONFIG"),
+    ):
+        assert f"AGENTOPS_{variable}_DIR={mounts[volume]}" in dockerfile
+    assert all("value" in e or "secretKeyRef" in e["valueFrom"] for e in container["env"])
+
+
+def test_agentops_compose_mounts_match_the_image_and_migrates_first() -> None:
+    """LOC-2: the same folders as in the cluster; the service waits for the migration."""
+    services = docs("services/agentops/compose.yaml")[0]["services"]
+    dockerfile = (ROOT / "services/agentops/Dockerfile").read_text()
+    mounts = dict(v.split(":")[:2] for v in services["agentops"]["volumes"])
+    for source, variable in (
+        ("traces", "TRACES"),
+        ("../../rubrics", "RUBRICS"),
+        ("../../prompts", "PROMPTS"),
+        ("../../config", "CONFIG"),
+    ):
+        assert f"AGENTOPS_{variable}_DIR={mounts[source]}" in dockerfile
+    assert services["agentops-migrate"]["command"] == ["python", "-m", "agentops.migrate"]
+    waits = services["agentops"]["depends_on"]["agentops-migrate"]["condition"]
+    assert waits == "service_completed_successfully"
+
+
+def test_database_password_comes_only_from_a_hand_made_secret() -> None:
+    """GEN-4: no Secret is committed and no manifest holds a literal password."""
+    assert "postgres.yaml" in docs("k8s/overlays/dev/kustomization.yaml")[0]["resources"]
+    assert not [p for p in (ROOT / "k8s").rglob("*.yaml") for d in yaml.safe_load_all(p.read_text())
+                if d and d.get("kind") == "Secret"]  # fmt: skip
+    for path in ("k8s/base/agentops.yaml", "k8s/overlays/dev/postgres.yaml"):
+        pod = docs(path)[0]["spec"]["template"]["spec"]
+        for container in pod.get("initContainers", []) + pod["containers"]:
+            env = {e["name"]: e for e in container["env"]}
+            reference = env["POSTGRES_PASSWORD"]["valueFrom"]["secretKeyRef"]
+            assert reference == {"name": "db", "key": "POSTGRES_PASSWORD"}
+    claim = docs("k8s/base/agentops.yaml")[1]["spec"]
+    assert claim["accessModes"] == ["ReadWriteOnce"]
+    assert claim["resources"]["requests"]["storage"] == "1Gi"

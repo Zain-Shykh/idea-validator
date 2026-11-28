@@ -1,0 +1,15 @@
+# ConfigMap `prompts` (K8S-4); Kustomize only reads files inside a kustomization's folder.
+# A key cannot contain '@', so each file is mounted as <name>.md. Update this list when a prompt
+# version bump renames a file (checked by eval/behaviour/test_packaging.py).
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+configMapGenerator:
+  - name: prompts
+    files:
+      - concretizer.md=concretizer@v1.md
+      - critic_check.md=critic_check@v1.md
+      - gap_analyst.md=gap_analyst@v1.md
+      - ideator.md=ideator@v1.md
+      - intake.md=intake@v1.md
+      - scorer.md=scorer@v1.md
+      - skeptic.md=skeptic@v1.md
