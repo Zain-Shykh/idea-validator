@@ -39,6 +39,10 @@ spec:
           envFrom:
             - configMapRef:
                 name: app-config
+          volumeMounts:
+            - name: prompts
+              mountPath: /etc/prompts
+              readOnly: true
           readinessProbe:
             httpGet:
               path: /ready
@@ -65,6 +69,10 @@ spec:
             readOnlyRootFilesystem: true
             capabilities:
               drop: [ALL]
+      volumes:
+        - name: prompts
+          configMap:
+            name: prompts
 ---
 apiVersion: v1
 kind: Service

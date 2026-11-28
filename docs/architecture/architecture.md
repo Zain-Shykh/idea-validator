@@ -400,6 +400,7 @@ stateDiagram-v2
 - **No renamed copies (M8-5, AVOID-7):** before an idea survives, M3 runs an M6 similarity search against product cards; similarity ≥ 0.9 with the same customer → dropped as duplicate.
 - **Ranking (U2):** GO > PIVOT > NO-GO > INSUFFICIENT_EVIDENCE, then score desc, then confidence desc. Each result item carries the verdict and a one-line reason (weakest/strongest dimension).
 - Validations of survivors are child runs (`parent_run_id`) sharing the parent budget; at most 2 run concurrently (Gemini free-tier rate limits).
+- **As built (D-018):** M3 filters in code before the Skeptic: gap evidence must exist in M6, then the duplicate check, then the hours rule (smallest plausible effort > `effort_margin` × available hours), whose objection cites no evidence and never reaches M11. Without gap evidence the run goes from NICHES to RESULT; if a later IDEATE fails it goes to VALIDATE_EACH. Child runs never wait: no clarifying question, and a deep search that needs approval is not run. They are not written to the verdict cache.
 
 ### 6.5 Approval of an expensive step (U4)
 
@@ -479,6 +480,8 @@ sequenceDiagram
     end
 ```
 
+**As built (D-019):** the engine input of a stored verdict is read from the checkpoint of the run that made it. The claim goes to M12 without the code's own "score from model" and "Cites" text. Only `supported` defends; "the check could not run" is a 503 and changes nothing; any other result removes the claim. A removal is stored as a new completed run, so the new version can be challenged again. What-if proposals are kept in Redis for 24 h, and applying one validates the new version with the student's current profile.
+
 ### 6.7 Live progress (U3)
 
 Every agent/tool/LLM step publishes a compact event to the Redis Stream `run:{run_id}:events` (`XADD`, `MAXLEN ~5000`, expires 24 h after finish). The gateway's `GET /runs/{id}/events` uses `XREAD BLOCK` from `Last-Event-ID` (or 0) and forwards as SSE, so a page reload replays history. Event schema in §7.3. The UI shows: current agent, its tool calls (name + short input), running spend (tokens, $ cost, pages, steps vs budget), approval/question prompts, dropped ideas, final verdicts.
@@ -524,11 +527,12 @@ All requests/responses JSON (except SSE). Auth: `Authorization: Bearer <JWT>` on
 | M2 | `POST /internal/approvals`, `PATCH /internal/approvals/{id}` | approval | approval |
 | M2 | `GET/PUT /internal/cache/verdicts/{key}` | verdict JSON | hit/miss (+ `cache_hit` metric) |
 | M2 | `GET /internal/ideas/versions/{version_id}` (proposed, D-016) | — | `Idea` with that version |
+| M2 | `GET /internal/ideas/{id}/versions/{n}/verdict` (proposed, D-019) | — | `VerdictStore`: the version's latest verdict with its claims |
 | M2 | `GET /internal/compare` | two idea ids | comparison |
 | M3 | `POST /runs` | `{workflow, user_id, idea_version_id?, niche_wish?, profile}` | `{run_id}` |
 | M3 | `GET /runs/{id}` (needs `X-User-Id`, as do `POST /runs`, answer, approve and resume, D-016) | — | `RunStatus` |
 | M3 | `POST /runs/{id}/answer`, `/approve`, `/resume` | answers / decision | `202` |
-| M3 | `POST /ideas/{id}/challenge`, `/whatif` | see §7.1 | see §7.1 |
+| M3 | `POST /ideas/{id}/challenge`, `/whatif` (need `X-User-Id`, D-020) | see §7.1 | see §7.1; `/whatif` is 200 with proposals, 202 with `apply` |
 | M4 | `POST /scout` | `{queries[], sources[], page_budget, run_id}` | `{fetched, ingested_card_ids[]}` |
 | M5 | `POST /fetch` | `{url, connector, run_id, mode: json\|text, max_bytes}` | `{status, content, sanitised: true, injection_flags, from_cache, fetched_at}` |
 | M5 | `POST /llm/chat` | `{run_id, agent, model_alias, messages, response_format?, max_tokens, temperature}` | `{content, model, tokens_in, tokens_out, cost_usd, latency_ms, cache_hit}` |
@@ -790,6 +794,7 @@ erDiagram
 | `rl:api:{user_or_ip}:{route}` | Gateway | 60 s | Public API rate limit (M1-4) |
 | `run:{run_id}:events` (Stream) | M3 writes, gateway reads | 24 h after finish | Live progress (U3) |
 | `orch:active-runs` (set) | M3 | 7 d | Runs to resume after a restart (D-015) |
+| `orch:whatif:{idea_id}:{version}:{proposal_id}` | M3 | 24 h | The proposals the student was shown (D-019) |
 
 Cache hits are recorded as `cache_hit: true` in the trace record, increment `ideaval_cache_requests_total{cache,result}`, and set `from_cache: true` in the verdict card so the UI shows a badge (M2-5).
 

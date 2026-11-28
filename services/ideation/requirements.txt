@@ -6,3 +6,5 @@ httpx==0.29.0
 tenacity==9.2.1
 prometheus-client==0.26.0
 uvicorn==0.54.0
+# common.registry: prompt files
+pyyaml==6.0.4

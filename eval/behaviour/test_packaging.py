@@ -299,6 +299,25 @@ def test_critic_gets_its_prompt_and_budgets_from_configmaps() -> None:
     ]
 
 
+def test_ideation_gets_its_prompts_from_a_configmap() -> None:
+    """K8S-4: the agent prompts are mounted where the image looks, never baked in; the pod gets
+    the knowledge base and model gateway addresses."""
+    pod = docs("k8s/base/ideation.yaml")[0]["spec"]["template"]["spec"]
+    (container,) = pod["containers"]
+    (mount,) = container["volumeMounts"]
+    assert (mount["mountPath"], mount["readOnly"]) == ("/etc/prompts", True)
+    assert [v["configMap"]["name"] for v in pod["volumes"]] == ["prompts"]
+    dockerfile = (ROOT / "services/ideation/Dockerfile").read_text()
+    assert f"IDEATION_PROMPTS_DIR={mount['mountPath']}" in dockerfile
+    assert "COPY prompts" not in dockerfile
+    spec = docs("services/ideation/compose.yaml")[0]["services"]["ideation"]
+    assert spec["volumes"] == [f"../../prompts:{mount['mountPath']}:ro"]
+    base = docs("k8s/base/kustomization.yaml")[0]
+    config = {item.split("=", 1)[0] for item in base["configMapGenerator"][0]["literals"]}
+    assert {"KB_URL", "TOOLS_URL", "LLM_BACKEND", "AGENTOPS_URL"} <= config
+    assert "KB_URL" in spec["environment"]
+
+
 def test_orchestrator_reads_its_rules_from_configmaps() -> None:
     """K8S-4: rubrics, prompts and budgets are mounted, in the cluster and in compose."""
     deployment = docs("k8s/base/orchestrator.yaml")[0]["spec"]
@@ -317,4 +336,5 @@ def test_orchestrator_reads_its_rules_from_configmaps() -> None:
     base = docs("k8s/base/kustomization.yaml")[0]
     config = {item.split("=", 1)[0] for item in base["configMapGenerator"][0]["literals"]}
     needed = {"PROFILE_URL", "VERDICT_URL", "VALIDATORS_URL", "KB_URL", "CRITIC_URL"}
-    assert needed | {"IDEATION_URL", "SCOUTS_URL"} <= config
+    assert needed | {"IDEATION_URL", "SCOUTS_URL", "ANALYST_URL"} <= config
+    assert "ANALYST_URL" in spec["environment"]

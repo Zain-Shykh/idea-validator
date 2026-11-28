@@ -10,6 +10,7 @@ from collections.abc import Sequence
 from common.contracts.agents import Rubric, ScoreRequest
 from common.contracts.core import EvidenceItem
 from common.contracts.tools import ChatMessage
+from common.idea_text import shorten
 from common.registry import Prompt, RegistryError
 
 # the model's context is 4096 tokens: these bounds (on the text after escaping) leave room for
@@ -64,7 +65,12 @@ def build_messages(
         "dimension": rubric.dimension.value,
         "rubric_version": request.rubric_id,
         "rubric": render_rubric(rubric),
-        "idea": _text(f"{request.idea.title}\n{request.idea.text}")[:MAX_IDEA_CHARS],
+        # shortened before and after escaping, which makes text longer; both keep what was
+        # appended to the idea
+        "idea": shorten(
+            _text(shorten(f"{request.idea.title}\n{request.idea.text}", MAX_IDEA_CHARS)),
+            MAX_IDEA_CHARS,
+        ),
         "features": _text(features)[:MAX_FEATURE_CHARS],
         "evidence": "\n".join(
             f'<evidence id="{item.evidence_id}" source="{html.escape(item.source[:80])}">'
