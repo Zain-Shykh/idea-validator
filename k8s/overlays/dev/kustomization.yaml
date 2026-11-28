@@ -22,6 +22,6 @@ images:
   - name: ghcr.io/zain-shykh/idea-validator-critic
     newTag: "fa9a9e2"
   - name: ghcr.io/zain-shykh/idea-validator-evaluation
-    newTag: "fa9a9e2"
+    newTag: "7214dd8"
   - name: ghcr.io/zain-shykh/idea-validator-agentops
     newTag: "fa9a9e2"
