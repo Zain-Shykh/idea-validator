@@ -38,6 +38,11 @@ class ServiceError(Exception):
         self.status = status
         self.details = details or {}
 
+    @property
+    def summary(self) -> str:
+        """Without the message, which came from outside and may echo what was sent."""
+        return self.code + (f" (HTTP {self.status})" if self.status else "")
+
 
 def _retryable(error: BaseException) -> bool:
     if isinstance(error, httpx.TimeoutException):
@@ -172,7 +177,7 @@ class ServiceClient:
             raise _status_error(exc.response) from exc
         except httpx.TimeoutException as exc:
             raise ServiceError("TIMEOUT", f"{method} {path} timed out") from exc
-        except httpx.HTTPError as exc:
+        except (httpx.HTTPError, httpx.InvalidURL) as exc:  # e.g. a huge id in a path
             raise ServiceError("UNAVAILABLE", f"{method} {path}: {type(exc).__name__}") from exc
         return _parse(response, response_model)
 

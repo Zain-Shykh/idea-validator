@@ -956,6 +956,11 @@ As built (D-012, decisions Z5-1..15):
 - **Input rail (M12-3):** `/rail/input` — length limits, prompt-injection patterns in user text, PII redaction (emails/phones), off-topic/abuse refusal.
 - **Approval above budget (M12-4):** `/policy/approval` — pure rule: `estimate > remaining` or `estimate > per-action cap` → approval required.
 
+As built (D-013, decisions Z6-1..14):
+- **Rules:** `common.injection` (English pattern rules, hidden characters, passages over 20000 characters). No M5 flags yet. Flagged passages are excluded from the judge prompt and the name check, and M9 withholds them from M10 itself.
+- **Claim check order:** claim limits and injection in the claim → every id known to M6 → flagged passages dropped → cited card ids and product names must appear in the cited evidence or its cards → judge (`prompts/critic_check@v2`). Only the judge can say `supported`; `reason` is written by code. Judge failure gives `unverifiable` (reason starts `claim check unavailable`); M6 failure is HTTP 503 `KB_UNAVAILABLE`.
+- **Rail:** rules only, no model call.
+
 ---
 
 ## 13. Verdict Engine (M11)
@@ -1249,7 +1254,7 @@ Policies: `default-deny-all`, `allow-dns-egress`, `allow-ingress-controller` (�
 | ConfigMap / Secret | Source | Consumers |
 |-------------------|--------|-----------|
 | `verdict-config` | `config/verdict.yaml` | verdict, evaluation |
-| `budgets` | `config/budgets.yaml` | orchestrator, tools |
+| `budgets` | `config/budgets.yaml` | orchestrator, tools, critic |
 | `llm-models` | `config/llm-models.yaml` | tools |
 | `sources` | `config/sources.yaml` | tools, scouts |
 | `rubrics` | `rubrics/*.yaml` | validators, scorer, agentops |

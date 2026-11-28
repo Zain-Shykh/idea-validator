@@ -200,7 +200,9 @@ class TraceClient:
         try:
             yield step
         except BaseException as exc:
-            step.error = step.error or f"{type(exc).__name__}: {exc}"[:500]
+            # a downstream error message may echo what was sent, so only its code is kept
+            detail = exc.summary if isinstance(exc, ServiceError) else str(exc)
+            step.error = step.error or f"{type(exc).__name__}: {detail}"[:500]
             raise
         finally:
             context.parent_step_var.reset(token)

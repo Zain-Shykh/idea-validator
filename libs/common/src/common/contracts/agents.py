@@ -249,8 +249,12 @@ class FineTuneExample(ContractModel):
 # --- M12 critic and guardrails -----------------------------------------------------------------
 
 
+MAX_CLAIMS = 50
+MAX_SCAN_ITEMS = 500
+
+
 class CheckRequest(ContractModel):
-    claims: list[Claim] = Field(min_length=1)
+    claims: list[Claim] = Field(min_length=1, max_length=MAX_CLAIMS)
     strict: bool = False
 
 
@@ -282,7 +286,7 @@ class InputRailResponse(ContractModel):
 
 
 class ScanRequest(ContractModel):
-    evidence: list[EvidenceItem]
+    evidence: list[EvidenceItem] = Field(max_length=MAX_SCAN_ITEMS)
 
 
 class FlaggedEvidence(ContractModel):

@@ -1,0 +1,2 @@
+{"agent": "critic", "alias": "agent-default", "model": "gemini/gemini-flash-latest", "content": "The claim is supported."}
+{"agent": "critic", "alias": "agent-default", "model": "gemini/gemini-flash-latest", "content": "{\"verdict\": \"GO\", \"reason\": \"yes\"}"}

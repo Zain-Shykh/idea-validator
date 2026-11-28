@@ -10,6 +10,8 @@ RUN pip --python /venv/bin/python install --no-cache-dir --no-deps /tmp/common
 FROM python:3.12-slim@sha256:2f17fc044b579bab302c2e8054d3a686e2cb9a83de48e70534b94cd8ebbe06a9
 RUN useradd --uid 10001 --create-home app
 ENV PATH=/venv/bin:$PATH PYTHONPATH=/app PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+# the claim-check prompt and the budget rules are mounted (ConfigMaps / compose), never baked in
+ENV CRITIC_PROMPTS_DIR=/etc/prompts CRITIC_BUDGETS_PATH=/etc/budgets/budgets.yaml
 COPY --from=build /venv /venv
 COPY services/critic/src /app
 # numeric, so Kubernetes can verify runAsNonRoot
