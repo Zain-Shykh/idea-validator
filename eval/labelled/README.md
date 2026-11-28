@@ -1,8 +1,13 @@
 # Labelled set (EVAL-1)
 
 > **`ideas.jsonl` holds 40 candidates drafted by AI (claude-sonnet-5-5, 2026-11-28). The owner has
-> not reviewed them (`owner_review: "pending"`). There are no human labels yet**, so there is no
-> confusion matrix, baseline or tuned value.
+> not reviewed them (`owner_review: "pending"`).**
+>
+> **`labels_zain.csv` is not an independent human labelling.** AI (claude-sonnet-5-5) drafted all 40
+> verdicts; Zain then reviewed and approved them on 2026-11-28 (decision Z10-26). Report this with
+> any agreement or kappa figure: agreement against these labels is likely to favour an AI system.
+> Ahmad has not labelled and **must not open `labels_zain.csv` before labelling**. There is no
+> resolved set, confusion matrix, baseline or tuned value yet.
 
 The set is used only to measure and tune, **never to train** the scoring model: `jobs/finetune/split.py`
 refuses any idea that is in it or close to one.
