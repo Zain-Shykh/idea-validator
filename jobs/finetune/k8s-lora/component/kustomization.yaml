@@ -1,0 +1,14 @@
+# Switches the scorer to the fine-tuned model scorer-lora@v1 (FT-7, spec Z9). Use it only once the
+# scorer-model:v1 image is in the cluster (../../model-image/README.md); until then the base
+# manifests keep serving scorer-base@v1. The next model: new image tag, file name, Job name and id.
+apiVersion: kustomize.config.k8s.io/v1alpha1
+kind: Component
+patches:
+  - path: scorer.yaml
+  # part of the verdict cache key and of every verdict's versions (AO-3): must equal the scorer's
+  - path: orchestrator.yaml
+  # Jobs are immutable, so the new model gets a new Job
+  - target:
+      kind: Job
+      name: model-import-base-v1
+    path: model-import-job.yaml

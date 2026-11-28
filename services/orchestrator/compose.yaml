@@ -17,6 +17,8 @@ services:
       PROFILE_URL: ${PROFILE_URL:-http://profile:8000}
       KB_URL: ${KB_URL:-http://kb:8000}
       SCOUTS_URL: ${SCOUTS_URL:-http://scouts:8000}
+      # M7 is not built yet: until then a Discover run fails with ANALYST_UNAVAILABLE
+      ANALYST_URL: ${ANALYST_URL:-http://analyst:8000}
       # add "profile" when M2 exists
       ORCH_READY_REQUIRES: ${ORCH_READY_REQUIRES:-verdict}
       SCORER_MODEL_ID: ${SCORER_MODEL_ID:-scorer-base@v1}

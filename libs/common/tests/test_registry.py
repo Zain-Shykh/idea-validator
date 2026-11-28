@@ -54,7 +54,7 @@ def test_repo_prompts() -> None:
     prompts = load_prompts(ROOT / "prompts")
     assert set(prompts) == set(PROMPTS)
     for name, prompt in prompts.items():
-        version = 2 if name == "critic_check" else 1
+        version = 2 if name in ("critic_check", "gap_analyst") else 1
         assert prompt.id == f"{name}@v{version}" and (ROOT / f"prompts/{prompt.id}.md").is_file()
         assert DATA_RULE in prompt.body
     for name in ("ideator", "gap_analyst", "skeptic", "critic_check", "scorer"):

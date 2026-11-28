@@ -1,15 +1,15 @@
-"""M8 stub: no model is called. Ideas only restate supplied gaps and keep their evidence ids."""
+"""M8 API (architecture §7.2): five agents behind five endpoints."""
 
-from fastapi import APIRouter
+from collections.abc import Awaitable, Callable
 
+from fastapi import APIRouter, Request
+
+from common import context
 from common.contracts.agents import (
-    ConcreteChange,
     ConcretizeRequest,
     ConcretizeResponse,
-    EnrichedIdea,
     GapAnalyzeRequest,
     GapAnalyzeResponse,
-    IdeaSlots,
     IdeateRequest,
     IdeateResponse,
     IntakeRequest,
@@ -17,51 +17,56 @@ from common.contracts.agents import (
     SkepticRequest,
     SkepticResponse,
 )
-from common.contracts.core import GeneratedIdea
-
-MAX_IDEAS = 6
+from common.http import ServiceError
+from common.llm import LLMError, LLMOutputError
+from common.service import ApiError
+from ideation.services.agents import Agents
 
 router = APIRouter()
 
 
+async def _run[T](request: Request, run_id: str, call: Callable[[Agents], Awaitable[T]]) -> T:
+    if context.safe_id(run_id) is None:
+        # the run id names a trace file
+        raise ApiError(422, "VALIDATION_ERROR", "run_id has characters that are not allowed")
+    # checked here, not in a dependency: a bad body is a 422 even when the service is unready
+    agents: Agents | None = request.app.state.agents
+    if agents is None:
+        raise ApiError(503, "NOT_READY", "the agents are not configured")
+    token = context.run_id_var.set(run_id)
+    try:
+        return await call(agents)
+    except LLMOutputError as exc:
+        # never free text into the pipeline: the step fails (§12.2)
+        raise ApiError(502, "LLM_OUTPUT_INVALID", "the model's reply was unusable") from exc
+    except (LLMError, TimeoutError) as exc:
+        raise ApiError(502, "LLM_UNAVAILABLE", "the model is unavailable") from exc
+    except ServiceError as exc:
+        raise ApiError(503, "KB_UNAVAILABLE", "the knowledge base is unavailable") from exc
+    finally:
+        context.run_id_var.reset(token)
+
+
 @router.post("/intake")
-async def intake(request: IntakeRequest) -> IntakeResponse:
-    slots = IdeaSlots(target_user="", platform="", core_features=[], scope="")
-    return IntakeResponse(slots=slots, questions=[])
+async def intake(body: IntakeRequest, request: Request) -> IntakeResponse:
+    return await _run(request, body.run_id, lambda agents: agents.intake(body))
 
 
 @router.post("/ideate")
-async def ideate(request: IdeateRequest) -> IdeateResponse:
-    return IdeateResponse(
-        ideas=[
-            GeneratedIdea(
-                title=f"Stub idea for niche {gap.niche_id}",
-                text=gap.statement,
-                niche_id=gap.niche_id,
-                target_user="unknown (stub)",
-                gap_evidence_ids=[item.evidence_id for item in gap.evidence],
-                rationale="stub: restates the gap, no model was called",
-            )
-            for gap in request.gaps[:MAX_IDEAS]
-        ]
-    )
+async def ideate(body: IdeateRequest, request: Request) -> IdeateResponse:
+    return await _run(request, body.run_id, lambda agents: agents.ideate(body))
 
 
 @router.post("/gap-analyze")
-async def gap_analyze(request: GapAnalyzeRequest) -> GapAnalyzeResponse:
-    return GapAnalyzeResponse(ideas=[EnrichedIdea(idea=idea) for idea in request.ideas])
+async def gap_analyze(body: GapAnalyzeRequest, request: Request) -> GapAnalyzeResponse:
+    return await _run(request, body.run_id, lambda agents: agents.gap_analyze(body))
 
 
 @router.post("/skeptic")
-async def skeptic(request: SkepticRequest) -> SkepticResponse:
-    return SkepticResponse(objections=[])
+async def skeptic(body: SkepticRequest, request: Request) -> SkepticResponse:
+    return await _run(request, body.run_id, lambda agents: agents.skeptic(body))
 
 
 @router.post("/concretize")
-async def concretize(request: ConcretizeRequest) -> ConcretizeResponse:
-    return ConcretizeResponse(
-        changes=[
-            ConcreteChange(dimension=c.dimension, change="stub: no concrete change yet (Z8)")
-            for c in request.changes
-        ]
-    )
+async def concretize(body: ConcretizeRequest, request: Request) -> ConcretizeResponse:
+    return await _run(request, body.run_id, lambda agents: agents.concretize(body))

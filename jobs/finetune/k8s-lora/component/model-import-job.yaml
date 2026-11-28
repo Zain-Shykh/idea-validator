@@ -1,0 +1,24 @@
+- op: replace
+  path: /metadata/name
+  value: model-import-lora-v1
+- op: replace
+  path: /spec/template/spec/containers/0/image
+  value: ghcr.io/zain-shykh/idea-validator-scorer-model:v1
+# the base Job's script with the new file name (a test keeps the two equal)
+- op: replace
+  path: /spec/template/spec/containers/0/command
+  value:
+    - sh
+    - -c
+    - |
+      set -eu
+      target=/models/scorer-lora-v1.gguf
+      want=$(cut -d' ' -f1 /model/model.gguf.sha256)
+      if [ -f "$target" ] && [ "$(sha256sum "$target" | cut -d' ' -f1)" = "$want" ]; then
+        echo "model already imported"
+        exit 0
+      fi
+      cp /model/model.gguf "$target.tmp"
+      echo "$want  $target.tmp" | sha256sum -c -
+      mv "$target.tmp" "$target"
+      echo "model imported"

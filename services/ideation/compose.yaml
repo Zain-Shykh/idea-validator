@@ -9,3 +9,10 @@ services:
       - "127.0.0.1:8008:8000"
     environment:
       LOG_LEVEL: ${LOG_LEVEL:-INFO}
+      # M6 and M5 are not built yet: until then the agents answer 503 or 502
+      KB_URL: ${KB_URL:-http://kb:8000}
+      LLM_BACKEND: ${LLM_BACKEND:-gateway}
+      TOOLS_URL: ${TOOLS_URL:-http://tools:8000}
+      AGENTOPS_URL: http://agentops:8000
+    volumes:
+      - ../../prompts:/etc/prompts:ro

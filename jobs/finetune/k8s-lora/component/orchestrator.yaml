@@ -1,0 +1,12 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchestrator
+spec:
+  template:
+    spec:
+      containers:
+        - name: orchestrator
+          env:
+            - name: SCORER_MODEL_ID
+              value: scorer-lora@v1

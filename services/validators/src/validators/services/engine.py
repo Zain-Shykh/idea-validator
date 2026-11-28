@@ -30,6 +30,7 @@ from common.contracts.core import (
 from common.contracts.kb import SearchRequest, SearchResponse
 from common.contracts.ops import InjectionBlockedEvent, OpsEvent
 from common.http import ServiceClient, ServiceError
+from common.idea_text import shorten
 from common.injection import scan_text
 from common.trace import TraceClient, new_step_id
 from validators.services.effort import AGENT, EffortEstimator
@@ -116,7 +117,7 @@ class Engine:
         the most similar first."""
         run_id = request.run_id
         try:
-            search = SearchRequest(query=query[:MAX_QUERY_CHARS], k=self.settings.search_k)
+            search = SearchRequest(query=shorten(query, MAX_QUERY_CHARS), k=self.settings.search_k)
             found: SearchResponse = await self._tool(
                 run_id, "search_kb", search.model_dump_json(), self.kb.search(search),
                 lambda r: [x.evidence_id for x in r.results],
@@ -259,7 +260,8 @@ class Engine:
         body = ScoreRequest(
             rubric_id=self.rubric_id(dimension),
             idea=IdeaInput(
-                title=request.idea.title, text=request.idea.text[: self.settings.max_idea_chars]
+                title=request.idea.title,
+                text=shorten(request.idea.text, self.settings.max_idea_chars),
             ),
             evidence=sent,
             features={name: features[name] for name in rubric.features if name in features},

@@ -15,6 +15,8 @@ class OrchestratorSettings(ServiceSettings):
     scouts_url: str | None = Field(default=None, validation_alias="SCOUTS_URL")
     critic_url: str | None = Field(default=None, validation_alias="CRITIC_URL")
     ideation_url: str | None = Field(default=None, validation_alias="IDEATION_URL")
+    # only Discover needs it
+    analyst_url: str | None = Field(default=None, validation_alias="ANALYST_URL")
 
     redis_host: str = Field(default="redis", validation_alias="REDIS_HOST")
     redis_port: int = Field(default=6379, validation_alias="REDIS_PORT")
@@ -37,3 +39,9 @@ class OrchestratorSettings(ServiceSettings):
     deep_search_page_cost_usd: float = Field(default=0.0005, ge=0)
     scout_sources: str = "hackernews,github"
     wait_timeout_s: int = Field(default=86_400, ge=60)
+
+    # Discover (§6.4): how many survivors the debate aims for, how many are validated at once,
+    # and from what search similarity a product card with the same customer is a copy (M8-5)
+    discover_target: int = Field(default=5, ge=1, le=10)
+    discover_concurrency: int = Field(default=2, ge=1, le=5)
+    duplicate_similarity: float = Field(default=0.9, gt=0, le=1)

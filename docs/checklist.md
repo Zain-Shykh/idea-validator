@@ -7,12 +7,12 @@
 
 | Owner | Rows | Done | Partial |
 |-------|-----:|-----:|--------:|
-| Zain | 89 | 54 | 12 |
+| Zain | 89 | 66 | 16 |
 | Ahmad | 77 | 0 | 0 |
-| Both | 54 | 0 | 25 |
-| **Total** | **220** | **54** | **37** |
+| Both | 54 | 0 | 31 |
+| **Total** | **220** | **66** | **47** |
 
-_Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
+_Last updated: 2026-11-28 (Z0–Z8 in review, Z9 blocked; summary recounted from the rows)._
 
 ## Phase completion
 
@@ -50,14 +50,14 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | U1 | Sign up, log in, save profile; profile changes later recommendations | Both | A7, A8, A9, Z8 | |
-| [ ] | U2 | Discover: ranked ideas each with verdict + short reason | Both | Z8, A9 | |
+| [~] | U1 | Sign up, log in, save profile; profile changes later recommendations | Both | A7, A8, A9, Z8 | Z8 (M3, M9, M11): another profile gives another verdict (`eval/behaviour/test_discover.py::test_profile_changes_the_verdict`); sign-up, log-in and saving in A7-A9 |
+| [~] | U2 | Discover: ranked ideas each with verdict + short reason | Both | Z8, A9 | Z8: ranked cards with one reason each (`services/orchestrator/tests/unit/test_discover.py::test_ranking_rule`); UI A9 |
 | [~] | U3 | Watch agents live: running agent, tool calls, spend | Both | Z7, A8, A9 | Z7: ordered `RunEvent`s with agent, tool calls and spend (`services/orchestrator/tests/unit/test_validate.py::test_event_stream`); gateway SSE and UI in A8, A9 |
 | [~] | U4 | Approve/decline expensive deep search; cost stated, waits | Both | Z7, Z6, A9 | Z7: cost stated, waits, approve/decline recorded (`test_budget.py`); fake scouts; UI A9 |
-| [~] | U5 | Validate own idea; only result-changing questions asked | Both | Z7, Z8, A9 | Z7: only flipping questions asked (`test_clarify.py`); real intake agent Z8, UI A9 |
+| [~] | U5 | Validate own idea; only result-changing questions asked | Both | Z7, Z8, A9 | Z7: only flipping questions asked (`test_clarify.py`); real intake agent Z8, UI A9; Z8: real intake agent (`services/ideation/tests/unit/test_agents.py`); long answers survive shortening |
 | [~] | U6 | Verdict card: verdict, gates, six scores + evidence links, weights, confidence, stability | Both | Z2, A9 | Z2 card; Z7 stores and publishes it with evidence ids (`test_validate.py::test_happy_path`); UI A9 |
-| [ ] | U7 | What would make this GO: concrete changes, apply one, v2 computed by engine | Both | Z2, Z8, A9 | |
-| [ ] | U8 | Challenge a claim: critic defends or removes | Both | Z6, Z8, A9 | |
+| [~] | U7 | What would make this GO: concrete changes, apply one, v2 computed by engine | Both | Z2, Z8, A9 | Z8: proposals from M11, apply makes v+1 and a new Validate run (`services/orchestrator/tests/unit/test_whatif.py`); UI A9 |
+| [~] | U8 | Challenge a claim: critic defends or removes | Both | Z6, Z8, A9 | Z8: defended or removed, M11 recomputes (`services/orchestrator/tests/unit/test_challenge.py`, `eval/behaviour/test_discover.py` with real M12 and M11); UI A9 |
 | [ ] | U9 | History, versions, compare two ideas on six dimensions | Ahmad | A7, A9 | |
 | [~] | U10 | INSUFFICIENT EVIDENCE card says what was missing, does not guess | Both | Z2, A9 | Z2 `missing`; Z7 carries it through a declined deep search (`test_budget.py`); UI A9 |
 
@@ -65,8 +65,8 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | WF-D1..D9 | Discover workflow (niches, ideator, gap analyst, skeptic, critic, ≤3 rounds, validate survivors, ranked result) | Zain | Z8 | |
-| [~] | WF-V1..V9 | Validate workflow (intake/clarify, evidence + scout on demand, 4 parallel scorers, features, verdict, challenge, stability, card) | Zain | Z7 | Z5: WF-V3/V4 in M9; Z7: all steps in M3 (`test_validate.py`, `eval/behaviour/test_orchestrator.py` with real M9, M11, M12, M13); real intake and skeptic Z8, real KB and scouts Ahmad |
+| [x] | WF-D1..D9 | Discover workflow (niches, ideator, gap analyst, skeptic, critic, ≤3 rounds, validate survivors, ranked result) | Zain | Z8 | Z8: `services/orchestrator/tests/unit/test_discover.py`, `test_state_machine.py`, `eval/behaviour/test_discover.py` (real M8, M9, M11, M12; cassettes; fake M2, M6, M7) |
+| [~] | WF-V1..V9 | Validate workflow (intake/clarify, evidence + scout on demand, 4 parallel scorers, features, verdict, challenge, stability, card) | Zain | Z7 | Z5: WF-V3/V4 in M9; Z7: all steps in M3 (`test_validate.py`, `eval/behaviour/test_orchestrator.py` with real M9, M11, M12, M13); real intake and skeptic Z8, real KB and scouts Ahmad; Z8: real M8 intake, skeptic and concretizer |
 
 ## M1 Web UI and API Gateway
 
@@ -96,7 +96,7 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [~] | M3-1 | Discover + Validate as testable state machines | Zain | Z7, Z8 | Z7: Validate (`test_state_machine.py`, `test_resume.py`); Discover Z8 |
+| [x] | M3-1 | Discover + Validate as testable state machines | Zain | Z7, Z8 | Z7: Validate; Z8: Discover (`services/orchestrator/tests/unit/test_state_machine.py`, `test_discover.py`, `test_z8_recovery.py`) |
 | [x] | M3-2 | Parallel agents | Zain | Z7 | Z7: `test_validate.py::test_scorers_run_in_parallel` |
 | [x] | M3-3 | Retries and timeouts | Zain | Z7 | Z7: `test_scoring.py`, `test_lifecycle.py` (every call has a time limit) |
 | [x] | M3-4 | Stop at budget and ask the user | Zain | Z7 | Z7: `test_budget.py` (fake M2 and M4) |
@@ -154,11 +154,11 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | M8-1 | Ideator, Gap Analyst, Skeptic debate | Zain | Z8 | |
-| [ ] | M8-2 | Limited debate rounds | Zain | Z8 | |
-| [ ] | M8-3 | Every idea cites gap evidence | Zain | Z8 | |
-| [ ] | M8-4 | Ideas defeated with evidence dropped | Zain | Z8 | |
-| [ ] | M8-5 | No renamed copies; respects student hours | Zain | Z8 | |
+| [x] | M8-1 | Ideator, Gap Analyst, Skeptic debate | Zain | Z8 | Z8: `services/ideation/tests/unit/test_agents.py`, `eval/behaviour/test_discover.py` (hand-written cassettes, fake M6) |
+| [x] | M8-2 | Limited debate rounds | Zain | Z8 | `services/orchestrator/tests/unit/test_discover.py::test_debate_never_exceeds_three_rounds` |
+| [x] | M8-3 | Every idea cites gap evidence | Zain | Z8 | `test_agents.py::test_ideas_without_offered_gap_evidence_are_rejected`, `services/orchestrator/tests/unit/test_discover.py::test_idea_without_existing_gap_evidence_is_dropped` |
+| [x] | M8-4 | Ideas defeated with evidence dropped | Zain | Z8 | `services/orchestrator/tests/unit/test_discover.py::test_only_supported_fatal_objections_drop` |
+| [x] | M8-5 | No renamed copies; respects student hours | Zain | Z8 | `services/orchestrator/tests/unit/test_discover.py::test_renamed_copy_is_dropped_as_duplicate`, `::test_idea_over_the_students_hours_gets_a_feasibility_objection` (threshold untuned, Z10) |
 
 ## M9 Validation agents
 
@@ -173,12 +173,12 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [~] | M10-1 | Fine-tuned 1B–3B (LoRA/QLoRA) in own container | Zain | Z4, Z9 | Z4: own container serving the base model; fine-tuned weights Z9 |
+| [~] | M10-1 | Fine-tuned 1B–3B (LoRA/QLoRA) in own container | Zain | Z4, Z9 | Z4: own container serving the base model. Z9: switch to `scorer-lora@v1` prepared; no tuned weights |
 | [x] | M10-2 | POST /score, /health, /ready | Zain | Z4 | Z4: `services/scorer`, `test_api.py`; probes green on minikube |
 | [x] | M10-3 | Schema validation, retry once, hosted fallback logged | Zain | Z4 | Z4: `eval/behaviour/test_scorer_cassettes.py` (live hosted call not verified: no key, M5 not built) |
-| [ ] | M10-4 | Comparison base vs fine-tuned vs hosted | Zain | Z9 | |
-| [~] | M10-5 | No weights in git; requests/limits measured | Zain | Z9, Z11 | Z4: no weights in git; base model measured (spec Z4 C4); final limits Z11 |
-| [ ] | M10t-1 | Data, scripts, documented commands in repo | Zain | Z9 | |
+| [~] | M10-4 | Comparison base vs fine-tuned vs hosted | Zain | Z9 | Z9: `evaluate.py`; no results |
+| [~] | M10-5 | No weights in git; requests/limits measured | Zain | Z9, Z11 | Z4: base model measured (spec Z4 C4). Z9: no-weights check (`test_packaging.py`); tuned weights not published; final limits Z11 |
+| [~] | M10t-1 | Data, scripts, documented commands in repo | Zain | Z9 | Z9: scripts and documented commands in `jobs/finetune/`; data not produced |
 
 ## M11 Verdict Engine
 
@@ -230,7 +230,7 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 | [x] | DATA-4 | Dimension score schema | Zain | Z0 | `test_contracts.py::test_guide_example_validates` |
 | [x] | DATA-5 | Verdict schema (+missing, gate_details, flips) | Zain | Z0, Z2 | `test_contracts.py::test_guide_example_validates` |
 | [x] | DATA-6 | Trace record schema | Zain | Z0 | `test_contracts.py::test_guide_example_validates` |
-| [~] | DATA-7 | Fine-tuning JSONL format | Zain | Z9 | Z0: `FineTuneExample` schema; data in Z9 |
+| [~] | DATA-7 | Fine-tuning JSONL format | Zain | Z9 | Z0: schema. Z9: builder writes it (`test_build_dataset.py`); no data yet |
 | [x] | DATA-8 | Rubric files: anchors 0–5 + example per level | Zain | Z3 | `rubrics/*.yaml`, `test_registry.py::test_repo_rubrics_are_complete` |
 | [ ] | DATA-9 | Storage model (app, kb, ops, Redis, files) | Both | A4, A7, Z3 | |
 
@@ -243,7 +243,7 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 | [ ] | API-P3 | POST /discover, /validate | Both | A8, Z7 | |
 | [~] | API-P4 | GET /runs/{id}, /runs/{id}/events (SSE) | Both | A8, Z7 | Z7: M3 `GET /runs/{id}` and the event stream; gateway and SSE A8 |
 | [~] | API-P5 | POST /runs/{id}/answer, /approve | Both | A8, Z7 | Z7: M3 answer and approve (`test_api.py`); gateway A8 |
-| [ ] | API-P6 | POST /ideas/{id}/challenge, /whatif | Both | A8, Z8 | |
+| [~] | API-P6 | POST /ideas/{id}/challenge, /whatif | Both | A8, Z8 | Z8: M3 side (`test_challenge.py`, `test_whatif.py`); gateway A8 |
 | [ ] | API-P7 | GET /ideas, /ideas/{id}/versions, /compare | Ahmad | A7, A8 | |
 | [~] | API-P8 | GET /metrics | Both | Z0, A8 | Z0: `/metrics` in `create_app`; gateway in A8 |
 | [ ] | API-I1 | M5 POST /fetch | Ahmad | A2 | |
@@ -272,9 +272,9 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 | [x] | VE-9 | NO-GO below T_no | Zain | Z2 | `test_scoring.py` |
 | [ ] | VE-10 | T_go 70, T_no 50, floor 1.5 then tuned | Zain | Z2, Z10 | |
 | [x] | VE-11 | Confidence formula, < 0.5 → IE | Zain | Z2 | `test_scoring.py::test_confidence_*` |
-| [x] | VE-12 | Challenge penalties (−0.5 each, max −1.0, conf −0.1) | Zain | Z2, Z7 | Z2 penalties (`services/verdict/tests/unit/test_challenge.py`); Z7 passes only critic-supported objections (`test_validate.py`); the challenge endpoint is Z8 (API-P6) |
+| [x] | VE-12 | Challenge penalties (−0.5 each, max −1.0, conf −0.1) | Zain | Z2, Z7 | Z2 penalties (`services/verdict/tests/unit/test_challenge.py`); Z7 passes only critic-supported objections (`test_validate.py`); the challenge endpoint is Z8 (API-P6); Z8: a removed claim only changes M11's input (`services/orchestrator/tests/unit/test_challenge.py`) |
 | [x] | VE-13 | Sensitivity (±20 % weights, ±1 least-confident) → BORDERLINE | Zain | Z2 | `test_sensitivity.py` |
-| [ ] | VE-14 | What would make this GO (smallest change, re-run → new version) | Zain | Z2, Z8 | |
+| [x] | VE-14 | What would make this GO (smallest change, re-run → new version) | Zain | Z2, Z8 | Z2 search; Z8: apply re-runs Validate on v+1 (`services/orchestrator/tests/unit/test_whatif.py`) |
 | [x] | VE-15 | Decision order per Fig. 4 | Zain | Z2 | `test_gates.py::test_first_failing_gate_decides` |
 | [x] | VE-16 | Worked example as unit test | Zain | Z2 | `test_worked_example.py`, `test_whatif.py` |
 
@@ -282,14 +282,14 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | FT-1 | Cheaper/faster/consistent goal stated | Zain | Z9 | |
-| [ ] | FT-2 | ≥ 300 examples, all dims, all levels | Zain | Z9 | |
-| [ ] | FT-3 | Hosted-drafted labels, ≥ 60 hand-checked and marked | Both | Z9 | |
-| [ ] | FT-4 | Split by idea; no labelled-set ideas in training | Zain | Z9 | |
-| [ ] | FT-5 | JSONL messages format | Zain | Z9 | |
-| [ ] | FT-6 | LoRA/QLoRA 1B–3B on free GPU; settings recorded | Zain | Z9 | |
-| [~] | FT-7 | Merge, GGUF, served behind /score; validate/retry/fallback | Zain | Z4, Z9 | Z4: GGUF served behind `/score` with validate/retry/fallback; adapter merge Z9; full image→PVC path with the real model not run (disk) |
-| [ ] | FT-8 | Comparison table (MAE, within-1, valid JSON, real ids, latency, cost) + failure case | Zain | Z9 | |
+| [x] | FT-1 | Cheaper/faster/consistent goal stated | Zain | Z9 | Z9: `jobs/finetune/README.md`, spec Z9 A1 |
+| [~] | FT-2 | ≥ 300 examples, all dims, all levels | Zain | Z9 | Z9: sampling and stratified assembly (`test_build_dataset.py`); no data yet (spec Z9 C6) |
+| [~] | FT-3 | Hosted-drafted labels, ≥ 60 hand-checked and marked | Both | Z9 | Z9: drafting and terminal review (`test_draft_labels.py`, `test_review.py`); no drafts or hand checks yet |
+| [~] | FT-4 | Split by idea; no labelled-set ideas in training | Zain | Z9 | Z9: split and leakage assertions (`test_split.py`); not run on real data |
+| [~] | FT-5 | JSONL messages format | Zain | Z9 | Z9: rows validate as `FineTuneExample` and equal the served prompt (`test_build_dataset.py`); no data file yet |
+| [~] | FT-6 | LoRA/QLoRA 1B–3B on free GPU; settings recorded | Zain | Z9 | Z9: `train_config.yaml`, `train.ipynb` (stub libraries only); no GPU run, no loss curves |
+| [~] | FT-7 | Merge, GGUF, served behind /score; validate/retry/fallback | Zain | Z4, Z9 | Z4: GGUF served behind `/score` with validate/retry/fallback. Z9: export steps and `k8s-lora` component; no tuned model yet |
+| [~] | FT-8 | Comparison table (MAE, within-1, valid JSON, real ids, latency, cost) + failure case | Zain | Z9 | Z9: `evaluate.py` (`test_evaluate.py`); no comparison run, no failure case |
 
 ## AgenticOps
 
@@ -378,13 +378,13 @@ _Last updated: 2026-11-27 (Z0–Z7 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [~] | AVOID-1 | No unbounded prompt/retries/rounds/spend | Zain | Z7, Z8 | Z7: bounded retries, time limits, one clarify round, one deep search, budgets (`test_scoring.py`, `test_budget.py`); debate rounds Z8 |
+| [x] | AVOID-1 | No unbounded prompt/retries/rounds/spend | Zain | Z7, Z8 | Z8: ≤ 3 rounds, shared budget, bounded M8 prompts (`test_discover.py`, `test_z8_bounds.py`) |
 | [x] | AVOID-2 | Verdict cache key includes profile + rubric version | Zain | Z0, Z7 | Z0 key; Z7 use and no caching of degraded results (`test_cache.py`, `test_edge_cases.py`) |
 | [x] | AVOID-3 | Model never decides/adjusts verdict | Zain | Z2, Z7 | Z2; Z7: `test_verdict_guard.py` |
-| [~] | AVOID-4 | No score/claim without evidence id; competitors from KB only | Zain | Z5 | Z5 (M9): `test_validators.py::test_invented_competitor_name_never_leaves_m9`; claims in Z6, ideation in Z8 |
+| [x] | AVOID-4 | No score/claim without evidence id; competitors from KB only | Zain | Z5 | Z8: ids M8 was not shown or M6 does not have are removed (`test_agents.py`, `test_discover.py`) |
 | [ ] | AVOID-5 | No model/scout calls from browser; no localhost in images | Both | A9, all | |
 | [ ] | AVOID-6 | Retrieval tested by metrics; chunks keep card id | Ahmad | A4, A5 | |
-| [ ] | AVOID-7 | No renamed copies; ideas respect hours | Zain | Z8 | |
+| [x] | AVOID-7 | No renamed copies; ideas respect hours | Zain | Z8 | `services/orchestrator/tests/unit/test_discover.py` (renamed copy, hours) |
 | [~] | AVOID-8 | Thin end-to-end on K8s early (walking skeleton) | Both | Z1, A0, A1 | Z1: thin version of Zain's services on K8s with a stub run end to end (spec Z1 C3); A0, A1 pending |
 
 ## Screenshots (SUB-3)

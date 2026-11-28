@@ -169,7 +169,12 @@ KB_URL=http://127.0.0.1:8005 LLM_BACKEND=direct uvicorn critic.main:app --app-di
 pytest -q services/critic eval/behaviour           # no model needed
 ```
 
-**Orchestrator (M3)** needs Redis, M2 (`PROFILE_URL`), M6 (`KB_URL`), M8, M9, M11 and M12. M2 and M6 are not built yet, so in Compose or the cluster `POST /runs` answers 503; the tests run the whole workflow against fakes. Compose and the manifest set `ORCH_READY_REQUIRES=verdict` (add `profile` when M2 runs). `POST /runs` and calls to `/runs/{id}` need the `X-User-Id` header. Run one replica.
+**Ideation (M8)** needs M6 (`KB_URL`) and a model (M5, or `LLM_BACKEND=direct`). Without `KB_URL` or the prompts it stays unready; with M6 down `/gap-analyze` answers 503. Prompts are read from `IDEATION_PROMPTS_DIR` (the repo folder locally, the `prompts` ConfigMap in the cluster).
+```bash
+pytest -q services/ideation eval/behaviour         # no model, no M6 needed
+```
+
+**Orchestrator (M3)** needs Redis, M2 (`PROFILE_URL`), M6 (`KB_URL`), M8, M9, M11 and M12; a Discover run also needs M7 (`ANALYST_URL`). M2, M6 and M7 are not built yet, so in Compose or the cluster `POST /runs` answers 503; the tests run both workflows against fakes. `POST /ideas/{id}/challenge` and `/whatif` need `X-User-Id` too. Compose and the manifest set `ORCH_READY_REQUIRES=verdict` (add `profile` when M2 runs). `POST /runs` and calls to `/runs/{id}` need the `X-User-Id` header. Run one replica.
 ```bash
 pytest -q services/orchestrator eval/behaviour     # no model, no M2 needed
 docker compose up -d redis && pytest -q -m integration services/orchestrator
@@ -223,7 +228,7 @@ Then: install suggested plugins → add credentials `kubeconfig` (Secret file: `
 
 ## 11. Fine-tuning environment (Colab/Kaggle)
 
-Not installed locally (no GPU, saves disk). Open `jobs/finetune/train.ipynb` (*after Z9*) in Google Colab or Kaggle with a free **T4 GPU**; the notebook installs Unsloth/PEFT/TRL itself. Upload `jobs/finetune/data/train.jsonl` and `test.jsonl`; download the GGUF and attach it to a GitHub Release / build the `scorer-model` image (commands in the notebook and `jobs/finetune/README` section of the spec).
+Not installed locally (no GPU, saves disk), and no ML library goes into `.venv` or a service image. The data scripts and the comparison run from the repo virtualenv; the commands are in [`jobs/finetune/README.md`](../jobs/finetune/README.md). Open [`jobs/finetune/train.ipynb`](../jobs/finetune/train.ipynb) in Google Colab or Kaggle with a free **T4 GPU**; it installs the versions pinned in `train_config.yaml`. It needs `data/train.jsonl`, `data/val.jsonl` and `data/split-report.json` (not the test set). Then follow [`export_gguf.md`](../jobs/finetune/export_gguf.md) for the GGUF, the GitHub Release asset, the `scorer-model:v1` image and the switch to `scorer-lora@v1`.
 
 ## 12. Verify your setup
 

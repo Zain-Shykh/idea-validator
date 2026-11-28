@@ -8,6 +8,7 @@ from redis.asyncio import Redis
 from redis.exceptions import RedisError
 
 from common.contracts.base import ContractModel
+from common.contracts.orchestrator import WhatIfProposal
 
 MEMO_TTL_S = 24 * 60 * 60
 ACTIVE_KEY = "orch:active-runs"
@@ -34,6 +35,21 @@ class StepMemo:
             await self._redis.set(key, value.model_dump_json(by_alias=True), ex=MEMO_TTL_S)
         except RedisError:
             log.warning("step memo write failed", exc_info=True)
+
+
+class Proposals:
+    """The what-if proposals a student was shown, so that applying one uses the same words
+    (Z8-8). Unlike the memo it does not hide a Redis failure: the caller must say so."""
+
+    def __init__(self, redis: Redis) -> None:
+        self._redis = redis
+
+    async def put(self, key: str, proposal: WhatIfProposal) -> None:
+        await self._redis.set(key, proposal.model_dump_json(by_alias=True), ex=MEMO_TTL_S)
+
+    async def get(self, key: str) -> WhatIfProposal | None:
+        raw = await self._redis.get(key)
+        return None if raw is None else WhatIfProposal.model_validate_json(raw)
 
 
 class ActiveRuns:

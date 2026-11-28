@@ -1,0 +1,37 @@
+# QLoRA settings of the scorer fine-tune (FT-6, architecture §14.1). train.ipynb reads this file
+# and copies it into the training log, so a run always records what it used. Change a value here,
+# never in the notebook.
+base_model: Qwen/Qwen2.5-1.5B-Instruct # Apache-2.0 (ADR-005)
+load_in_4bit: true # QLoRA
+max_seq_length: 2048 # longer rows are left out and counted in the log
+
+lora:
+  r: 16
+  alpha: 32
+  dropout: 0.05
+  target_modules: [q_proj, k_proj, v_proj, o_proj, gate_proj, up_proj, down_proj]
+
+training:
+  learning_rate: 2.0e-4
+  epochs: 3
+  # 2 x 4 = an effective batch of 8, which fits a 16 GB T4
+  per_device_batch_size: 2
+  gradient_accumulation_steps: 4
+  logging_steps: 5
+  eval_steps: 10 # validation loss; about 100 optimiser steps are expected
+  optimizer: adamw_8bit
+  fp16: true # a T4 has no bf16
+  seed: 3407
+
+# only the assistant message (the label) counts towards the loss
+chat_markers:
+  instruction: "<|im_start|>user\n"
+  response: "<|im_start|>assistant\n"
+
+# installed by the first cell. The log records the versions that were really there.
+packages:
+  - unsloth==2026.11.12
+  - trl==1.15.0
+  - transformers==5.17.0
+  - peft==0.22.0
+  - datasets==4.8.5

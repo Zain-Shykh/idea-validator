@@ -18,8 +18,8 @@
 | Z5 | M9 Validation agents (4 scorers) | In review | [Z5](specs/Z5-validators.md) | [#13](https://github.com/Zain-Shykh/idea-validator/pull/13) | 2026-11-27 11:46 | — |
 | Z6 | M12 Critic and Guardrails | In review | [Z6](specs/Z6-critic-guardrails.md) | [#15](https://github.com/Zain-Shykh/idea-validator/pull/15) | 2026-11-27 12:25 | — |
 | Z7 | M3 Orchestrator: run lifecycle + Validate | In review | [Z7](specs/Z7-orchestrator-validate.md) | [#17](https://github.com/Zain-Shykh/idea-validator/pull/17) | 2026-11-27 15:55 | — |
-| Z8 | M8 Ideation + Discover + challenge / what-if | Not started | — | — | — | — |
-| Z9 | M10t Fine-tuning pipeline + model comparison | Not started | — | — | — | — |
+| Z8 | M8 Ideation + Discover + challenge / what-if | In review | [Z8](specs/Z8-ideation-discover.md) | [#19](https://github.com/Zain-Shykh/idea-validator/pull/19) | 2026-11-27 | — |
+| Z9 | M10t Fine-tuning pipeline + model comparison | Blocked | [Z9](specs/Z9-finetuning.md) | [#21](https://github.com/Zain-Shykh/idea-validator/pull/21) | 2026-11-27 | — |
 | Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | Not started | — | — | — | — |
 | Z11 | Cluster integration, measurements, end-to-end acceptance | Not started | — | — | — | — |
 | Z12 | Report and submission (shared with Ahmad) | Not started | — | — | — | — |
@@ -365,7 +365,7 @@ flowchart LR
 
 ## Z8 — M8 Ideation + Discover workflow + challenge / what-if
 
-- **Status:** Not started · **Spec:** `docs/specs/Z8-ideation-discover.md` · **Branch:** `feat/z8-ideation-discover`
+- **Status:** In review · **Spec:** `docs/specs/Z8-ideation-discover.md` · **Branch:** `feat/z8-ideation-discover`
 - **Requirements:** M8-1..5, WF-D1..D9, U2, U7, U8, U9 (versions), VE-12, VE-14, API-P6 (orchestrator side), AVOID-1, AVOID-7
 - **Depends on:** Z7; M7 via `FakeAnalyst` until A6. **Unblocks:** S5.
 
@@ -379,24 +379,30 @@ flowchart LR
 **Deliverables.** `services/ideation/**`, `services/orchestrator/**` (discover, challenge, whatif), cassettes.
 
 **Acceptance criteria.**
-- [ ] Debate never exceeds 3 rounds (test with a skeptic that always objects); ideas with an accepted fatal objection are dropped and emitted as `idea_dropped` events with the evidence.
-- [ ] Every surviving idea has ≥ 1 existing gap evidence id; ideas without them are rejected.
-- [ ] A renamed copy of a fixture product is dropped as duplicate (AVOID-7); an idea needing more hours than available gets a feasibility objection.
-- [ ] Discover result is ranked (GO > PIVOT > NO-GO > IE, then score) with a verdict and one-line reason per idea (U2).
-- [ ] Challenge: supported claim → `defended` with rationale; unsupported → claim removed, verdict recomputed by M11, new version stored.
-- [ ] What-if: proposals come from M11's candidate list (each with new score/verdict); applying one creates version v+1 and its verdict is computed by a new Validate run (scorers + engine), not by editing numbers.
-- [ ] Two different profiles on the same idea yield different verdicts where the Description says they should (200 h team vs 20 h solo; U1 "changes later recommendations").
+- [x] Debate never exceeds 3 rounds (test with a skeptic that always objects); ideas with an accepted fatal objection are dropped and emitted as `idea_dropped` events with the evidence.
+- [x] Every surviving idea has ≥ 1 existing gap evidence id; ideas without them are rejected.
+- [x] A renamed copy of a fixture product is dropped as duplicate (AVOID-7); an idea needing more hours than available gets a feasibility objection.
+- [x] Discover result is ranked (GO > PIVOT > NO-GO > IE, then score) with a verdict and one-line reason per idea (U2).
+- [x] Challenge: supported claim → `defended` with rationale; unsupported → claim removed, verdict recomputed by M11, new version stored.
+- [x] What-if: proposals come from M11's candidate list (each with new score/verdict); applying one creates version v+1 and its verdict is computed by a new Validate run (scorers + engine), not by editing numbers.
+- [x] Two different profiles on the same idea yield different verdicts where the Description says they should (200 h team vs 20 h solo; U1 "changes later recommendations").
 
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 16:57 | Started | Branch `feat/z8-ideation-discover` from `feat/z7-orchestrator-validate` (PR #17 unmerged) |
+| 2026-11-27 16:58 | Spec | `docs/specs/Z8-ideation-discover.md` Part A (commit time) |
+| 2026-11-27 16:58 | Plan | Part B (commit time) |
+| 2026-11-27 20:01 | Interrupted | Usage limit; untested M8 work saved (`99be1b9`). Resumed in a second session |
+| 2026-11-27 20:31 | Implemented | M8, Discover, challenge, what-if, behaviour tests, packaging |
+| 2026-11-27 21:18 | Tests | Testing subagent: 4 bugs, all fixed; 1801 tests pass, coverage 98 % |
+| 2026-11-27 21:42 | PR | #19 against `feat/z7-orchestrator-validate` (closes #18) |
 
 ---
 
 ## Z9 — M10t Fine-tuning pipeline + model comparison
 
-- **Status:** Not started · **Spec:** `docs/specs/Z9-finetuning.md` · **Branch:** `feat/z9-finetuning`
+- **Status:** Blocked (no real KB (S3), no Colab/Kaggle GPU, no Gemini key, no human label checks; owner runbook in spec C6) · **Spec:** `docs/specs/Z9-finetuning.md` · **Branch:** `feat/z9-finetuning`
 - **Requirements:** M10t-1, M10t-2, FT-1..8, M10-1, M10-4, M10-5, DATA-7, SUB-2e, SS-18
 - **Depends on:** Z5 (features/evidence code), **S3** (real KB with ≥ 1,500 cards). Ahmad checks ≥ 20 labels (shared task). **Unblocks:** S6.
 
@@ -414,18 +420,25 @@ flowchart LR
 **Deliverables.** `jobs/finetune/**` (data + scripts + notebook + config + documented commands), results JSON, release asset, model image.
 
 **Acceptance criteria.**
-- [ ] `all.jsonl` ≥ 300 examples in the DATA-7 format; all six dimensions and all levels 0–5 present (report counts).
-- [ ] ≥ 60 examples marked `checked_by` (with both names present); checked examples are the test set.
-- [ ] Split test proves no idea leakage and no labelled-set ideas in training.
-- [ ] Training settings and loss curves committed; notebook runs top-to-bottom on a free T4.
-- [ ] No weights in git (CI/size check); GGUF available as release asset and image.
-- [ ] Comparison table with all six metrics for the three models committed; one "did not help" case written up.
-- [ ] Scorer in the cluster serves the fine-tuned model; fallback still works.
+- [ ] `all.jsonl` ≥ 300 examples in the DATA-7 format; all six dimensions and all levels 0–5 present (report counts). — *blocked: S3, Gemini key (code ready)*
+- [ ] ≥ 60 examples marked `checked_by` (with both names present); checked examples are the test set. — *blocked: hand checks (code ready)*
+- [ ] Split test proves no idea leakage and no labelled-set ideas in training. — *assertions pass on fake fixtures only; not on real data*
+- [ ] Training settings and loss curves committed; notebook runs top-to-bottom on a free T4. — *settings committed; no GPU run, no curves*
+- [ ] No weights in git (CI/size check); GGUF available as release asset and image. — *size check passes; no GGUF asset or image*
+- [ ] Comparison table with all six metrics for the three models committed; one "did not help" case written up. — *blocked: test set, tuned model, Gemini key*
+- [ ] Scorer in the cluster serves the fine-tuned model; fallback still works. — *component renders; no tuned model; fallback tested in code only*
 
 **Progress log.**
 | Date & time | Event | Notes |
 |-------------|-------|-------|
-| — | — | — |
+| 2026-11-27 21:55 | Start | Branch `feat/z9-finetuning` from `feat/z8-ideation-discover` (PR #19 unmerged). Real KB, GPU, Gemini key and hand checks unavailable |
+| 2026-11-27 21:55 | Spec | `docs/specs/Z9-finetuning.md` Part A |
+| 2026-11-27 21:55 | Plan | Part B |
+| 2026-11-27 22:00 | Implementation | Tasks 1–3; the session then stopped on a usage limit (split step saved as `wip`, 2026-11-28 01:01) |
+| 2026-11-28 01:11 | Implementation | Resumed: split verified and finished, notebook, comparison, packaging, docs (tasks 4–8) |
+| 2026-11-28 01:29 | Tests | Testing subagent: 5 bugs, all fixed; 1941 passed, 2 skipped |
+| 2026-11-28 01:31 | Blocked | **No dataset, labels, checks, training run, metrics or comparison.** Needs: real KB (S3), Gemini key, hand checks by Zain (≥ 40) and Ahmad (≥ 20), `eval/labelled/ideas.jsonl`, free T4, then export and cluster. Steps: spec Z9 C6 |
+| 2026-11-28 01:31 | PR | Draft PR [#21](https://github.com/Zain-Shykh/idea-validator/pull/21) against `feat/z8-ideation-discover`; no acceptance criterion below is met yet |
 
 ---
 

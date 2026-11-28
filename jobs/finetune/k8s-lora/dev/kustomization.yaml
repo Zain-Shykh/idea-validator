@@ -1,0 +1,7 @@
+# The dev overlay serving the fine-tuned scorer: kubectl apply -k jobs/finetune/k8s-lora/dev
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../../../k8s/overlays/dev
+components:
+  - ../component

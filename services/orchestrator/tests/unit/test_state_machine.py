@@ -7,8 +7,10 @@ import pytest
 from common.contracts.core import RunState
 from orchestrator.services.state_machine import (
     TERMINAL,
+    DiscoverStep,
     InvalidTransitionError,
     Step,
+    check_discover_transition,
     check_run_transition,
     check_step_transition,
 )
@@ -40,6 +42,30 @@ VALIDATE = {  # architecture §6.2, plus the cache shortcut of §6.3
     ("VERDICT", "STABILITY"),
     ("STABILITY", "CARD"),
 }
+
+
+DISCOVER = {  # architecture §6.4; the three shortcuts are in spec Z8 A6/A7
+    ("REQUEST", "NICHES"),
+    ("NICHES", "IDEATE"),
+    ("NICHES", "RESULT"),
+    ("IDEATE", "GAP_ANALYZE"),
+    ("IDEATE", "VALIDATE_EACH"),
+    ("GAP_ANALYZE", "SKEPTIC"),
+    ("SKEPTIC", "CRITIC"),
+    ("CRITIC", "FILTER"),
+    ("FILTER", "IDEATE"),
+    ("FILTER", "VALIDATE_EACH"),
+    ("VALIDATE_EACH", "RESULT"),
+}
+
+
+@pytest.mark.parametrize(("current", "new"), list(product(DiscoverStep, DiscoverStep)))
+def test_discover_transitions(current: DiscoverStep, new: DiscoverStep) -> None:
+    if (current, new) in DISCOVER:
+        check_discover_transition(current, new)
+    else:
+        with pytest.raises(InvalidTransitionError):
+            check_discover_transition(current, new)
 
 
 @pytest.mark.parametrize(("current", "new"), list(product(RunState, RunState)))

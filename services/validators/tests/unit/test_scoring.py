@@ -6,9 +6,10 @@ import httpx
 import pytest
 from validator_factories import IDEAS, StubScorer, body, engine, kb
 
-from common.contracts.core import Dimension, DimensionScore, EvidenceItem
+from common.contracts.core import Dimension, DimensionScore, EvidenceItem, IdeaInput
 from common.contracts.kb import SearchRequest, SearchResponse
 from common.http import ServiceError
+from common.idea_text import CHANGES, CLARIFICATIONS, append
 from validators.scorers import SCORERS
 from validators.services.engine import Engine, KbUnavailableError
 
@@ -214,3 +215,19 @@ async def test_scores_outside_the_similarity_scale(score: float) -> None:
 
 def test_five_fixture_ideas_exist() -> None:
     assert len(IDEAS) == 5
+
+
+async def test_amendments_reach_the_scoring_model() -> None:
+    """Z7 follow-up: an answer or change appended to a long idea is not cut off."""
+    scorer = StubScorer()
+    long_text = IDEAS["flashcards"].text + " More detail." * 300
+    text = append(long_text, CLARIFICATIONS, ["Who is it for?\n  nursing students"], 5000)
+    text = append(text, CHANGES, ["drop the mobile client"], 5000)
+    idea = IdeaInput(title=IDEAS["flashcards"].title, text=text)
+    for run in SCORERS.values():
+        await run(engine(scorer=scorer), body(idea))
+    assert len(scorer.requests) == 6
+    for request in scorer.requests:
+        assert len(request.idea.text) <= 1200
+        assert "nursing students" in request.idea.text
+        assert "drop the mobile client" in request.idea.text
