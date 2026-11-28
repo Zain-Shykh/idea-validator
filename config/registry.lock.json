@@ -17,6 +17,10 @@
     "sha256": "cb32b3e124c20c78797f14b095052ffc655cf15ea62ac09f87b347da152ae4a8",
     "version": "v1"
   },
+  "prompt/effort": {
+    "sha256": "91e421a13c9bef929f3c35a7e8d8ca1ce1d5f813f993caae06c76d860ad97ff9",
+    "version": "v1"
+  },
   "prompt/gap_analyst": {
     "sha256": "5a1dd4af43f0ea6635a2eeac7d1c398d4b1bf786e3aa0f013be12a5b52708cbf",
     "version": "v1"

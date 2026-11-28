@@ -3,8 +3,9 @@
 Every record is written to stdout as one JSON line (K8S-12) and, when ``AGENTOPS_URL`` is set,
 POSTed to M13 in batches. Tracing never makes the traced call fail.
 
-Prompts and model replies never reach stdout (container logs are widely readable): the line of
-an ``llm_call`` carries only their length and hash; the full record goes to M13 (replay, AO-1).
+Prompts, model replies and tool inputs (search queries carry the student's idea) never reach
+stdout, which is widely readable: the line carries only their length and hash; the full record
+goes to M13 (replay, AO-1).
 """
 
 import asyncio
@@ -51,11 +52,12 @@ def _digest(text: str | None) -> str | None:
 
 
 def _stdout_view(record: TraceRecord) -> TraceRecord:
-    if record.kind is not TraceKind.LLM_CALL:
+    if record.kind is TraceKind.DECISION:
         return record
-    return record.model_copy(
-        update={"input": _digest(record.input), "output": _digest(record.output)}
-    )
+    hidden = {"input": _digest(record.input)}
+    if record.kind is TraceKind.LLM_CALL:
+        hidden["output"] = _digest(record.output)
+    return record.model_copy(update=hidden)
 
 
 def _encodable(record: TraceRecord) -> TraceRecord:

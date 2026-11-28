@@ -24,6 +24,7 @@ PROMPTS = (
     "concretizer",
     "critic_check",
     "scorer",
+    "effort",
 )
 
 
@@ -67,7 +68,7 @@ def test_repo_budgets() -> None:
 
 def test_registry_lists_every_versioned_file() -> None:
     entries = registry_entries(ROOT / "rubrics", ROOT / "prompts", ROOT / "config")
-    assert len(entries) == 7 + 7 + 2
+    assert len(entries) == 7 + 8 + 2
     assert all((ROOT / e.path).is_file() for e in entries)
 
 

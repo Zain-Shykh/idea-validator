@@ -291,7 +291,7 @@ Notes:
 - **Deep search & approval (U4, M3-4, M12-4):** before `DEEP_SEARCH`, M3 estimates cost (pages × per-page cost + LLM tokens) and asks M12 `/policy/approval`. If the estimate exceeds the remaining run budget → `AWAITING_APPROVAL` with the stated cost; declined → continue with existing evidence (which may yield INSUFFICIENT EVIDENCE, U10). Deep search is attempted at most once per run.
 - **Clarifying questions only when they change the result (U5):** M8 `/intake` proposes ≤ 3 candidate questions, each tagged with the dimension(s) it affects and the score impact of two plausible answers. After the preliminary verdict, M3 asks M11 `/whatif` (mode `apply`) for both answers; a question is asked **only if the two answers produce different verdicts**. Answers are appended to the idea text (new idea version, origin `clarify`) and only the affected scorers re-run (step memo, M3-5). At most one clarify round.
 - **Scorer → dimension mapping:** `demand` → `demand_pain`; `competition` → `competition`, `differentiation`; `feasibility` → `feasibility`, `learning`; `risk` → `risk` (M9-1). Scorers that depend on the profile: `feasibility` only — so a profile change re-runs only that scorer (M3-5).
-- **Timeouts and retries (M3-3):** each scorer call 90 s timeout, 2 retries with exponential back-off; a scorer that still fails **abstains** (score `null`, confidence 0, reason recorded). Partial failure never crashes the run.
+- **Timeouts and retries (M3-3, D-010):** each M9 request has a 600 s timeout (`VALIDATOR_TIMEOUT`, it may wait for the model) and is not retried on timeout; one M10 call has 90 s and is not retried by M9; a scorer that still fails **abstains** (score `null`, confidence 0, reason recorded). Partial failure never crashes the run.
 
 ### 6.3 Validate — sequence
 
@@ -941,7 +941,14 @@ Aliases (`config/llm-models.yaml`, exact model ids verified at implementation ti
 | `feasibility` | `feasibility`, `learning` | `available_hours = hours_per_week × weeks × team_size`, `est_effort_hours` (model estimate clamped by heuristic bands), `hours_ratio`, `skill_overlap` (Jaccard), `compute_fit`, `new_skills`, `interest_match` | `search_kb(similar builds)` | `est_effort_hours`, `available_hours` |
 | `risk` | `risk` | keyword/regex hits (medical, legal, finance, minors, PII, scraping ToS), `platform_dependency` (single third-party API), `regulated_domain` | `search_kb(risk terms)` | `blockers[]` (legal/safety, with evidence) |
 
-Each scorer: own rubric(s) (`rubrics/<dimension>.yaml`), own prompt, own output schema; calls M10 `/score` once per dimension with rubric + idea + evidence + features. **No evidence ids → abstain** (score `null`, confidence 0, reason "no evidence") (M9-4). Effort-gate margin: `feasibility` gate passes when `est_effort_hours ≤ 0.8 × available_hours` (margin configurable).
+Each scorer: own rubric(s) (`rubrics/<dimension>.yaml`), own queries, own feature schema; calls M10 `/score` once per dimension with rubric + idea + evidence + features (M10's prompt is shared, D-012). **No evidence ids → abstain** (score `null`, confidence 0, reason "no evidence") (M9-4).
+
+As built (D-012, decisions Z5-1..15):
+- **Grounding (AVOID-4):** cited ids are limited to those sent; M10's free text is dropped and `reason` is written by code, naming competitors only from KB cards.
+- **Cards:** `niche_tags` containing `complaint` marks a complaint; every other card is a product. `SearchResult.score` is read as a similarity in 0..1.
+- **Effort:** the model estimate (`prompts/effort@v1.md`, alias `agent-cheap`) is clamped to a band computed by code; without one, the band midpoint. Always sent.
+- **Blockers:** keyword rule plus a KB card on the same topic; a rule without such a card makes `risk` abstain, so M11 cannot say GO.
+- **Model load:** at most 4 evidence items of 300 characters and 1200 characters of idea; `VALIDATORS_SCORER_CONCURRENCY` (default 1) M10 calls at a time. Effort-gate margin: `feasibility` gate passes when `est_effort_hours ≤ 0.8 × available_hours` (margin configurable).
 
 ### 12.5 M12 Critic and Guardrails
 - **Claim check (`/check`, M12-1):** (1) every evidence id must exist in M6 (`/evidence`) — fabricated ids → `unsupported`; (2) LLM judge (temperature 0, strict schema) decides whether the quoted evidence supports the claim; (3) lexical-overlap heuristic as fallback when the LLM is unavailable (verdict `unverifiable` → treated as unsupported for objections, kept-but-flagged for scorer claims).
@@ -1092,7 +1099,7 @@ flowchart LR
 
 | Capability | Design |
 |-----------|--------|
-| **Tracing (AO-1)** | `TraceRecord` per agent step, tool call, LLM call and orchestrator decision; `run_id` propagated via `X-Run-Id` header; `step_id` is a time-ordered unique integer from `common.trace`, `parent_step` is passed as `X-Parent-Step` (D-003). Stored as JSONL + index; also one JSON line per record on stdout, where `llm_call` contents are replaced by length + hash (D-002). `GET /runs/{id}/trace` returns the ordered tree. |
+| **Tracing (AO-1)** | `TraceRecord` per agent step, tool call, LLM call and orchestrator decision; `run_id` propagated via `X-Run-Id` header; `step_id` is a time-ordered unique integer from `common.trace`, `parent_step` is passed as `X-Parent-Step` (D-003). Stored as JSONL + index; also one JSON line per record on stdout, where `llm_call` contents and `tool_call` inputs are replaced by length + hash (D-002, D-011). `GET /runs/{id}/trace` returns the ordered tree. |
 | **Replay (AO-1)** | `python -m agentops.replay <run_id>`: loads the trace, runs the orchestrator state machine with a `ReplayTransport` that answers every tool/LLM call from the recorded output (matched by agent, tool, input hash, order). Diff of decisions printed; non-zero exit if the verdict differs. |
 | **Budgets (AO-2)** | `config/budgets.yaml` (ConfigMap): per workflow `max_tokens`, `max_cost_usd`, `max_pages`, `max_steps`, per-action caps. Enforced in M3 (before each step) and M5 (per fetch / LLM call, using `run_id`). Over budget → approval (if the action is optional) or `BUDGET_STOPPED`. |
 | **Registry (AO-3)** | `prompts/*.md` and `rubrics/*.yaml` with `version` in front-matter; `rubrics/manifest.yaml` defines the rubric set id; M13 `/registry` lists name, version, sha256; `scripts/check_registry.py` (lock `config/registry.lock.json`) fails if a rubric, prompt, budgets or verdict rules file changes without a version bump; a version bump requires a new eval run (Jenkins nightly + PR note). |
@@ -1364,7 +1371,7 @@ JSON lines to stdout: `{ts, level, service, run_id, step_id, msg, …}`. Headers
 HTTP codes: 400 validation, 401/403 auth, 404, 409 state conflict (e.g. answering a run not awaiting input), 422 schema, 429 rate limit, 402 budget (internal), 503 not ready.
 
 ### 21.4 Timeouts and retries
-Defaults in `common.http`: connect 3 s, read 30 s (LLM 60 s, scorer 90 s); retries 2 with exponential back-off + jitter on 429/5xx/timeouts only; idempotent requests only (POSTs carry an `Idempotency-Key` = step id).
+Defaults in `common.http`: connect 3 s, read 30 s (LLM 60 s, scorer 90 s, validator request 600 s, D-010); retries 2 with exponential back-off + jitter on 429/5xx/timeouts only; idempotent requests only (POSTs carry an `Idempotency-Key` = step id).
 
 ### 21.5 Testing strategy
 | Level | Tool | Scope |

@@ -10,6 +10,8 @@ RUN pip --python /venv/bin/python install --no-cache-dir --no-deps /tmp/common
 FROM python:3.12-slim@sha256:2f17fc044b579bab302c2e8054d3a686e2cb9a83de48e70534b94cd8ebbe06a9
 RUN useradd --uid 10001 --create-home app
 ENV PATH=/venv/bin:$PATH PYTHONPATH=/app PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
+# rubrics and the effort prompt are mounted (ConfigMaps / compose), never baked in
+ENV VALIDATORS_RUBRICS_DIR=/etc/rubrics VALIDATORS_PROMPTS_DIR=/etc/prompts
 COPY --from=build /venv /venv
 COPY services/validators/src /app
 # numeric, so Kubernetes can verify runAsNonRoot

@@ -7,12 +7,12 @@
 
 | Owner | Rows | Done | Partial |
 |-------|-----:|-----:|--------:|
-| Zain | 89 | 30 | 7 |
+| Zain | 89 | 38 | 12 |
 | Ahmad | 77 | 0 | 0 |
 | Both | 54 | 0 | 17 |
-| **Total** | **220** | **30** | **24** |
+| **Total** | **220** | **38** | **29** |
 
-_Last updated: 2026-11-27 (Z0–Z3 in review; summary recounted from the rows)._
+_Last updated: 2026-11-27 (Z0–Z5 in review; summary recounted from the rows)._
 
 ## Phase completion
 
@@ -66,7 +66,7 @@ _Last updated: 2026-11-27 (Z0–Z3 in review; summary recounted from the rows)._
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
 | [ ] | WF-D1..D9 | Discover workflow (niches, ideator, gap analyst, skeptic, critic, ≤3 rounds, validate survivors, ranked result) | Zain | Z8 | |
-| [ ] | WF-V1..V9 | Validate workflow (intake/clarify, evidence + scout on demand, 4 parallel scorers, features, verdict, challenge, stability, card) | Zain | Z7 | |
+| [~] | WF-V1..V9 | Validate workflow (intake/clarify, evidence + scout on demand, 4 parallel scorers, features, verdict, challenge, stability, card) | Zain | Z7 | Z5: WF-V3 (parallel-safe scorers, own rubrics) and WF-V4 (features computed by code) in M9; workflow in Z7 |
 
 ## M1 Web UI and API Gateway
 
@@ -164,10 +164,10 @@ _Last updated: 2026-11-27 (Z0–Z3 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | M9-1 | Four scorers in parallel (six dimensions) | Zain | Z5, Z7 | |
-| [ ] | M9-2 | Own rubric, tools, output schema each | Zain | Z5 | |
-| [ ] | M9-3 | Computed features + model judgment | Zain | Z5 | |
-| [ ] | M9-4 | Every score cites evidence ids, else abstain | Zain | Z5 | |
+| [~] | M9-1 | Four scorers in parallel (six dimensions) | Zain | Z5, Z7 | Z5: four scorers, six dimensions, parallel-safe (`eval/behaviour/test_validators.py`); parallel calls by M3 in Z7; one CPU model is serialised (D-010) |
+| [x] | M9-2 | Own rubric, tools, output schema each | Zain | Z5 | Z5: own rubrics, KB/analyst queries and feature schema per scorer (`services/validators/src/validators/scorers/`; D-012) |
+| [x] | M9-3 | Computed features + model judgment | Zain | Z5 | Z5: `test_features.py`, `test_gate_inputs.py`; model judgment through M10 (fake KB and analyst) |
+| [x] | M9-4 | Every score cites evidence ids, else abstain | Zain | Z5 | Z5: `test_scoring.py::test_scores_cite_only_retrieved_ids`, `test_validators.py::test_empty_source_abstains` (fake KB) |
 
 ## M10 Scoring Model / M10t Fine-tuning
 
@@ -259,8 +259,8 @@ _Last updated: 2026-11-27 (Z0–Z3 in review; summary recounted from the rows)._
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
 | [ ] | VE-1 | LLM never decides the verdict | Zain | Z2, Z7 | |
-| [~] | VE-2 | Six dimensions 0–5 + confidence + evidence ids, versioned rubric | Zain | Z3, Z5 | Z3: six versioned rubrics; scores with evidence ids in Z5 |
-| [ ] | VE-3 | Dimension definitions in rubrics | Zain | Z3 | |
+| [x] | VE-2 | Six dimensions 0–5 + confidence + evidence ids, versioned rubric | Zain | Z3, Z5 | Z3 rubrics; Z5 six scores with confidence and KB evidence ids, `test_api.py::test_five_ideas_give_six_dimensions` (fake KB; real KB at S3) |
+| [x] | VE-3 | Dimension definitions in rubrics | Zain | Z3 | `rubrics/*.yaml` (Z3), applied by the four scorers (Z5) |
 | [x] | VE-4a | Evidence gate (≥3 sources, ≥2 platforms) → IE | Zain | Z2 | `test_gates.py` |
 | [x] | VE-4b | Feasibility gate → NO-GO with hours gap | Zain | Z2 | `test_gates.py` |
 | [x] | VE-4c | Risk gate → NO-GO with blocker named | Zain | Z2 | `test_gates.py` |
@@ -381,7 +381,7 @@ _Last updated: 2026-11-27 (Z0–Z3 in review; summary recounted from the rows)._
 | [ ] | AVOID-1 | No unbounded prompt/retries/rounds/spend | Zain | Z7, Z8 | |
 | [~] | AVOID-2 | Verdict cache key includes profile + rubric version | Zain | Z0, Z7 | Z0: `verdict_key` requires every version (`test_cache_keys.py`); use in Z7 |
 | [ ] | AVOID-3 | Model never decides/adjusts verdict | Zain | Z2, Z7 | |
-| [ ] | AVOID-4 | No score/claim without evidence id; competitors from KB only | Zain | Z5 | |
+| [~] | AVOID-4 | No score/claim without evidence id; competitors from KB only | Zain | Z5 | Z5 (M9): `test_validators.py::test_invented_competitor_name_never_leaves_m9`; claims in Z6, ideation in Z8 |
 | [ ] | AVOID-5 | No model/scout calls from browser; no localhost in images | Both | A9, all | |
 | [ ] | AVOID-6 | Retrieval tested by metrics; chunks keep card id | Ahmad | A4, A5 | |
 | [ ] | AVOID-7 | No renamed copies; ideas respect hours | Zain | Z8 | |

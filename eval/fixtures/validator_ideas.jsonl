@@ -1,0 +1,5 @@
+{"key": "flashcards", "title": "Flashcards from lecture decks", "text": "A web app that turns a student's lecture slides into flashcards. University students retype cards from slides by hand today and diagrams get lost on export."}
+{"key": "flaky_tests", "title": "Flaky test finder", "text": "A dashboard for developers that reruns CI pipelines, finds flaky tests and explains which test is flaky."}
+{"key": "gym_log", "title": "Offline gym log", "text": "A mobile app where gym users log sets offline and export their workout history to CSV."}
+{"key": "slidecards_clone", "title": "SlideCards for my course", "text": "A web app that turns a student's own lecture slides into spaced-repetition flashcards, for university students."}
+{"key": "symptom_bot", "title": "SymptomBuddy", "text": "A chatbot that gives patients a diagnosis from their symptoms and suggests a medication dosage."}
