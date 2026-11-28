@@ -10,15 +10,15 @@
 
 | Phase | Title | Status | Spec | PR | Started | Completed |
 |-------|-------|--------|------|----|---------|-----------|
-| Z0 | Shared contracts, `libs/common`, repo tooling | In review | [Z0](specs/Z0-contracts-common.md) | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) | 2026-11-27 07:47 | — |
-| Z1 | Walking skeleton of Zain's services | In review | [Z1](specs/Z1-walking-skeleton.md) | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) | 2026-11-27 08:09 | — |
-| Z2 | M11 Verdict Engine | In review | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | — |
-| Z3 | Rubrics, prompts registry, M13 AgenticOps core | In review | [Z3](specs/Z3-rubrics-agentops.md) | [#9](https://github.com/Zain-Shykh/idea-validator/pull/9) | 2026-11-27 10:04 | — |
-| Z4 | M10 Scorer serving (base model + fallback) | In review | [Z4](specs/Z4-scorer-serving.md) | [#11](https://github.com/Zain-Shykh/idea-validator/pull/11) | 2026-11-27 10:43 | — |
-| Z5 | M9 Validation agents (4 scorers) | In review | [Z5](specs/Z5-validators.md) | [#13](https://github.com/Zain-Shykh/idea-validator/pull/13) | 2026-11-27 11:46 | — |
-| Z6 | M12 Critic and Guardrails | In review | [Z6](specs/Z6-critic-guardrails.md) | [#15](https://github.com/Zain-Shykh/idea-validator/pull/15) | 2026-11-27 12:25 | — |
-| Z7 | M3 Orchestrator: run lifecycle + Validate | In review | [Z7](specs/Z7-orchestrator-validate.md) | [#17](https://github.com/Zain-Shykh/idea-validator/pull/17) | 2026-11-27 15:55 | — |
-| Z8 | M8 Ideation + Discover + challenge / what-if | Not started | — | — | — | — |
+| Z0 | Shared contracts, `libs/common`, repo tooling | Done | [Z0](specs/Z0-contracts-common.md) | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) | 2026-11-27 07:47 | 2026-11-28 12:10 |
+| Z1 | Walking skeleton of Zain's services | Done | [Z1](specs/Z1-walking-skeleton.md) | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) | 2026-11-27 08:09 | 2026-11-28 12:10 |
+| Z2 | M11 Verdict Engine | Done | [Z2](specs/Z2-verdict-engine.md) | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) | 2026-11-27 08:44 | 2026-11-28 12:10 |
+| Z3 | Rubrics, prompts registry, M13 AgenticOps core | Done | [Z3](specs/Z3-rubrics-agentops.md) | [#9](https://github.com/Zain-Shykh/idea-validator/pull/9) | 2026-11-27 10:04 | 2026-11-28 12:10 |
+| Z4 | M10 Scorer serving (base model + fallback) | Done | [Z4](specs/Z4-scorer-serving.md) | [#11](https://github.com/Zain-Shykh/idea-validator/pull/11) | 2026-11-27 10:43 | 2026-11-28 12:11 |
+| Z5 | M9 Validation agents (4 scorers) | Done | [Z5](specs/Z5-validators.md) | [#13](https://github.com/Zain-Shykh/idea-validator/pull/13) | 2026-11-27 11:46 | 2026-11-28 12:11 |
+| Z6 | M12 Critic and Guardrails | Done | [Z6](specs/Z6-critic-guardrails.md) | [#15](https://github.com/Zain-Shykh/idea-validator/pull/15) | 2026-11-27 12:25 | 2026-11-28 12:11 |
+| Z7 | M3 Orchestrator: run lifecycle + Validate | Done | [Z7](specs/Z7-orchestrator-validate.md) | [#17](https://github.com/Zain-Shykh/idea-validator/pull/17) | 2026-11-27 15:55 | 2026-11-28 12:11 |
+| Z8 | M8 Ideation + Discover + challenge / what-if | Done | [Z8](specs/Z8-ideation-discover.md) | [#19](https://github.com/Zain-Shykh/idea-validator/pull/19) | 2026-11-27 16:57 | 2026-11-28 12:11 |
 | Z9 | M10t Fine-tuning pipeline + model comparison | Not started | — | — | — | — |
 | Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | Not started | — | — | — | — |
 | Z11 | Cluster integration, measurements, end-to-end acceptance | Not started | — | — | — | — |
@@ -53,7 +53,7 @@ flowchart LR
 
 ## Z0 — Shared contracts, `libs/common`, repo tooling
 
-- **Status:** In review · **Spec:** `docs/specs/Z0-contracts-common.md` · **Branch:** `feat/z0-contracts-common`
+- **Status:** Done · **Spec:** `docs/specs/Z0-contracts-common.md` · **Branch:** `feat/z0-contracts-common`
 - **Requirements:** GEN-7, GEN-8, GEN-9, DATA-1..8, API-I7, M13-1 (client side), AO-1 (propagation)
 - **Depends on:** nothing. **Unblocks:** everyone (sync **S1**).
 
@@ -98,12 +98,13 @@ flowchart LR
 | 2026-11-27 08:00 | Implementation pushed | contracts, helpers, fixtures; 113 tests |
 | 2026-11-27 08:05 | Tests and fixes pushed | testing subagent: 3 bugs fixed; 161 tests, coverage 99 % |
 | 2026-11-27 08:07 | PR opened | [#3](https://github.com/Zain-Shykh/idea-validator/pull/3) (base `chore/headless-decision-log`, closes #2); awaiting Ahmad's review |
+| 2026-11-28 12:10 | Merged | PR #3, admin merge approved by owner; no review by the other member (P-4) |
 
 ---
 
 ## Z1 — Walking skeleton of Zain's services
 
-- **Status:** In review · **Spec:** `docs/specs/Z1-walking-skeleton.md` · **Branch:** `feat/z1-walking-skeleton`
+- **Status:** Done · **Spec:** `docs/specs/Z1-walking-skeleton.md` · **Branch:** `feat/z1-walking-skeleton`
 - **Requirements:** GEN-6, GEN-8, DOCK-1..3, K8S-1, K8S-5 (probes), K8S-11, AVOID-8
 - **Depends on:** Z0. Uses A0's `k8s/base/kustomization.yaml` if merged; otherwise creates own manifests and Ahmad adds them to the kustomization. **Unblocks:** S2.
 
@@ -132,12 +133,13 @@ flowchart LR
 | 2026-11-27 08:20 | Implementation pushed | seven stubs, images, compose, manifests; 244 tests; compose and cluster checks passed |
 | 2026-11-27 08:35 | Tests and fixes pushed | testing subagent: 2 bugs + 3 smaller issues fixed; 363 tests + 3 integration; images rebuilt (`11276f4`) and rechecked |
 | 2026-11-27 08:40 | PR opened | [#5](https://github.com/Zain-Shykh/idea-validator/pull/5) (base `feat/z0-contracts-common`, closes #4); awaiting Ahmad's review |
+| 2026-11-28 12:10 | Merged | PR #5, admin merge approved by owner; no review by the other member (P-4) |
 
 ---
 
 ## Z2 — M11 Verdict Engine
 
-- **Status:** In review · **Spec:** `docs/specs/Z2-verdict-engine.md` · **Branch:** `feat/z2-verdict-engine`
+- **Status:** Done · **Spec:** `docs/specs/Z2-verdict-engine.md` · **Branch:** `feat/z2-verdict-engine`
 - **Requirements:** M11-1..5, VE-1..16, U6, U7 (engine side), U10, API-I4, K8S-4 (ConfigMap), CI-2
 - **Depends on:** Z0, Z1. **Unblocks:** real verdict cards for the UI; Z7.
 
@@ -171,12 +173,13 @@ flowchart LR
 | 2026-11-27 08:49 | Implementation pushed | engine, API, `verdict-config` ConfigMap; 535 tests |
 | 2026-11-27 09:02 | Tests and fixes pushed | testing subagent: 3 bugs + smaller issues fixed; 587 tests, verdict coverage 100 %; image `bedf5d8` checked on Docker and minikube |
 | 2026-11-27 09:07 | PR opened | [#7](https://github.com/Zain-Shykh/idea-validator/pull/7) (base `feat/z1-walking-skeleton`, closes #6) |
+| 2026-11-28 12:10 | Merged | PR #7, admin merge approved by owner; no review by the other member (P-4) |
 
 ---
 
 ## Z3 — Rubrics, prompts registry, M13 AgenticOps core
 
-- **Status:** In review · **Spec:** `docs/specs/Z3-rubrics-agentops.md` · **Branch:** `feat/z3-rubrics-agentops`
+- **Status:** Done · **Spec:** `docs/specs/Z3-rubrics-agentops.md` · **Branch:** `feat/z3-rubrics-agentops`
 - **Requirements:** DATA-8, VE-2, AO-1 (store + read), AO-2 (budgets config), AO-3, AO-6 (summary API), M13-1..3, M13-6, M2-5 (cache-hit metric aggregation), API-I6, K8S-12
 - **Depends on:** Z0, Z1. **Unblocks:** Z4/Z5 (rubrics), Ahmad's Ops page (`/summary`), trace ingestion for all services.
 
@@ -211,12 +214,13 @@ flowchart LR
 | 2026-11-27 10:32 | Tests and fixes pushed | testing subagent; `b181715`, `9d8410a` |
 | 2026-11-27 10:36 | Image checked on compose and minikube | tag `9d8410a` |
 | 2026-11-27 10:40 | PR opened | [#9](https://github.com/Zain-Shykh/idea-validator/pull/9), issue #8, base `feat/z2-verdict-engine` |
+| 2026-11-28 12:10 | Merged | PR #9, admin merge approved by owner; no review by the other member (P-4) |
 
 ---
 
 ## Z4 — M10 Scorer serving (base model + fallback)
 
-- **Status:** In review · **Spec:** `docs/specs/Z4-scorer-serving.md` · **Branch:** `feat/z4-scorer-serving`
+- **Status:** Done · **Spec:** `docs/specs/Z4-scorer-serving.md` · **Branch:** `feat/z4-scorer-serving`
 - **Requirements:** M10-1 (container; fine-tuned weights arrive in Z9), M10-2, M10-3, M10-5, FT-7, API-I3, AO-1, AO-6 (fallback metric)
 - **Depends on:** Z3 (rubrics, prompts, trace). M5 not required (`LLM_BACKEND=direct` until A2). **Unblocks:** Z5.
 
@@ -246,12 +250,13 @@ flowchart LR
 | 2026-11-27 11:21 | Tests and fixes pushed | testing subagent; `ad988ff`, `3eec195` |
 | 2026-11-27 11:34 | Cluster check (partial), model-image fix | `1f111ab`, `2dd2e2b`; one criterion open (disk) |
 | 2026-11-27 11:41 | PR opened | [#11](https://github.com/Zain-Shykh/idea-validator/pull/11), issue #10, base `feat/z3-rubrics-agentops` |
+| 2026-11-28 12:11 | Merged | PR #11, admin merge approved by owner; no review by the other member (P-4) |
 
 ---
 
 ## Z5 — M9 Validation agents (four scorers)
 
-- **Status:** In review · **Spec:** `docs/specs/Z5-validators.md` · **Branch:** `feat/z5-validators`
+- **Status:** Done · **Spec:** `docs/specs/Z5-validators.md` · **Branch:** `feat/z5-validators`
 - **Requirements:** M9-1..4, VE-2, VE-3, WF-V3, WF-V4, VE-4 (gate inputs), AVOID-4, AVOID-7
 - **Depends on:** Z4; M6 via `FakeKB` until S3, M7 via `FakeAnalyst` until A6. **Unblocks:** Z7, Z9 (feature code reused for dataset building).
 
@@ -282,12 +287,13 @@ flowchart LR
 | 2026-11-27 11:58 | Implementation pushed | Four scorers, fakes, image, manifest; fake KB, analyst and M10 only |
 | 2026-11-27 12:13 | Tests and fixes pushed | Testing subagent: 3 bugs, fixed; 1065 passed, coverage 98 % |
 | 2026-11-27 12:19 | PR opened | [#13](https://github.com/Zain-Shykh/idea-validator/pull/13) into `feat/z4-scorer-serving`, closes #12; Ahmad could not be requested (not a collaborator) |
+| 2026-11-28 12:11 | Merged | PR #13, admin merge approved by owner; no review by the other member (P-4) |
 
 ---
 
 ## Z6 — M12 Critic and Guardrails
 
-- **Status:** In review · **Spec:** `docs/specs/Z6-critic-guardrails.md` · **Branch:** `feat/z6-critic-guardrails`
+- **Status:** Done · **Spec:** `docs/specs/Z6-critic-guardrails.md` · **Branch:** `feat/z6-critic-guardrails`
 - **Requirements:** M12-1..4, ETH-5, AO-7 (poisoned page), U8 (critic side), WF-D6, WF-V6, API-I5
 - **Depends on:** Z3 (prompts), M6 `/evidence` via fake until S3. **Unblocks:** Z7, Z8.
 
@@ -318,12 +324,13 @@ flowchart LR
 | 2026-11-27 15:18 | Implementation pushed | rules, M9 filter, critic service, fixtures, image; 1208 tests before packaging |
 | 2026-11-27 15:38 | Tests and fixes pushed | testing subagent: 8 problems fixed or bounded; security review follow-up; 1282 tests |
 | 2026-11-27 15:47 | PR opened | [#15](https://github.com/Zain-Shykh/idea-validator/pull/15) (base `feat/z5-validators`, closes #14); awaiting Ahmad's review |
+| 2026-11-28 12:11 | Merged | PR #15, admin merge approved by owner; no review by the other member (P-4) |
 
 ---
 
 ## Z7 — M3 Orchestrator: run lifecycle + Validate workflow
 
-- **Status:** In review · **Spec:** `docs/specs/Z7-orchestrator-validate.md` · **Branch:** `feat/z7-orchestrator-validate`
+- **Status:** Done · **Spec:** `docs/specs/Z7-orchestrator-validate.md` · **Branch:** `feat/z7-orchestrator-validate`
 - **Requirements:** M3-1..6, WF-V1..V9, U3, U4, U5, U6, U10, AO-1, AO-2, M2-4, M2-5, AVOID-1, AVOID-2, AVOID-3
 - **Depends on:** Z2, Z5, Z6 (real), M2/M4/M6 fakes until S3/S4. **Unblocks:** S4 (Validate end-to-end), Ahmad's gateway/UI integration.
 
@@ -360,12 +367,13 @@ flowchart LR
 | 2026-11-27 16:19 | Implemented | State machine, run API, tests, behaviour tests; image built and run against fake services |
 | 2026-11-27 16:41 | Tests | Testing subagent: 11 bugs, all fixed; 1562 tests pass, orchestrator coverage 97 %, real-Redis test passes |
 | 2026-11-27 16:46 | PR | #17 against `feat/z6-critic-guardrails` (closes #16) |
+| 2026-11-28 12:11 | Merged | PR #17, admin merge approved by owner; no review by the other member (P-4) |
 
 ---
 
 ## Z8 — M8 Ideation + Discover workflow + challenge / what-if
 
-- **Status:** In review · **Spec:** `docs/specs/Z8-ideation-discover.md` · **Branch:** `feat/z8-ideation-discover`
+- **Status:** Done · **Spec:** `docs/specs/Z8-ideation-discover.md` · **Branch:** `feat/z8-ideation-discover`
 - **Requirements:** M8-1..5, WF-D1..D9, U2, U7, U8, U9 (versions), VE-12, VE-14, API-P6 (orchestrator side), AVOID-1, AVOID-7
 - **Depends on:** Z7; M7 via `FakeAnalyst` until A6. **Unblocks:** S5.
 
@@ -397,6 +405,7 @@ flowchart LR
 | 2026-11-27 20:31 | Implemented | M8, Discover, challenge, what-if, behaviour tests, packaging |
 | 2026-11-27 21:18 | Tests | Testing subagent: 4 bugs, all fixed; 1801 tests pass, coverage 98 % |
 | 2026-11-27 21:42 | PR | #19 against `feat/z7-orchestrator-validate` (closes #18) |
+| 2026-11-28 12:11 | Merged | PR #19, admin merge approved by owner; no review by the other member (P-4) |
 
 ---
 
