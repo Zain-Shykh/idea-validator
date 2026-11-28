@@ -31,3 +31,5 @@ spec:
             - "1"
             - --threads
             - "2"
+            - --cache-ram
+            - "0"

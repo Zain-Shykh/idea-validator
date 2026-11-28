@@ -96,14 +96,15 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 20
             timeoutSeconds: 3
-          # measured 46 MiB idle-to-scoring (spec Z4 C4); final values in Z11
+          # measured under load: docs/evidence/resources.md. The CPU limit stays for startup and
+          # probes, and the memory limit is about twice the 61 MiB peak
           resources:
             requests:
-              cpu: 50m
-              memory: 96Mi
+              cpu: 10m
+              memory: 64Mi
             limits:
               cpu: 500m
-              memory: 256Mi
+              memory: 128Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -127,6 +128,9 @@ spec:
             - "1"
             - --threads
             - "2"
+            # the default host prompt cache may grow to 8 GiB, past any limit set here
+            - --cache-ram
+            - "0"
           volumeMounts:
             - name: models
               mountPath: /models
@@ -152,14 +156,17 @@ spec:
             periodSeconds: 20
             timeoutSeconds: 4
             failureThreshold: 6
-          # architecture §17.2; replaced by measurements in Z11
+          # measured under load: docs/evidence/resources.md. The CPU figure is capped by
+          # --threads; a new model, --ctx-size or --threads needs a new measurement. About
+          # 950 MiB of the memory is the model file, charged to this container only when it
+          # is the first to read it: measure after evicting the file from the page cache
           resources:
             requests:
-              cpu: 500m
-              memory: 1536Mi
+              cpu: 1850m
+              memory: 2176Mi
             limits:
               cpu: "2"
-              memory: 2560Mi
+              memory: 2720Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true

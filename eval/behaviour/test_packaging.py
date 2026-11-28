@@ -231,6 +231,8 @@ def test_scorer_pod_serves_the_model_from_the_pvc() -> None:
     assert env["SCORER_MODEL_URL"] == f"http://{args['--host']}:{args['--port']}"
     assert args["--host"] == "127.0.0.1" and "ports" not in llama
     assert int(args["--threads"]) == int(llama["resources"]["limits"]["cpu"])
+    # unbounded host memory would make the measured limit meaningless
+    assert args["--cache-ram"] == "0"
     for spec in (pod, job["spec"]["template"]["spec"]):
         claims = [v for v in spec["volumes"] if "persistentVolumeClaim" in v]
         assert claims == [{"name": "models", "persistentVolumeClaim": {"claimName": "models"}}]
@@ -244,6 +246,23 @@ def test_scorer_pod_serves_the_model_from_the_pvc() -> None:
     dockerfile = (ROOT / "services/scorer/Dockerfile").read_text()
     for volume, variable in (("rubrics", "RUBRICS"), ("prompts", "PROMPTS")):
         assert f"SCORER_{variable}_DIR={mounts[volume]}" in dockerfile
+
+
+def test_scorer_resources_are_the_measured_ones() -> None:
+    """K8S-5: the table of docs/evidence/resources.md, which says how they were measured."""
+    pod = docs("k8s/base/scorer.yaml")[0]["spec"]["template"]["spec"]
+    found = {
+        c["name"]: (*c["resources"]["requests"].values(), *c["resources"]["limits"].values())
+        for c in pod["containers"]
+    }
+    assert found == {
+        "scorer": ("10m", "64Mi", "500m", "128Mi"),
+        "llama": ("1850m", "2176Mi", "2", "2720Mi"),
+    }
+    evidence = (ROOT / "docs/evidence/resources.md").read_text()
+    for name, values in found.items():
+        cpu, memory, cpu_limit, memory_limit = values
+        assert f"| {name} (set) | {cpu} / {memory} | {cpu_limit} / {memory_limit} |" in evidence
 
 
 def test_no_model_weights_are_tracked_and_the_model_image_is_pinned() -> None:
@@ -260,6 +279,16 @@ def test_no_model_weights_are_tracked_and_the_model_image_is_pinned() -> None:
     # --chmod also applies to the folder COPY creates: without x, the Job cannot read the model
     modes = re.findall(r"--chmod=0?([0-7]{3})", text)
     assert modes and all(int(digit, 8) & 5 == 5 for mode in modes for digit in mode)
+
+
+def test_a_busy_validators_pod_is_not_restarted() -> None:
+    """Found under load (Z11): liveness (3 s, three times) killed the pod mid-burst, and every
+    run in progress lost its scores."""
+    probe = docs("k8s/base/validators.yaml")[0]["spec"]["template"]["spec"]["containers"][0][
+        "livenessProbe"
+    ]
+    assert probe["timeoutSeconds"] >= 10
+    assert probe["periodSeconds"] * probe["failureThreshold"] >= 120
 
 
 def test_validators_get_rubrics_and_prompts_and_one_scorer_slot() -> None:
