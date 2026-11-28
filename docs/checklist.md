@@ -9,10 +9,10 @@
 |-------|-----:|-----:|--------:|
 | Zain | 89 | 7 | 5 |
 | Ahmad | 77 | 0 | 0 |
-| Both | 54 | 0 | 5 |
-| **Total** | **220** | **7** | **10** |
+| Both | 54 | 0 | 12 |
+| **Total** | **220** | **7** | **17** |
 
-_Last updated: 2026-11-27 (Z0 in review)._
+_Last updated: 2026-11-27 (Z0, Z1 in review)._
 
 ## Phase completion
 
@@ -41,9 +41,9 @@ _Last updated: 2026-11-27 (Z0 in review)._
 | [ ] | GEN-3 | Data only via official APIs / allowed pages; robots.txt; no private data | Ahmad | A2, A3 | |
 | [ ] | GEN-4 | No keys/passwords committed; .env.example names only | Both | all | |
 | [ ] | GEN-5 | Uses GitHub, Actions, Jenkins, Docker, K8s, RAG, fine-tuning, AgenticOps | Both | all | |
-| [ ] | GEN-6 | Whole system on Kubernetes, one container per module | Both | Z1, A1, A10 | |
+| [~] | GEN-6 | Whole system on Kubernetes, one container per module | Both | Z1, A1, A10 | Z1: Zain's 7 services, one image each, all Ready on minikube (spec Z1 C3); A1, A10 pending |
 | [x] | GEN-7 | Schemas defined once (Pydantic), validated in/out, schema files in repo | Zain | Z0 | `libs/common/src/common/contracts/`, `libs/common/schemas/`, `test_contracts.py`, `test_export.py`; each service validates with these from Z1 |
-| [~] | GEN-8 | /health and /ready on every service | Both | Z1, A1 | Z0: `common.service.create_app` (`test_service.py`); services in Z1, A1 |
+| [~] | GEN-8 | /health and /ready on every service | Both | Z1, A1 | Z0: `common.service.create_app` (`test_service.py`); Z1: Zain's 7 services (`services/*/tests`, compose + cluster smoke); A1 pending |
 | [~] | GEN-9 | Settings via env/ConfigMaps; no hard-coded localhost | Both | all | Z0: settings from env, no URL defaults (`test_settings.py`, `test_package_has_no_localhost`) |
 
 ## User capabilities
@@ -337,8 +337,8 @@ _Last updated: 2026-11-27 (Z0 in review)._
 | [ ] | LOC-2 | docker-compose.yml for dev | Ahmad | A0 | |
 | [ ] | LOC-3 | .env.example | Both | baseline | |
 | [ ] | LOC-4 | README starts the system with a short command list | Both | A10, Z12 | |
-| [ ] | DOCK-1 | One image per module, ≥ 6 images | Both | Z1, A1 | |
-| [ ] | DOCK-2 | Multi-stage, non-root, pinned, .dockerignore | Both | Z1, A1 | |
+| [~] | DOCK-1 | One image per module, ≥ 6 images | Both | Z1, A1 | Z1: 7 images (`services/*/Dockerfile`); A1 pending |
+| [~] | DOCK-2 | Multi-stage, non-root, pinned, .dockerignore | Both | Z1, A1 | Z1: Zain's 7 images, uid 10001, base pinned by digest (`test_packaging.py`); A1 pending |
 | [ ] | DOCK-3 | Tagged by commit SHA | Ahmad | A0, A10 | |
 | [ ] | DOCK-4 | Scanned in CI | Ahmad | A0 | |
 | [ ] | CI-1 | Lint + type checks | Ahmad | A0 | |
@@ -351,17 +351,17 @@ _Last updated: 2026-11-27 (Z0 in review)._
 | [ ] | JEN-2 | Failure stops pipeline, nothing deployed | Ahmad | A10 | |
 | [ ] | JEN-3 | Jenkins in container; kubeconfig as credential | Ahmad | A0 | |
 | [ ] | JEN-4 | SCM polling or tunnel | Ahmad | A0 | |
-| [ ] | K8S-1 | Deployments + Services for all modules | Both | Z1, A1 | |
+| [~] | K8S-1 | Deployments + Services for all modules | Both | Z1, A1 | Z1: `k8s/base/<svc>.yaml` for Zain's 7; A1 pending |
 | [ ] | K8S-2 | StatefulSet/PVC for Postgres, Redis, vector store | Ahmad | A0, A4 | |
 | [ ] | K8S-3 | CronJobs (scouts, ingestion) + Jobs (eval, model import) | Both | A3, A4, Z9, Z10 | |
 | [ ] | K8S-4 | ConfigMaps (weights, thresholds, budgets, rubrics) + Secrets | Both | Z2, Z3, A0 | |
-| [ ] | K8S-5 | Probes everywhere; requests/limits from measurements | Both | Z11, A10 | |
+| [~] | K8S-5 | Probes everywhere; requests/limits from measurements | Both | Z11, A10 | Z1: probes and initial requests/limits on Zain's 7; measured values in Z11, A10 |
 | [ ] | K8S-6 | HPA on gateway | Ahmad | A8, A10 | |
 | [ ] | K8S-7 | NetworkPolicy default-deny; only M5 egress; ui → api only | Ahmad | A0, A2 | |
 | [ ] | K8S-8 | RollingUpdate maxUnavailable 0; rollback demonstrated | Ahmad | A10 | |
 | [ ] | K8S-9 | Ingress single entry | Ahmad | A0 | |
 | [ ] | K8S-10 | NetworkPolicy test (fail from non-M5, works from M5) | Ahmad | A2, A10 | |
-| [ ] | K8S-11 | Non-root, pinned image on every workload | Both | all | |
+| [~] | K8S-11 | Non-root, pinned image on every workload | Both | all | Z1: Zain's 7 (`test_packaging.py::test_manifest_workload_standards`); other workloads pending |
 | [ ] | K8S-12 | Traces to stdout + trace volume; metrics; dashboard | Zain | Z3 | |
 
 ## Submission
@@ -385,7 +385,7 @@ _Last updated: 2026-11-27 (Z0 in review)._
 | [ ] | AVOID-5 | No model/scout calls from browser; no localhost in images | Both | A9, all | |
 | [ ] | AVOID-6 | Retrieval tested by metrics; chunks keep card id | Ahmad | A4, A5 | |
 | [ ] | AVOID-7 | No renamed copies; ideas respect hours | Zain | Z8 | |
-| [ ] | AVOID-8 | Thin end-to-end on K8s early (walking skeleton) | Both | Z1, A0, A1 | |
+| [~] | AVOID-8 | Thin end-to-end on K8s early (walking skeleton) | Both | Z1, A0, A1 | Z1: thin version of Zain's services on K8s with a stub run end to end (spec Z1 C3); A0, A1 pending |
 
 ## Screenshots (SUB-3)
 

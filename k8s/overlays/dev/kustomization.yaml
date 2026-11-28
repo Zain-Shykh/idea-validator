@@ -1,0 +1,24 @@
+# Minimal dev overlay created in Z1; Ahmad takes this file over in A0.
+# newTag is the short git SHA of the images to run (never "latest"); see docs/setup.md §6.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - ../../base
+  - redis.yaml
+# redis.yaml is outside the base, so the namespace is set here too
+namespace: idea-validator
+images:
+  - name: ghcr.io/zain-shykh/idea-validator-orchestrator
+    newTag: "11276f4"
+  - name: ghcr.io/zain-shykh/idea-validator-ideation
+    newTag: "11276f4"
+  - name: ghcr.io/zain-shykh/idea-validator-validators
+    newTag: "11276f4"
+  - name: ghcr.io/zain-shykh/idea-validator-scorer
+    newTag: "11276f4"
+  - name: ghcr.io/zain-shykh/idea-validator-verdict
+    newTag: "11276f4"
+  - name: ghcr.io/zain-shykh/idea-validator-critic
+    newTag: "11276f4"
+  - name: ghcr.io/zain-shykh/idea-validator-agentops
+    newTag: "11276f4"

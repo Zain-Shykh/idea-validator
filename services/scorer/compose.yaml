@@ -1,0 +1,11 @@
+# Local development only (LOC-2); included by the root docker-compose.yml.
+services:
+  scorer:
+    build:
+      context: ../..
+      dockerfile: services/scorer/Dockerfile
+    image: idea-validator-scorer:${IMAGE_TAG:-dev}
+    ports:
+      - "127.0.0.1:8010:8000"
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}

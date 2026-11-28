@@ -1,0 +1,85 @@
+# M3 orchestrator
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: orchestrator
+  labels: &labels
+    app: orchestrator
+    module: M3
+    tier: backend
+    app.kubernetes.io/part-of: idea-validator
+spec:
+  replicas: 1
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  selector:
+    matchLabels:
+      app: orchestrator
+  template:
+    metadata:
+      labels: *labels
+    spec:
+      automountServiceAccountToken: false
+      # service links would inject VERDICT_PORT, REDIS_PORT=tcp://... over our env vars
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: orchestrator
+          image: ghcr.io/zain-shykh/idea-validator-orchestrator:set-by-overlay
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 8000
+          envFrom:
+            - configMapRef:
+                name: app-config
+            # REDIS_PASSWORD, once scripts/create_secrets.sh (A0) creates the secret
+            - secretRef:
+                name: redis
+                optional: true
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 8000
+            periodSeconds: 10
+            timeoutSeconds: 4
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 8000
+            initialDelaySeconds: 5
+            periodSeconds: 20
+            timeoutSeconds: 3
+          # initial plan (architecture §17.2); replaced by measurements in Z11
+          resources:
+            requests:
+              cpu: 50m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 384Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: orchestrator
+  labels:
+    app: orchestrator
+    app.kubernetes.io/part-of: idea-validator
+spec:
+  selector:
+    app: orchestrator
+  ports:
+    - port: 8000
+      targetPort: 8000

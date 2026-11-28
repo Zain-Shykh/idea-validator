@@ -1,0 +1,11 @@
+# Local development only (LOC-2); included by the root docker-compose.yml.
+services:
+  ideation:
+    build:
+      context: ../..
+      dockerfile: services/ideation/Dockerfile
+    image: idea-validator-ideation:${IMAGE_TAG:-dev}
+    ports:
+      - "127.0.0.1:8008:8000"
+    environment:
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}

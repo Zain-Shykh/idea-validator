@@ -147,3 +147,9 @@ def test_json_log_has_run_id() -> None:
         context.run_id_var.reset(token)
     assert (entry["service"], entry["run_id"], entry["msg"]) == ("demo", "run_42", "hi there")
     assert {"ts", "level"} <= set(entry)
+
+
+def test_empty_log_level_means_the_default(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("LOG_LEVEL", "")
+    create_app("svc")
+    assert logging.getLogger().level == logging.INFO

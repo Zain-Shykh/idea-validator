@@ -1,0 +1,34 @@
+# Minimal base created in Z1; Ahmad takes this file over in A0.
+# Each module adds its own resource line.
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: idea-validator
+resources:
+  - namespace.yaml
+  - orchestrator.yaml
+  - ideation.yaml
+  - validators.yaml
+  - scorer.yaml
+  - verdict.yaml
+  - critic.yaml
+  - agentops.yaml
+configMapGenerator:
+  - name: app-config
+    literals:
+      - LOG_LEVEL=INFO
+      - LLM_BACKEND=gateway
+      - GATEWAY_URL=http://gateway:8000
+      - PROFILE_URL=http://profile:8000
+      - ORCHESTRATOR_URL=http://orchestrator:8000
+      - SCOUTS_URL=http://scouts:8000
+      - TOOLS_URL=http://tools:8000
+      - KB_URL=http://kb:8000
+      - ANALYST_URL=http://analyst:8000
+      - IDEATION_URL=http://ideation:8000
+      - VALIDATORS_URL=http://validators:8000
+      - SCORER_URL=http://scorer:8000
+      - VERDICT_URL=http://verdict:8000
+      - CRITIC_URL=http://critic:8000
+      - AGENTOPS_URL=http://agentops:8000
+      - REDIS_HOST=redis
+      - REDIS_PORT=6379

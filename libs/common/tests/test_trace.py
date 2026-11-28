@@ -116,3 +116,12 @@ def test_step_without_run_id_is_an_error() -> None:
 def test_step_ids_are_unique_and_js_safe() -> None:
     ids = {new_step_id() for _ in range(50)}
     assert len(ids) >= 49 and max(ids) < 2**53
+
+
+def test_step_ids_stay_increasing_when_the_random_part_collides(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr("common.trace.time.time_ns", lambda: 1_000_000_000)
+    monkeypatch.setattr("common.trace.secrets.randbelow", lambda _: 0)
+    first, second, third = new_step_id(), new_step_id(), new_step_id()
+    assert first < second < third
