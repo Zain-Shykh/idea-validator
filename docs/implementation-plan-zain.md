@@ -21,7 +21,7 @@
 | Z8 | M8 Ideation + Discover + challenge / what-if | In review | [Z8](specs/Z8-ideation-discover.md) | [#19](https://github.com/Zain-Shykh/idea-validator/pull/19) | 2026-11-27 | — |
 | Z9 | M10t Fine-tuning pipeline + model comparison | Blocked | [Z9](specs/Z9-finetuning.md) | [#21](https://github.com/Zain-Shykh/idea-validator/pull/21) | 2026-11-27 | — |
 | Z10 | Evaluation harness, behaviour tests, replay, drift, verdict tuning | Blocked | — | — | — | — |
-| Z11 | Cluster integration, measurements, end-to-end acceptance | Blocked | [Z11](specs/Z11-integration-acceptance.md) | — | 2026-11-28 | — |
+| Z11 | Cluster integration, measurements, end-to-end acceptance | Blocked | [Z11](specs/Z11-integration-acceptance.md) | [#25](https://github.com/Zain-Shykh/idea-validator/pull/25) | 2026-11-28 | — |
 | Z12 | Report and submission (shared with Ahmad) | Not started | — | — | — | — |
 
 Status values: `Not started` · `In progress` · `In review` (PR open) · `Done` (merged) · `Blocked` (say why in the log).
@@ -511,6 +511,7 @@ flowchart LR
 | 2026-11-28 03:51 | Cluster deploy, two fixes, stand-in | First session; it stopped on a usage limit while verifying |
 | 2026-11-28 07:28 | Implementation and cluster checks done | Resumed: stand-in report fix, load and sampling tools, load runs, scorer sizing, `validators` liveness fix, evidence |
 | 2026-11-28 07:54 | Tests | Testing subagent: 6 findings fixed; 2385 passed, 2 skipped; 7 integration passed |
+| 2026-11-28 07:57 | Draft PR, phase Blocked | [#25](https://github.com/Zain-Shykh/idea-validator/pull/25) into `feat/z10-evaluation-tuning`, closes #24. Not merged |
 
 ---
 

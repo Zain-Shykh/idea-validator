@@ -10,7 +10,7 @@
 | Requirement IDs | U1–U10, K8S-5, K8S-11, M3-5, M10-1/2 (Z4 open criterion), AO-6, SS-10..16, GIT-4 |
 | Architecture refs | `architecture.md` §14.2, §17, §19 |
 | Depends on | Z4–Z10. Missing: Ahmad's M1, M2, M4, M5, M6, M7, UI (A-phases), a Gemini key, human labels |
-| Issue / PR | filled at PR time |
+| Issue / PR | #24 / #25 (draft) |
 
 ---
 
