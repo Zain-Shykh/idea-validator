@@ -1,0 +1,132 @@
+{
+  "$defs": {
+    "Compute": {
+      "enum": [
+        "laptop",
+        "free_gpu",
+        "paid"
+      ],
+      "title": "Compute",
+      "type": "string"
+    },
+    "Goal": {
+      "enum": [
+        "startup",
+        "portfolio",
+        "course_project"
+      ],
+      "title": "Goal",
+      "type": "string"
+    },
+    "IdeaInput": {
+      "additionalProperties": false,
+      "description": "The text of an idea, as given to agents.",
+      "properties": {
+        "text": {
+          "maxLength": 5000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "text"
+      ],
+      "title": "IdeaInput",
+      "type": "object"
+    },
+    "StudentProfile": {
+      "additionalProperties": false,
+      "description": "DATA-2. ``version`` increases on every profile change and is part of cache keys.",
+      "properties": {
+        "compute": {
+          "$ref": "#/$defs/Compute"
+        },
+        "goal": {
+          "$ref": "#/$defs/Goal"
+        },
+        "hours_per_week": {
+          "maximum": 168,
+          "minimum": 0,
+          "title": "Hours Per Week",
+          "type": "integer"
+        },
+        "interests": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Interests",
+          "type": "array"
+        },
+        "skills": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Skills",
+          "type": "array"
+        },
+        "team_size": {
+          "minimum": 1,
+          "title": "Team Size",
+          "type": "integer"
+        },
+        "user_id": {
+          "minLength": 1,
+          "title": "User Id",
+          "type": "string"
+        },
+        "version": {
+          "default": 1,
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        },
+        "weeks_available": {
+          "minimum": 1,
+          "title": "Weeks Available",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "user_id",
+        "skills",
+        "hours_per_week",
+        "weeks_available",
+        "team_size",
+        "compute",
+        "goal",
+        "interests"
+      ],
+      "title": "StudentProfile",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "idea": {
+      "$ref": "#/$defs/IdeaInput"
+    },
+    "profile": {
+      "$ref": "#/$defs/StudentProfile"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "idea",
+    "profile"
+  ],
+  "title": "IntakeRequest",
+  "type": "object"
+}

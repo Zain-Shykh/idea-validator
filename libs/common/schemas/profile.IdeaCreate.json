@@ -1,0 +1,48 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "niche_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Niche Id"
+    },
+    "source": {
+      "enum": [
+        "own",
+        "generated"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "text": {
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "user_id": {
+      "minLength": 1,
+      "title": "User Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "user_id",
+    "title",
+    "text",
+    "source"
+  ],
+  "title": "IdeaCreate",
+  "type": "object"
+}

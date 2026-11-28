@@ -1,0 +1,62 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "idea_id": {
+      "minLength": 1,
+      "title": "Idea Id",
+      "type": "string"
+    },
+    "origin": {
+      "enum": [
+        "initial",
+        "whatif",
+        "challenge",
+        "clarify"
+      ],
+      "title": "Origin",
+      "type": "string"
+    },
+    "parent_version_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Version Id"
+    },
+    "text": {
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    },
+    "version": {
+      "minimum": 1,
+      "title": "Version",
+      "type": "integer"
+    }
+  },
+  "required": [
+    "text",
+    "origin",
+    "id",
+    "idea_id",
+    "version",
+    "created_at"
+  ],
+  "title": "IdeaVersion",
+  "type": "object"
+}

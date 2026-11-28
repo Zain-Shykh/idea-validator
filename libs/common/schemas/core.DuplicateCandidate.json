@@ -1,0 +1,39 @@
+{
+  "additionalProperties": false,
+  "description": "An existing product, always a knowledge-base card (AVOID-4).",
+  "properties": {
+    "card_id": {
+      "pattern": "^card_[A-Za-z0-9]+$",
+      "title": "Card Id",
+      "type": "string"
+    },
+    "product_name": {
+      "minLength": 1,
+      "title": "Product Name",
+      "type": "string"
+    },
+    "same_core_features": {
+      "title": "Same Core Features",
+      "type": "boolean"
+    },
+    "same_user": {
+      "title": "Same User",
+      "type": "boolean"
+    },
+    "similarity": {
+      "maximum": 1,
+      "minimum": 0,
+      "title": "Similarity",
+      "type": "number"
+    }
+  },
+  "required": [
+    "card_id",
+    "product_name",
+    "same_core_features",
+    "same_user",
+    "similarity"
+  ],
+  "title": "DuplicateCandidate",
+  "type": "object"
+}

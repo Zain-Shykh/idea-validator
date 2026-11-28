@@ -7,7 +7,9 @@
 
 | ID | Date | Phase | Owner | What changed (designed → built) | Why | Impact / requirement IDs | Follow-up |
 |----|------|-------|-------|--------------------------------|-----|--------------------------|-----------|
-| — | — | — | — | _No deviations yet (baseline 2026-11-27)._ | — | — | — |
+| D-001 | 2026-11-27 | Z0 | Zain | Verdict cache key (§8.4): designed `sha256(idea_text_hash, profile_version, rubric_set, engine_version, weights_version, kb_version)` → built with `user_id`, `prompt_versions` and `scorer_model` added | `profile_version` is counted per user, so two students with the same idea text could get each other's verdict; a prompt or scorer-model change would serve stale verdicts | M2-4, AVOID-2, AO-3. M2 and M3 must build keys with `common.cache_keys.verdict_key` | Z7 passes all arguments; Ahmad (A7) only stores the key |
+| D-002 | 2026-11-27 | Z0 | Zain | Trace lines on stdout (§15.1, K8S-12): the full record → for `llm_call` records `input`/`output` are replaced by length + hash; M13 gets the full record | conventions §1 forbids full prompts in logs; prompts carry student data | AO-1 replay reads from M13, not from container logs; while M13 is down for longer than the buffer holds, LLM contents are lost | Z3 stores the full record; Z10 replay uses it |
+| D-003 | 2026-11-27 | Z0 | Zain | `step_id` (§15 Tracing): per-run counter in M3 → time-ordered unique integer from `common.trace` (a caller may still pass its own); `parent_step` travels in `X-Parent-Step` as designed | Other services create child steps and have no access to M3's counter | AO-1, DATA-6: ids are unique and roughly ordered, not consecutive | M13 (Z3) orders by `ts`, then `step_id` |
 
 <!-- Template row:
 | D-001 | 2026-12-02 | Z2 | Zain | `whatif` step 0.5 → 0.25 | worked example needed finer steps | VE-14 | none |

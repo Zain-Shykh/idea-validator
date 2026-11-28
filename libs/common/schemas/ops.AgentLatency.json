@@ -1,0 +1,33 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "agent": {
+      "minLength": 1,
+      "title": "Agent",
+      "type": "string"
+    },
+    "avg_ms": {
+      "minimum": 0,
+      "title": "Avg Ms",
+      "type": "number"
+    },
+    "calls": {
+      "minimum": 0,
+      "title": "Calls",
+      "type": "integer"
+    },
+    "p95_ms": {
+      "minimum": 0,
+      "title": "P95 Ms",
+      "type": "number"
+    }
+  },
+  "required": [
+    "agent",
+    "calls",
+    "avg_ms",
+    "p95_ms"
+  ],
+  "title": "AgentLatency",
+  "type": "object"
+}

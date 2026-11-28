@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools==84.2.1"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "idea-validator-common"
+version = "0.1.0"
+description = "Shared contracts and service helpers (the only code both tracks share)"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi==0.165.0",
+    "pydantic==2.14.4",
+    "pydantic-settings==2.16.3",
+    "httpx==0.29.0",
+    "tenacity==9.2.1",
+    "prometheus-client==0.26.0",
+]
+
+[project.optional-dependencies]
+# LLM_BACKEND=direct (local development only)
+direct = ["litellm==1.111.0"]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+common = ["py.typed"]

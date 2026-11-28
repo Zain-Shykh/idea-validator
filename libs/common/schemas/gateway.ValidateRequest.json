@@ -1,0 +1,51 @@
+{
+  "$defs": {
+    "IdeaInput": {
+      "additionalProperties": false,
+      "description": "The text of an idea, as given to agents.",
+      "properties": {
+        "text": {
+          "maxLength": 5000,
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "text"
+      ],
+      "title": "IdeaInput",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "idea": {
+      "$ref": "#/$defs/IdeaInput"
+    },
+    "idea_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Idea Id"
+    }
+  },
+  "required": [
+    "idea"
+  ],
+  "title": "ValidateRequest",
+  "type": "object"
+}

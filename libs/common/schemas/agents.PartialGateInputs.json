@@ -1,0 +1,156 @@
+{
+  "$defs": {
+    "Blocker": {
+      "additionalProperties": false,
+      "properties": {
+        "description": {
+          "minLength": 1,
+          "title": "Description",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "type": {
+          "$ref": "#/$defs/BlockerType"
+        }
+      },
+      "required": [
+        "type",
+        "description",
+        "evidence_ids"
+      ],
+      "title": "Blocker",
+      "type": "object"
+    },
+    "BlockerType": {
+      "enum": [
+        "legal",
+        "safety"
+      ],
+      "title": "BlockerType",
+      "type": "string"
+    },
+    "DuplicateCandidate": {
+      "additionalProperties": false,
+      "description": "An existing product, always a knowledge-base card (AVOID-4).",
+      "properties": {
+        "card_id": {
+          "pattern": "^card_[A-Za-z0-9]+$",
+          "title": "Card Id",
+          "type": "string"
+        },
+        "product_name": {
+          "minLength": 1,
+          "title": "Product Name",
+          "type": "string"
+        },
+        "same_core_features": {
+          "title": "Same Core Features",
+          "type": "boolean"
+        },
+        "same_user": {
+          "title": "Same User",
+          "type": "boolean"
+        },
+        "similarity": {
+          "maximum": 1,
+          "minimum": 0,
+          "title": "Similarity",
+          "type": "number"
+        }
+      },
+      "required": [
+        "card_id",
+        "product_name",
+        "same_core_features",
+        "same_user",
+        "similarity"
+      ],
+      "title": "DuplicateCandidate",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Each scorer fills only its own fields; M3 merges them into ``GateInputs``.",
+  "properties": {
+    "available_hours": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Available Hours"
+    },
+    "blockers": {
+      "items": {
+        "$ref": "#/$defs/Blocker"
+      },
+      "title": "Blockers",
+      "type": "array"
+    },
+    "duplicate": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/DuplicateCandidate"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "est_effort_hours": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Est Effort Hours"
+    },
+    "n_platforms": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "N Platforms"
+    },
+    "n_sources": {
+      "anyOf": [
+        {
+          "minimum": 0,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "N Sources"
+    }
+  },
+  "title": "PartialGateInputs",
+  "type": "object"
+}

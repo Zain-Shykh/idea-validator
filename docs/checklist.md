@@ -7,12 +7,12 @@
 
 | Owner | Rows | Done | Partial |
 |-------|-----:|-----:|--------:|
-| Zain | 89 | 0 | 0 |
+| Zain | 89 | 7 | 5 |
 | Ahmad | 77 | 0 | 0 |
-| Both | 54 | 0 | 0 |
-| **Total** | **220** | **0** | **0** |
+| Both | 54 | 0 | 5 |
+| **Total** | **220** | **7** | **10** |
 
-_Last updated: 2026-11-27 (baseline, nothing implemented yet)._
+_Last updated: 2026-11-27 (Z0 in review)._
 
 ## Phase completion
 
@@ -42,9 +42,9 @@ _Last updated: 2026-11-27 (baseline, nothing implemented yet)._
 | [ ] | GEN-4 | No keys/passwords committed; .env.example names only | Both | all | |
 | [ ] | GEN-5 | Uses GitHub, Actions, Jenkins, Docker, K8s, RAG, fine-tuning, AgenticOps | Both | all | |
 | [ ] | GEN-6 | Whole system on Kubernetes, one container per module | Both | Z1, A1, A10 | |
-| [ ] | GEN-7 | Schemas defined once (Pydantic), validated in/out, schema files in repo | Zain | Z0 | |
-| [ ] | GEN-8 | /health and /ready on every service | Both | Z1, A1 | |
-| [ ] | GEN-9 | Settings via env/ConfigMaps; no hard-coded localhost | Both | all | |
+| [x] | GEN-7 | Schemas defined once (Pydantic), validated in/out, schema files in repo | Zain | Z0 | `libs/common/src/common/contracts/`, `libs/common/schemas/`, `test_contracts.py`, `test_export.py`; each service validates with these from Z1 |
+| [~] | GEN-8 | /health and /ready on every service | Both | Z1, A1 | Z0: `common.service.create_app` (`test_service.py`); services in Z1, A1 |
+| [~] | GEN-9 | Settings via env/ConfigMaps; no hard-coded localhost | Both | all | Z0: settings from env, no URL defaults (`test_settings.py`, `test_package_has_no_localhost`) |
 
 ## User capabilities
 
@@ -88,7 +88,7 @@ _Last updated: 2026-11-27 (baseline, nothing implemented yet)._
 | [ ] | M2-1 | Postgres: users, profiles, ideas, versions, runs | Ahmad | A7 | |
 | [ ] | M2-2 | Redis cache for verdicts and retrieval with TTL | Ahmad | A7, A4 | |
 | [ ] | M2-3 | Migrations | Ahmad | A7 | |
-| [ ] | M2-4 | Cache keys include profile + rubric versions | Both | Z0, Z7, A7 | |
+| [~] | M2-4 | Cache keys include profile + rubric versions | Both | Z0, Z7, A7 | Z0: `common.cache_keys.verdict_key` (`test_cache_keys.py`, D-001); use in Z7, A7 |
 | [ ] | M2-5 | Cache hits visible | Both | Z3, Z7, A9 | |
 | [ ] | M2-6 | Layered backend (routes, services, repositories) | Ahmad | A7 | |
 
@@ -203,7 +203,7 @@ _Last updated: 2026-11-27 (baseline, nothing implemented yet)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | M13-1 | Tracing per run (/trace, /runs/{id}/trace) | Zain | Z3 | |
+| [~] | M13-1 | Tracing per run (/trace, /runs/{id}/trace) | Zain | Z3 | Z0: client side `common.trace` (`test_trace.py`); `/trace` API in Z3 |
 | [ ] | M13-2 | Budgets | Zain | Z3, Z7 | |
 | [ ] | M13-3 | Prompt and rubric registry | Zain | Z3 | |
 | [ ] | M13-4 | Evaluation harness | Zain | Z10 | |
@@ -224,14 +224,14 @@ _Last updated: 2026-11-27 (baseline, nothing implemented yet)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | DATA-1 | Idea card schema | Zain | Z0 | |
-| [ ] | DATA-2 | Student profile schema | Zain | Z0 | |
-| [ ] | DATA-3 | Evidence item schema | Zain | Z0 | |
-| [ ] | DATA-4 | Dimension score schema | Zain | Z0 | |
-| [ ] | DATA-5 | Verdict schema (+missing, gate_details, flips) | Zain | Z0, Z2 | |
-| [ ] | DATA-6 | Trace record schema | Zain | Z0 | |
-| [ ] | DATA-7 | Fine-tuning JSONL format | Zain | Z9 | |
-| [ ] | DATA-8 | Rubric files: anchors 0–5 + example per level | Zain | Z3 | |
+| [x] | DATA-1 | Idea card schema | Zain | Z0 | `test_contracts.py::test_guide_example_validates` |
+| [x] | DATA-2 | Student profile schema | Zain | Z0 | `test_contracts.py::test_guide_example_validates` |
+| [x] | DATA-3 | Evidence item schema | Zain | Z0 | `test_contracts.py::test_guide_example_validates` |
+| [x] | DATA-4 | Dimension score schema | Zain | Z0 | `test_contracts.py::test_guide_example_validates` |
+| [x] | DATA-5 | Verdict schema (+missing, gate_details, flips) | Zain | Z0, Z2 | `test_contracts.py::test_guide_example_validates` |
+| [x] | DATA-6 | Trace record schema | Zain | Z0 | `test_contracts.py::test_guide_example_validates` |
+| [~] | DATA-7 | Fine-tuning JSONL format | Zain | Z9 | Z0: `FineTuneExample` schema; data in Z9 |
+| [~] | DATA-8 | Rubric files: anchors 0–5 + example per level | Zain | Z3 | Z0: `Rubric` schema (anchors 0-5); rubric files and example per level in Z3 |
 | [ ] | DATA-9 | Storage model (app, kb, ops, Redis, files) | Both | A4, A7, Z3 | |
 
 ## API
@@ -245,14 +245,14 @@ _Last updated: 2026-11-27 (baseline, nothing implemented yet)._
 | [ ] | API-P5 | POST /runs/{id}/answer, /approve | Both | A8, Z7 | |
 | [ ] | API-P6 | POST /ideas/{id}/challenge, /whatif | Both | A8, Z8 | |
 | [ ] | API-P7 | GET /ideas, /ideas/{id}/versions, /compare | Ahmad | A7, A8 | |
-| [ ] | API-P8 | GET /metrics | Both | Z0, A8 | |
+| [~] | API-P8 | GET /metrics | Both | Z0, A8 | Z0: `/metrics` in `create_app`; gateway in A8 |
 | [ ] | API-I1 | M5 POST /fetch | Ahmad | A2 | |
 | [ ] | API-I2 | M6 POST /search | Ahmad | A4 | |
 | [ ] | API-I3 | M10 POST /score | Zain | Z4 | |
 | [ ] | API-I4 | M11 POST /verdict, /whatif | Zain | Z2 | |
 | [ ] | API-I5 | M12 POST /check | Zain | Z6 | |
 | [ ] | API-I6 | M13 POST /trace, GET /runs/{id}/trace | Zain | Z3 | |
-| [ ] | API-I7 | /health, /ready everywhere | Both | Z1, A1 | |
+| [~] | API-I7 | /health, /ready everywhere | Both | Z1, A1 | Z0: `/health`, `/ready` in `create_app`; services in Z1, A1 |
 
 ## Verdict rules
 
@@ -295,7 +295,7 @@ _Last updated: 2026-11-27 (baseline, nothing implemented yet)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | AO-1 | Tracing under one run id + replay command | Zain | Z3, Z7, Z10 | |
+| [~] | AO-1 | Tracing under one run id + replay command | Zain | Z3, Z7, Z10 | Z0: run id propagation and trace client; storage Z3, replay Z10 |
 | [ ] | AO-2 | Budgets (tokens, pages, steps, cost) in orchestrator and tool layer | Both | Z7, A2 | |
 | [ ] | AO-3 | Prompt and rubric registry; verdict records versions | Zain | Z3 | |
 | [ ] | AO-4 | Evaluation harness (agreement, confusion matrix, behaviour) as K8s Job + nightly Jenkins | Both | Z10, A10 | |
@@ -379,7 +379,7 @@ _Last updated: 2026-11-27 (baseline, nothing implemented yet)._
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
 | [ ] | AVOID-1 | No unbounded prompt/retries/rounds/spend | Zain | Z7, Z8 | |
-| [ ] | AVOID-2 | Verdict cache key includes profile + rubric version | Zain | Z0, Z7 | |
+| [~] | AVOID-2 | Verdict cache key includes profile + rubric version | Zain | Z0, Z7 | Z0: `verdict_key` requires every version (`test_cache_keys.py`); use in Z7 |
 | [ ] | AVOID-3 | Model never decides/adjusts verdict | Zain | Z2, Z7 | |
 | [ ] | AVOID-4 | No score/claim without evidence id; competitors from KB only | Zain | Z5 | |
 | [ ] | AVOID-5 | No model/scout calls from browser; no localhost in images | Both | A9, all | |

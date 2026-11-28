@@ -1,0 +1,45 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "competition": {
+      "minimum": 0,
+      "title": "Competition",
+      "type": "number"
+    },
+    "demand_pain": {
+      "minimum": 0,
+      "title": "Demand Pain",
+      "type": "number"
+    },
+    "differentiation": {
+      "minimum": 0,
+      "title": "Differentiation",
+      "type": "number"
+    },
+    "feasibility": {
+      "minimum": 0,
+      "title": "Feasibility",
+      "type": "number"
+    },
+    "learning": {
+      "minimum": 0,
+      "title": "Learning",
+      "type": "number"
+    },
+    "risk": {
+      "minimum": 0,
+      "title": "Risk",
+      "type": "number"
+    }
+  },
+  "required": [
+    "demand_pain",
+    "competition",
+    "differentiation",
+    "feasibility",
+    "risk",
+    "learning"
+  ],
+  "title": "Weights",
+  "type": "object"
+}

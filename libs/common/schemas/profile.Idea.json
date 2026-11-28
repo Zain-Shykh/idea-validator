@@ -1,0 +1,125 @@
+{
+  "$defs": {
+    "IdeaVersion": {
+      "additionalProperties": false,
+      "properties": {
+        "created_at": {
+          "format": "date-time",
+          "title": "Created At",
+          "type": "string"
+        },
+        "id": {
+          "minLength": 1,
+          "title": "Id",
+          "type": "string"
+        },
+        "idea_id": {
+          "minLength": 1,
+          "title": "Idea Id",
+          "type": "string"
+        },
+        "origin": {
+          "enum": [
+            "initial",
+            "whatif",
+            "challenge",
+            "clarify"
+          ],
+          "title": "Origin",
+          "type": "string"
+        },
+        "parent_version_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Parent Version Id"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "version": {
+          "minimum": 1,
+          "title": "Version",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "text",
+        "origin",
+        "id",
+        "idea_id",
+        "version",
+        "created_at"
+      ],
+      "title": "IdeaVersion",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "id": {
+      "minLength": 1,
+      "title": "Id",
+      "type": "string"
+    },
+    "niche_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Niche Id"
+    },
+    "source": {
+      "enum": [
+        "own",
+        "generated"
+      ],
+      "title": "Source",
+      "type": "string"
+    },
+    "title": {
+      "minLength": 1,
+      "title": "Title",
+      "type": "string"
+    },
+    "user_id": {
+      "minLength": 1,
+      "title": "User Id",
+      "type": "string"
+    },
+    "versions": {
+      "items": {
+        "$ref": "#/$defs/IdeaVersion"
+      },
+      "title": "Versions",
+      "type": "array"
+    }
+  },
+  "required": [
+    "id",
+    "user_id",
+    "title",
+    "source",
+    "created_at"
+  ],
+  "title": "Idea",
+  "type": "object"
+}

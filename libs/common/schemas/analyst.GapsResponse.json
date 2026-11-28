@@ -1,0 +1,62 @@
+{
+  "$defs": {
+    "Gap": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_ids": {
+          "items": {
+            "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "gap_id": {
+          "minLength": 1,
+          "title": "Gap Id",
+          "type": "string"
+        },
+        "niche_id": {
+          "minLength": 1,
+          "title": "Niche Id",
+          "type": "string"
+        },
+        "score": {
+          "minimum": 0,
+          "title": "Score",
+          "type": "number"
+        },
+        "statement": {
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        }
+      },
+      "required": [
+        "gap_id",
+        "niche_id",
+        "statement",
+        "evidence_ids",
+        "score"
+      ],
+      "title": "Gap",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "gaps": {
+      "items": {
+        "$ref": "#/$defs/Gap"
+      },
+      "title": "Gaps",
+      "type": "array"
+    }
+  },
+  "required": [
+    "gaps"
+  ],
+  "title": "GapsResponse",
+  "type": "object"
+}

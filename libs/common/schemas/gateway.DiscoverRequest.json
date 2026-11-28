@@ -1,0 +1,34 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "max_ideas": {
+      "anyOf": [
+        {
+          "maximum": 10,
+          "minimum": 1,
+          "type": "integer"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Max Ideas"
+    },
+    "niche_wish": {
+      "anyOf": [
+        {
+          "maxLength": 500,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Niche Wish"
+    }
+  },
+  "title": "DiscoverRequest",
+  "type": "object"
+}

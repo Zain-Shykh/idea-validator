@@ -1,0 +1,33 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "name": {
+      "minLength": 1,
+      "title": "Name",
+      "type": "string"
+    },
+    "niche_id": {
+      "minLength": 1,
+      "title": "Niche Id",
+      "type": "string"
+    },
+    "trend_label": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Trend Label"
+    }
+  },
+  "required": [
+    "niche_id",
+    "name"
+  ],
+  "title": "NicheContext",
+  "type": "object"
+}

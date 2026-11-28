@@ -1,0 +1,36 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "claim_id": {
+      "minLength": 1,
+      "title": "Claim Id",
+      "type": "string"
+    },
+    "reason": {
+      "minLength": 1,
+      "title": "Reason",
+      "type": "string"
+    },
+    "supported": {
+      "title": "Supported",
+      "type": "boolean"
+    },
+    "verdict": {
+      "enum": [
+        "supported",
+        "unsupported",
+        "unverifiable"
+      ],
+      "title": "Verdict",
+      "type": "string"
+    }
+  },
+  "required": [
+    "claim_id",
+    "supported",
+    "verdict",
+    "reason"
+  ],
+  "title": "ClaimResult",
+  "type": "object"
+}

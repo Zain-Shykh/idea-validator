@@ -1,0 +1,78 @@
+{
+  "$defs": {
+    "ApprovalRequest": {
+      "additionalProperties": false,
+      "description": "What the student is asked to approve, with its stated cost (U4).",
+      "properties": {
+        "action": {
+          "minLength": 1,
+          "title": "Action",
+          "type": "string"
+        },
+        "approval_id": {
+          "minLength": 1,
+          "title": "Approval Id",
+          "type": "string"
+        },
+        "estimated_cost_usd": {
+          "minimum": 0,
+          "title": "Estimated Cost Usd",
+          "type": "number"
+        },
+        "estimated_pages": {
+          "minimum": 0,
+          "title": "Estimated Pages",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "approval_id",
+        "action",
+        "estimated_cost_usd",
+        "estimated_pages"
+      ],
+      "title": "ApprovalRequest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "decided_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Decided At"
+    },
+    "decision": {
+      "enum": [
+        "pending",
+        "approved",
+        "declined"
+      ],
+      "title": "Decision",
+      "type": "string"
+    },
+    "request": {
+      "$ref": "#/$defs/ApprovalRequest"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "run_id",
+    "request",
+    "decision"
+  ],
+  "title": "Approval",
+  "type": "object"
+}

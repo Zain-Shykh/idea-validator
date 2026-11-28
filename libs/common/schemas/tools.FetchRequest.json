@@ -1,0 +1,42 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "connector": {
+      "minLength": 1,
+      "title": "Connector",
+      "type": "string"
+    },
+    "max_bytes": {
+      "default": 1000000,
+      "minimum": 1,
+      "title": "Max Bytes",
+      "type": "integer"
+    },
+    "mode": {
+      "default": "text",
+      "enum": [
+        "json",
+        "text"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "url": {
+      "minLength": 1,
+      "title": "Url",
+      "type": "string"
+    }
+  },
+  "required": [
+    "url",
+    "connector",
+    "run_id"
+  ],
+  "title": "FetchRequest",
+  "type": "object"
+}

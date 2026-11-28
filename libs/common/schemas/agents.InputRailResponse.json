@@ -1,0 +1,26 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "allowed": {
+      "title": "Allowed",
+      "type": "boolean"
+    },
+    "reasons": {
+      "items": {
+        "type": "string"
+      },
+      "title": "Reasons",
+      "type": "array"
+    },
+    "redacted_text": {
+      "title": "Redacted Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "allowed",
+    "redacted_text"
+  ],
+  "title": "InputRailResponse",
+  "type": "object"
+}

@@ -1,0 +1,66 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "cards_by_niche": {
+      "additionalProperties": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "title": "Cards By Niche",
+      "type": "object"
+    },
+    "cards_by_source": {
+      "additionalProperties": {
+        "minimum": 0,
+        "type": "integer"
+      },
+      "title": "Cards By Source",
+      "type": "object"
+    },
+    "kb_version": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Kb Version"
+    },
+    "last_ingestion_by_source": {
+      "additionalProperties": {
+        "format": "date-time",
+        "type": "string"
+      },
+      "title": "Last Ingestion By Source",
+      "type": "object"
+    },
+    "median_age_days": {
+      "anyOf": [
+        {
+          "type": "number"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Median Age Days"
+    },
+    "pct_fresh_90d_by_source": {
+      "additionalProperties": {
+        "type": "number"
+      },
+      "title": "Pct Fresh 90D By Source",
+      "type": "object"
+    }
+  },
+  "required": [
+    "cards_by_source",
+    "cards_by_niche"
+  ],
+  "title": "KbStats",
+  "type": "object"
+}

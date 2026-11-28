@@ -1,0 +1,55 @@
+{
+  "$defs": {
+    "FlaggedEvidence": {
+      "additionalProperties": false,
+      "properties": {
+        "card_id": {
+          "anyOf": [
+            {
+              "pattern": "^card_[A-Za-z0-9]+$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Card Id"
+        },
+        "evidence_id": {
+          "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "patterns": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Patterns",
+          "type": "array"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "patterns"
+      ],
+      "title": "FlaggedEvidence",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "flagged": {
+      "items": {
+        "$ref": "#/$defs/FlaggedEvidence"
+      },
+      "title": "Flagged",
+      "type": "array"
+    }
+  },
+  "required": [
+    "flagged"
+  ],
+  "title": "ScanResponse",
+  "type": "object"
+}

@@ -1,0 +1,21 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "expected": {
+      "additionalProperties": true,
+      "title": "Expected",
+      "type": "object"
+    },
+    "input": {
+      "minLength": 1,
+      "title": "Input",
+      "type": "string"
+    }
+  },
+  "required": [
+    "input",
+    "expected"
+  ],
+  "title": "RubricExample",
+  "type": "object"
+}

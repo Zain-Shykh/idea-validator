@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "text": {
+      "maxLength": 20000,
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "text"
+  ],
+  "title": "InputRailRequest",
+  "type": "object"
+}

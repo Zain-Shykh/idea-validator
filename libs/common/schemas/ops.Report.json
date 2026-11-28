@@ -1,0 +1,50 @@
+{
+  "additionalProperties": false,
+  "description": "Drift and evaluation reports; metric names are fixed in Z10.",
+  "properties": {
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "git_sha": {
+      "title": "Git Sha",
+      "type": "string"
+    },
+    "kind": {
+      "enum": [
+        "eval",
+        "retrieval",
+        "drift",
+        "finetune"
+      ],
+      "title": "Kind",
+      "type": "string"
+    },
+    "metrics": {
+      "additionalProperties": true,
+      "title": "Metrics",
+      "type": "object"
+    },
+    "path": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Path"
+    }
+  },
+  "required": [
+    "kind",
+    "git_sha",
+    "created_at",
+    "metrics"
+  ],
+  "title": "Report",
+  "type": "object"
+}

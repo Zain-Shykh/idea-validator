@@ -1,0 +1,38 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "origin": {
+      "enum": [
+        "initial",
+        "whatif",
+        "challenge",
+        "clarify"
+      ],
+      "title": "Origin",
+      "type": "string"
+    },
+    "parent_version_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Version Id"
+    },
+    "text": {
+      "minLength": 1,
+      "title": "Text",
+      "type": "string"
+    }
+  },
+  "required": [
+    "text",
+    "origin"
+  ],
+  "title": "IdeaVersionCreate",
+  "type": "object"
+}

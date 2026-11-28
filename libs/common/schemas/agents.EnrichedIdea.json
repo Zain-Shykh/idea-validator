@@ -1,0 +1,132 @@
+{
+  "$defs": {
+    "Claim": {
+      "additionalProperties": false,
+      "properties": {
+        "claim_id": {
+          "minLength": 1,
+          "title": "Claim Id",
+          "type": "string"
+        },
+        "dimension": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Dimension"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "evidence_ids": {
+          "items": {
+            "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "claim_id",
+        "text",
+        "evidence_ids"
+      ],
+      "title": "Claim",
+      "type": "object"
+    },
+    "Dimension": {
+      "description": "The six dimensions. Declaration order is the fixed iteration order of the engine.",
+      "enum": [
+        "demand_pain",
+        "competition",
+        "differentiation",
+        "feasibility",
+        "risk",
+        "learning"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    },
+    "GeneratedIdea": {
+      "additionalProperties": false,
+      "properties": {
+        "gap_evidence_ids": {
+          "items": {
+            "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Gap Evidence Ids",
+          "type": "array"
+        },
+        "niche_id": {
+          "minLength": 1,
+          "title": "Niche Id",
+          "type": "string"
+        },
+        "rationale": {
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "target_user": {
+          "minLength": 1,
+          "title": "Target User",
+          "type": "string"
+        },
+        "text": {
+          "minLength": 1,
+          "title": "Text",
+          "type": "string"
+        },
+        "title": {
+          "minLength": 1,
+          "title": "Title",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "text",
+        "niche_id",
+        "target_user",
+        "gap_evidence_ids",
+        "rationale"
+      ],
+      "title": "GeneratedIdea",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "complaints": {
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Complaints",
+      "type": "array"
+    },
+    "idea": {
+      "$ref": "#/$defs/GeneratedIdea"
+    },
+    "missing_features": {
+      "items": {
+        "$ref": "#/$defs/Claim"
+      },
+      "title": "Missing Features",
+      "type": "array"
+    }
+  },
+  "required": [
+    "idea"
+  ],
+  "title": "EnrichedIdea",
+  "type": "object"
+}

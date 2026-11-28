@@ -1,0 +1,19 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "ids": {
+      "items": {
+        "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Ids",
+      "type": "array"
+    }
+  },
+  "required": [
+    "ids"
+  ],
+  "title": "EvidenceRequest",
+  "type": "object"
+}

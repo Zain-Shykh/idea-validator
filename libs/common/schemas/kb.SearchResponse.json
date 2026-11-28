@@ -1,0 +1,88 @@
+{
+  "$defs": {
+    "SearchResult": {
+      "additionalProperties": false,
+      "properties": {
+        "card_id": {
+          "pattern": "^card_[A-Za-z0-9]+$",
+          "title": "Card Id",
+          "type": "string"
+        },
+        "card_name": {
+          "title": "Card Name",
+          "type": "string"
+        },
+        "evidence_id": {
+          "pattern": "^card_[A-Za-z0-9]+#c\\d+$",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "quote": {
+          "minLength": 1,
+          "title": "Quote",
+          "type": "string"
+        },
+        "retrieved_at": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "format": "date-time",
+              "type": "string"
+            }
+          ],
+          "title": "Retrieved At"
+        },
+        "score": {
+          "title": "Score",
+          "type": "number"
+        },
+        "source": {
+          "minLength": 1,
+          "title": "Source",
+          "type": "string"
+        },
+        "url": {
+          "minLength": 1,
+          "title": "Url",
+          "type": "string"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "card_id",
+        "quote",
+        "source",
+        "url",
+        "retrieved_at",
+        "score",
+        "card_name"
+      ],
+      "title": "SearchResult",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "index_version": {
+      "minLength": 1,
+      "title": "Index Version",
+      "type": "string"
+    },
+    "results": {
+      "items": {
+        "$ref": "#/$defs/SearchResult"
+      },
+      "title": "Results",
+      "type": "array"
+    }
+  },
+  "required": [
+    "results",
+    "index_version"
+  ],
+  "title": "SearchResponse",
+  "type": "object"
+}

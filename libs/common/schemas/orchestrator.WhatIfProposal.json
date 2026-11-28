@@ -1,0 +1,128 @@
+{
+  "$defs": {
+    "Dimension": {
+      "description": "The six dimensions. Declaration order is the fixed iteration order of the engine.",
+      "enum": [
+        "demand_pain",
+        "competition",
+        "differentiation",
+        "feasibility",
+        "risk",
+        "learning"
+      ],
+      "title": "Dimension",
+      "type": "string"
+    },
+    "VerdictLabel": {
+      "enum": [
+        "GO",
+        "PIVOT",
+        "NO-GO",
+        "INSUFFICIENT_EVIDENCE"
+      ],
+      "title": "VerdictLabel",
+      "type": "string"
+    },
+    "WhatWouldMakeGo": {
+      "additionalProperties": false,
+      "description": "One change that reaches GO. ``from``/``to`` describe the score step when known.",
+      "properties": {
+        "change": {
+          "minLength": 1,
+          "title": "Change",
+          "type": "string"
+        },
+        "dimension": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Dimension"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
+        },
+        "from": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "From"
+        },
+        "new_score": {
+          "maximum": 100,
+          "minimum": 0,
+          "title": "New Score",
+          "type": "number"
+        },
+        "new_verdict": {
+          "$ref": "#/$defs/VerdictLabel"
+        },
+        "stable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Stable"
+        },
+        "to": {
+          "anyOf": [
+            {
+              "maximum": 5,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "To"
+        }
+      },
+      "required": [
+        "change",
+        "new_score",
+        "new_verdict"
+      ],
+      "title": "WhatWouldMakeGo",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "candidate": {
+      "$ref": "#/$defs/WhatWouldMakeGo"
+    },
+    "concrete_change": {
+      "minLength": 1,
+      "title": "Concrete Change",
+      "type": "string"
+    },
+    "proposal_id": {
+      "minLength": 1,
+      "title": "Proposal Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "proposal_id",
+    "concrete_change",
+    "candidate"
+  ],
+  "title": "WhatIfProposal",
+  "type": "object"
+}

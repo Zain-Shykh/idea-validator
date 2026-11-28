@@ -1,0 +1,15 @@
+{
+  "additionalProperties": false,
+  "properties": {
+    "verdict_id": {
+      "minLength": 1,
+      "title": "Verdict Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "verdict_id"
+  ],
+  "title": "VerdictStored",
+  "type": "object"
+}

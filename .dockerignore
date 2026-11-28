@@ -1,0 +1,37 @@
+# Build context is the repo root: docker build -f services/<svc>/Dockerfile .
+# Template: keep out everything an image never needs. A service may add its own
+# services/<svc>/Dockerfile.dockerignore (it replaces this file for that build).
+.git
+.github
+.venv
+.claude
+.claude-runs
+.vscode
+# a bare pattern only matches at the context root, so secrets are excluded at any depth
+**/.env
+**/*.env
+**/*.pem
+**/*.key
+**/kubeconfig*
+**/secrets
+**/__pycache__
+**/*.py[cod]
+**/*.egg-info
+**/.pytest_cache
+**/.mypy_cache
+**/.ruff_cache
+**/.hypothesis
+**/.coverage
+**/htmlcov
+**/node_modules
+**/dist
+**/tests
+*.log
+traces
+docs
+data
+eval
+k8s
+models
+*.gguf
+*.safetensors

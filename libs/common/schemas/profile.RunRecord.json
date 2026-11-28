@@ -1,0 +1,167 @@
+{
+  "$defs": {
+    "Budget": {
+      "additionalProperties": false,
+      "properties": {
+        "max_cost_usd": {
+          "minimum": 0,
+          "title": "Max Cost Usd",
+          "type": "number"
+        },
+        "max_pages": {
+          "minimum": 0,
+          "title": "Max Pages",
+          "type": "integer"
+        },
+        "max_steps": {
+          "minimum": 0,
+          "title": "Max Steps",
+          "type": "integer"
+        },
+        "max_tokens": {
+          "minimum": 0,
+          "title": "Max Tokens",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_tokens",
+        "max_cost_usd",
+        "max_pages",
+        "max_steps"
+      ],
+      "title": "Budget",
+      "type": "object"
+    },
+    "RunState": {
+      "description": "Run lifecycle (architecture \u00a76.1).",
+      "enum": [
+        "QUEUED",
+        "RUNNING",
+        "AWAITING_INPUT",
+        "AWAITING_APPROVAL",
+        "COMPLETED",
+        "FAILED",
+        "BUDGET_STOPPED",
+        "CANCELLED"
+      ],
+      "title": "RunState",
+      "type": "string"
+    },
+    "Spend": {
+      "additionalProperties": false,
+      "properties": {
+        "cost_usd": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Cost Usd",
+          "type": "number"
+        },
+        "pages": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Pages",
+          "type": "integer"
+        },
+        "steps": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Steps",
+          "type": "integer"
+        },
+        "tokens": {
+          "default": 0,
+          "minimum": 0,
+          "title": "Tokens",
+          "type": "integer"
+        }
+      },
+      "title": "Spend",
+      "type": "object"
+    },
+    "Workflow": {
+      "enum": [
+        "discover",
+        "validate"
+      ],
+      "title": "Workflow",
+      "type": "string"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "budget": {
+      "$ref": "#/$defs/Budget"
+    },
+    "created_at": {
+      "format": "date-time",
+      "title": "Created At",
+      "type": "string"
+    },
+    "parent_run_id": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Parent Run Id"
+    },
+    "profile_version": {
+      "minimum": 1,
+      "title": "Profile Version",
+      "type": "integer"
+    },
+    "result": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Result"
+    },
+    "run_id": {
+      "minLength": 1,
+      "title": "Run Id",
+      "type": "string"
+    },
+    "spend": {
+      "$ref": "#/$defs/Spend"
+    },
+    "state": {
+      "additionalProperties": true,
+      "title": "State",
+      "type": "object"
+    },
+    "status": {
+      "$ref": "#/$defs/RunState"
+    },
+    "user_id": {
+      "minLength": 1,
+      "title": "User Id",
+      "type": "string"
+    },
+    "workflow": {
+      "$ref": "#/$defs/Workflow"
+    }
+  },
+  "required": [
+    "run_id",
+    "user_id",
+    "workflow",
+    "profile_version",
+    "budget",
+    "status",
+    "created_at"
+  ],
+  "title": "RunRecord",
+  "type": "object"
+}
