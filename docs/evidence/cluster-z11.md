@@ -53,8 +53,8 @@ Repeated twice with new settings (2 cores, one slot): 10/10 both times, p50 36.7
 - `agentops` init container ran the migrations: `alembic_version` = `0002` (head), tables
   `traces_index` and `eval_runs`.
 - Mounted ConfigMaps: `app-config` in all seven (`envFrom`); `rubrics` in orchestrator, validators,
-  scorer, agentops; `prompts` in all but verdict; `budgets` in orchestrator and critic;
-  `verdict-config` in verdict. `GET /config` on verdict returned engine `m11@v1`, weights `w1`.
+  scorer, agentops; `prompts` in all but verdict; `budgets` in orchestrator, critic,
+  agentops; `verdict-config` in verdict and agentops. `GET /config` on verdict returned engine `m11@v1`, weights `w1`.
 - Postgres and Redis show 2 and 4 restarts from before this session's checks, when the machine and
   cluster were restarted (last state `Unknown`).
 

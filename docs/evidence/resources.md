@@ -38,7 +38,7 @@ minikube -p idea-validator ssh -- "sudo dd if=<PV hostPath>/scorer-base-v1.gguf 
 kubectl --context idea-validator -n idea-validator scale deploy/scorer --replicas=1
 ```
 
-Cold start, ready, before any scoring: **1727 MiB** (776 anonymous + 945 model file).
+Cold start, ready, before any scoring: **1727 MiB** (776 anonymous + 945 model file + about 6 other).
 
 ## Scorer pod
 
@@ -55,7 +55,7 @@ Cold start, ready, before any scoring: **1727 MiB** (776 anonymous + 945 model f
 | Container | request (cpu / mem) | limit (cpu / mem) |
 |---|---|---|
 | scorer, §17.2 plan | 50m / 96Mi | 500m / 256Mi |
-| scorer, rule on the cold run | 10m / 64Mi | 90m / 80Mi |
+| scorer, rule on the cold run | 10m / 64Mi | 120m / 80Mi |
 | scorer (set) | 10m / 64Mi | 500m / 128Mi |
 | llama, §17.2 plan | 500m / 1536Mi | 2 / 2560Mi |
 | llama, rule on the cold run | 2240m / 2176Mi | 2800m / 2720Mi |
@@ -71,7 +71,7 @@ Cold start, ready, before any scoring: **1727 MiB** (776 anonymous + 945 model f
   warm-cache figure fell from 1281 to 864 MiB. The old container had also run much longer, so how
   much of that the cache caused was not separated.
 - **wrapper:** memory limit 128Mi is twice the 63 MiB peak (the rule's 80Mi leaves little for
-  larger evidence). The CPU limit stays at 500m: start-up needs more than the 90m of the rule.
+  larger evidence). The CPU limit stays at 500m: the rule's 120m comes from samples that do not cover start-up.
 - Not covered: the tuned model of M10t (`k8s-lora`) and the §17.2 6-CPU node. Measure again for a
   new model, `--ctx-size` or `--threads`.
 

@@ -342,3 +342,58 @@ async def test_a_stand_in_knowledge_base_makes_the_report_fake(tmp_path: Path) -
     m3 = Orchestrator(stack)
     report = await run_eval.evaluate(folder, harness(m3), fake=False, sha="abc1234")
     assert report["metrics"]["errors"] == 0 and report["fake"] is True
+
+
+def entry(kb_version: str | None, error: str | None = None) -> dict[str, Any]:
+    if error:
+        return {"idea_id": "x", "verdict": None, "error": error}
+    checks = {"tools_missing": [], "evidence_cited_ratio": None, "budget_kept": True,
+              "injection_resisted": None}  # fmt: skip
+    return {"idea_id": "y", "verdict": "GO", "error": None, "behaviour": checks,
+            "versions": {"kb_version": kb_version}}  # fmt: skip
+
+
+@pytest.mark.parametrize(
+    ("entries", "expected"),
+    [
+        ([entry("kb@1"), entry("stand-in")], True),
+        # partial errors, and a verdict whose /stats call failed, do not hide the one that tells
+        ([entry(None, "TIMEOUT"), entry(None), entry("stand-in")], True),
+        ([entry("kb@1"), entry(None), entry(None, "UNAVAILABLE")], False),
+    ],
+)
+def test_one_stand_in_verdict_makes_the_whole_report_fake(
+    entries: list[dict[str, Any]], expected: bool
+) -> None:
+    report = run_eval.build_report(entries, None, fake=False, sha="a", labelled_sha256="x")
+    assert report["fake"] is expected
+
+
+@pytest.mark.parametrize("into_results", [True, False])
+def test_an_unflagged_stand_in_run_is_neither_stored_nor_put_into_results(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+    capsys: pytest.CaptureFixture[str],
+    into_results: bool,
+) -> None:
+    """As the eval Job starts it: no --fake, with --store."""
+    monkeypatch.setattr(reports, "RESULTS_DIR", tmp_path / "results")
+    monkeypatch.setattr(reports, "made_up", lambda _: False)
+    monkeypatch.setattr(reports, "database", lambda: pytest.fail("a fake report was stored"))
+    stack = Stack()
+    stack.kb_version = "stand-in"
+    folder = labelled_set(tmp_path / "set", None, count=1)
+    out = reports.RESULTS_DIR if into_results else tmp_path / "out"
+    args = ["--labelled", str(folder), "--out", str(out), "--store", "--print-report"]
+
+    assert run_eval.main(args, harness(Orchestrator(stack))) == 2
+
+    assert not reports.RESULTS_DIR.exists()
+    if not into_results:
+        (path,) = out.iterdir()
+        assert path.name.startswith("FAKE-")
+        (line,) = [
+            x for x in capsys.readouterr().out.split("\n") if x.startswith(run_eval.REPORT_LINE)
+        ]
+        # what check_eval.sh greps for
+        assert '"fake": true' in line

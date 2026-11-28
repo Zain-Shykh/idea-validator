@@ -97,7 +97,7 @@ spec:
             periodSeconds: 20
             timeoutSeconds: 3
           # measured under load: docs/evidence/resources.md. The CPU limit stays for startup and
-          # probes, and the memory limit is about twice the 61 MiB peak
+          # probes, and the memory limit is about twice the 63 MiB peak
           resources:
             requests:
               cpu: 10m

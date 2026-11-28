@@ -17,6 +17,7 @@ import json
 import math
 import os
 import re
+import signal
 import subprocess
 import sys
 import time
@@ -172,6 +173,8 @@ def main(argv: Sequence[str] | None = None, run: Kubectl = kubectl) -> int:
     parser.add_argument("--out", type=Path, help="the summary and the samples, as JSON")
     parser.add_argument("command", nargs="*", help="after --: sample while it runs")
     args = parser.parse_args(argv)
+    if not (args.interval > 0 and args.duration >= 0):
+        parser.error("--interval must be above 0 and --duration not below it")
     child = None
     if args.command:
         try:
@@ -184,9 +187,15 @@ def main(argv: Sequence[str] | None = None, run: Kubectl = kubectl) -> int:
     def running() -> bool:
         return child.poll() is None if child else time.monotonic() < end
 
+    def stop(number: int, _: object) -> None:
+        raise SystemExit(128 + number)
+
+    # SIGTERM by default skips ``finally``, and the load would go on without its sampler
+    previous = signal.signal(signal.SIGTERM, stop)
     try:
         samples, skipped = collect(args.interval, running, run)
     finally:
+        signal.signal(signal.SIGTERM, previous)
         if child and child.poll() is None:
             child.terminate()
     code = child.wait() if child else 0
@@ -197,12 +206,15 @@ def main(argv: Sequence[str] | None = None, run: Kubectl = kubectl) -> int:
     for pod, container in sorted({(s[0], s[1]) for s in samples}):
         if counters := cgroup(pod, container, run):
             summary[container].setdefault("cgroup", []).append({"pod": pod, **counters})
+    print(table(summary))
+    print(f"calls without a sample: {skipped}")
     if args.out:
         report = {"interval_s": args.interval, "skipped": skipped, "command_exit": code,
                   "containers": summary, "samples": samples}  # fmt: skip
-        args.out.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
-    print(table(summary))
-    print(f"calls without a sample: {skipped}")
+        try:
+            args.out.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")
+        except OSError as exc:
+            print(f"error: cannot write {args.out}: {exc}", file=sys.stderr)
     return code
 
 

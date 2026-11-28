@@ -22,6 +22,7 @@ from collections.abc import Sequence
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 import httpx
 
@@ -32,6 +33,16 @@ import labelled  # noqa: E402
 import reports  # noqa: E402
 import run_eval  # noqa: E402
 from sample_resources import percentile  # noqa: E402
+
+URL_VARIABLES = ("ORCHESTRATOR_URL", "PROFILE_URL", "AGENTOPS_URL")
+
+
+def usable(url: str) -> bool:
+    try:
+        parts = urlsplit(url)
+    except ValueError:
+        return False
+    return parts.scheme in ("http", "https") and bool(parts.hostname)
 
 
 def stand_in(profile_url: str, transport: httpx.BaseTransport | None = None) -> bool | None:
@@ -111,18 +122,27 @@ def main(argv: Sequence[str] | None = None, harness: Any = None, is_stand_in: An
     concurrency = args.concurrency if args.concurrency is not None else args.runs
     if args.runs < 1 or concurrency < 1:
         parser.error("--runs and --concurrency must be at least 1")
+    if not (args.poll > 0 and args.idea_timeout > 0):
+        parser.error("--poll and --idea-timeout must be above 0")
     sha = reports.git_sha()
     started = datetime.now(UTC)
     try:
         ideas = labelled.load_ideas(args.labelled / "ideas.jsonl")
         if harness is None:
             harness = run_eval.harness_from_env(args, f"load_{sha}_{int(time.time())}")
+            # an unusable URL: stop before every run is counted as failed
+            if bad := [n for n in URL_VARIABLES if not usable(os.environ[n])]:
+                print(f"error: not an HTTP URL: {', '.join(bad)}", file=sys.stderr)
+                return 2
             is_stand_in = stand_in(os.environ["PROFILE_URL"])
     except labelled.LabelError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2
     clock = time.monotonic()
     entries = asyncio.run(load(harness, ideas, args.runs, concurrency))
+    # the data says so itself too (Z11-6): the probe asks only M2, once, and may time out
+    if any((e.get("versions") or {}).get("kb_version") == reports.STAND_IN_KB for e in entries):
+        is_stand_in = True
     report = {
         "kind": "load",
         "git_sha": sha,
@@ -136,11 +156,15 @@ def main(argv: Sequence[str] | None = None, harness: Any = None, is_stand_in: An
             for e in entries
         ],
     }
-    if args.out:
-        args.out.write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
+    # printed before it is written: a wrong --out must not lose a long load
     print(json.dumps({k: v for k, v in report.items() if k != "entries"}, indent=2))
     if is_stand_in:
         print("STAND-IN: these numbers are no result of the system", file=sys.stderr)
+    if args.out:
+        try:
+            reports.write_text(args.out, json.dumps(report, indent=2) + "\n")
+        except reports.OutputError as exc:
+            print(f"error: {exc}", file=sys.stderr)
     return 0 if report["completed"] == args.runs else 1
 
 

@@ -51,6 +51,23 @@ def test_deployment_files_do_not_use_a_fake(path: Path) -> None:
     assert not re.search(r"LLM_BACKEND[\"']?\s*[:=]\s*[\"']?(fake|direct)\b", text)
     for document in yaml.safe_load_all(text) if path.suffix in {".yaml", ".yml"} else []:
         assert "idea-validator/stand-in" not in str(document)
+        assert not fake_backend_env(document)
+
+
+def fake_backend_env(node: object) -> bool:
+    """The ``- name: LLM_BACKEND`` / ``value: fake`` form, which no one-line pattern sees."""
+    if isinstance(node, list):
+        return any(fake_backend_env(item) for item in node)
+    if not isinstance(node, dict):
+        return False
+    if node.get("name") == "LLM_BACKEND" and node.get("value") in ("fake", "direct"):
+        return True
+    return any(fake_backend_env(item) for item in node.values())
+
+
+def test_the_env_entry_form_of_a_fake_backend_is_seen() -> None:
+    planted = "spec:\n  env:\n    - name: LLM_BACKEND\n      value: fake\n"
+    assert fake_backend_env(yaml.safe_load(planted))
 
 
 def test_the_cluster_calls_models_through_the_gateway_only() -> None:

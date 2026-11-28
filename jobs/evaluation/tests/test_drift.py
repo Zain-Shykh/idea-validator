@@ -260,3 +260,16 @@ def test_a_stand_in_knowledge_base_makes_the_report_fake(
     assert [p.name.startswith("FAKE-drift-") for p in (tmp_path / "out").iterdir()] == [True]
     with TestClient(build_app(database)) as api:
         assert api.get("/drift/latest").status_code == 404
+
+
+def test_an_unflagged_stand_in_drift_run_never_reaches_the_results_folder(
+    database: AgentOpsSettings, tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """``--out`` defaults to eval/results; the early guard cannot know yet that this is fake."""
+    monkeypatch.setattr(reports, "RESULTS_DIR", tmp_path / "results")
+    stats = STATS.model_copy(update={"kb_version": "stand-in"})
+    reply = kb(lambda _: httpx.Response(200, content=stats.model_dump_json()))
+    assert drift.main(["--out", str(reports.RESULTS_DIR)], reply) == 2
+    assert not reports.RESULTS_DIR.exists()
+    with TestClient(build_app(database)) as api:
+        assert api.get("/drift/latest").status_code == 404
