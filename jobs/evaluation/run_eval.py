@@ -241,7 +241,8 @@ def build_report(
         "kind": "eval",
         "git_sha": sha,
         "created_at": datetime.now(UTC).isoformat(),
-        "fake": fake,
+        # the data says so itself, however the job was started
+        "fake": fake or any(e["versions"].get("kb_version") == reports.STAND_IN_KB for e in done),
         "labelled_sha256": labelled_sha256,
         "labels": "resolved.csv" if human is not None else None,
         "metrics": metrics,

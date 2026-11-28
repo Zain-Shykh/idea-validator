@@ -332,3 +332,13 @@ async def test_a_trace_with_a_hostile_reply_never_ends_the_whole_evaluation(
     report = await run_eval.evaluate(folder, it, fake=True, sha="a")
 
     assert len(report["ideas"]) == 1
+
+
+async def test_a_stand_in_knowledge_base_makes_the_report_fake(tmp_path: Path) -> None:
+    """The eval Job passes no ``--fake``: the verdicts themselves have to give it away."""
+    folder = labelled_set(tmp_path / "set", None, count=1)
+    stack = Stack()
+    stack.kb_version = "stand-in"
+    m3 = Orchestrator(stack)
+    report = await run_eval.evaluate(folder, harness(m3), fake=False, sha="abc1234")
+    assert report["metrics"]["errors"] == 0 and report["fake"] is True

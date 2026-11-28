@@ -20,6 +20,8 @@ ROOT = Path(__file__).resolve().parents[2]
 RESULTS_DIR = ROOT / "eval/results"
 # input from one of these folders is made up by definition
 _FAKE_FOLDERS = frozenset({"tests", "fixtures"})
+# what the cluster stand-in for M2, M5 and M6 calls its knowledge base (scripts/standins)
+STAND_IN_KB = "stand-in"
 
 
 class OutputError(Exception):
