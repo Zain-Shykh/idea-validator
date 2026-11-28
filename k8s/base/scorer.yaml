@@ -1,4 +1,6 @@
-# M10 scorer
+# M10 scorer: FastAPI wrapper + llama.cpp sidecar serving a GGUF from the `models` PVC, which the
+# model-import Job fills from the scorer-model image (architecture §14.2, ADR-005).
+# A new model: new image tag, file name, Job name and SCORER_MODEL_ID.
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -28,17 +30,59 @@ spec:
       securityContext:
         runAsNonRoot: true
         runAsUser: 10001
+        fsGroup: 10001
         seccompProfile:
           type: RuntimeDefault
+      initContainers:
+        # the Job renames the finished file into place, so a file that exists is complete
+        - name: wait-for-model
+          image: &llama-image ghcr.io/ggml-org/llama.cpp:server-v1.1.0@sha256:ce3817b50dae557848c3a5b7df6264f25b08792c9fc39d35b4e67e1d19b15b20
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - until [ -s /models/scorer-base-v1.gguf ]; do echo waiting for the model; sleep 5; done
+          volumeMounts:
+            - name: models
+              mountPath: /models
+              readOnly: true
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 100m
+              memory: 64Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
       containers:
         - name: scorer
           image: ghcr.io/zain-shykh/idea-validator-scorer:set-by-overlay
           imagePullPolicy: IfNotPresent
           ports:
             - containerPort: 8000
+          env:
+            - name: SCORER_BACKEND
+              value: llamacpp
+            # the sidecar shares the pod's loopback interface
+            - name: SCORER_MODEL_URL
+              value: http://127.0.0.1:8080
+            - name: SCORER_MODEL_ID
+              value: scorer-base@v1
           envFrom:
             - configMapRef:
                 name: app-config
+          volumeMounts:
+            - name: rubrics
+              mountPath: /etc/rubrics
+              readOnly: true
+            - name: prompts
+              mountPath: /etc/prompts
+              readOnly: true
+          # 200 only after the model has answered a probe prompt
           readinessProbe:
             httpGet:
               path: /ready
@@ -52,19 +96,87 @@ spec:
             initialDelaySeconds: 5
             periodSeconds: 20
             timeoutSeconds: 3
-          # initial plan (architecture §17.2); replaced by measurements in Z11
+          # measured 46 MiB idle-to-scoring (spec Z4 C4); final values in Z11
           resources:
             requests:
               cpu: 50m
-              memory: 128Mi
+              memory: 96Mi
             limits:
               cpu: 500m
-              memory: 384Mi
+              memory: 256Mi
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
             capabilities:
               drop: [ALL]
+        - name: llama
+          image: *llama-image
+          imagePullPolicy: IfNotPresent
+          # the image's entrypoint is llama-server. Loopback only: it has no authentication.
+          # --threads matches the CPU limit; the default counts the node's cores and throttles.
+          args:
+            - --model
+            - /models/scorer-base-v1.gguf
+            - --host
+            - 127.0.0.1
+            - --port
+            - "8080"
+            - --ctx-size
+            - "4096"
+            - --parallel
+            - "1"
+            - --threads
+            - "2"
+          volumeMounts:
+            - name: models
+              mountPath: /models
+              readOnly: true
+            - name: tmp
+              mountPath: /tmp
+          # exec, because kubelet httpGet probes cannot reach a loopback address.
+          # /health is 503 while the model loads.
+          startupProbe:
+            exec:
+              command: &llama-health [curl, -fsS, --max-time, "3", "http://127.0.0.1:8080/health"]
+            periodSeconds: 5
+            timeoutSeconds: 4
+            failureThreshold: 60
+          readinessProbe:
+            exec:
+              command: *llama-health
+            periodSeconds: 10
+            timeoutSeconds: 4
+          livenessProbe:
+            exec:
+              command: *llama-health
+            periodSeconds: 20
+            timeoutSeconds: 4
+            failureThreshold: 6
+          # architecture §17.2; replaced by measurements in Z11
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1536Mi
+            limits:
+              cpu: "2"
+              memory: 2560Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: models
+        - name: tmp
+          emptyDir: {}
+        - name: rubrics
+          configMap:
+            name: rubrics
+        - name: prompts
+          configMap:
+            name: prompts
 ---
 apiVersion: v1
 kind: Service
@@ -79,3 +191,85 @@ spec:
   ports:
     - port: 8000
       targetPort: 8000
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: models
+  labels:
+    app: scorer
+    app.kubernetes.io/part-of: idea-validator
+spec:
+  accessModes: [ReadWriteOnce]
+  resources:
+    requests:
+      storage: 3Gi
+---
+# Copies the GGUF out of the scorer-model image: the kubelet pulls it, so no pod needs egress.
+# Safe to run again: a file with the right checksum is left alone.
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: model-import-base-v1
+  labels:
+    app: model-import
+    app.kubernetes.io/part-of: idea-validator
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 1800
+  template:
+    metadata:
+      # not app: scorer, or the scorer Service would send requests here
+      labels:
+        app: model-import
+        module: M10
+        tier: backend
+        app.kubernetes.io/part-of: idea-validator
+    spec:
+      restartPolicy: OnFailure
+      automountServiceAccountToken: false
+      enableServiceLinks: false
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 10001
+        fsGroup: 10001
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: model-import
+          image: ghcr.io/zain-shykh/idea-validator-scorer-model:base-v1
+          imagePullPolicy: IfNotPresent
+          command:
+            - sh
+            - -c
+            - |
+              set -eu
+              target=/models/scorer-base-v1.gguf
+              want=$(cut -d' ' -f1 /model/model.gguf.sha256)
+              if [ -f "$target" ] && [ "$(sha256sum "$target" | cut -d' ' -f1)" = "$want" ]; then
+                echo "model already imported"
+                exit 0
+              fi
+              cp /model/model.gguf "$target.tmp"
+              echo "$want  $target.tmp" | sha256sum -c -
+              mv "$target.tmp" "$target"
+              echo "model imported"
+          volumeMounts:
+            - name: models
+              mountPath: /models
+          resources:
+            requests:
+              cpu: 100m
+              memory: 64Mi
+            limits:
+              cpu: "1"
+              memory: 256Mi
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop: [ALL]
+      volumes:
+        - name: models
+          persistentVolumeClaim:
+            claimName: models

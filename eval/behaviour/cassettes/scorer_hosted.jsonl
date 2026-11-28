@@ -1,0 +1,1 @@
+{"agent": "scorer", "alias": "scorer-hosted", "model": "fake-hosted", "content": "{\"score\": 3.0, \"confidence\": 0.6, \"evidence_ids\": [\"card_a1#c0\"], \"reason\": \"One source states the pain (card_a1#c0).\"}", "tokens_in": 600, "tokens_out": 60, "cost_usd": 0.0002}

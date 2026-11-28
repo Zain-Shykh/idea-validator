@@ -173,11 +173,11 @@ _Last updated: 2026-11-27 (Z0–Z3 in review; summary recounted from the rows)._
 
 | Done | ID | Requirement | Owner | Phase | Evidence |
 |:----:|----|-------------|-------|-------|----------|
-| [ ] | M10-1 | Fine-tuned 1B–3B (LoRA/QLoRA) in own container | Zain | Z4, Z9 | |
-| [ ] | M10-2 | POST /score, /health, /ready | Zain | Z4 | |
-| [ ] | M10-3 | Schema validation, retry once, hosted fallback logged | Zain | Z4 | |
+| [~] | M10-1 | Fine-tuned 1B–3B (LoRA/QLoRA) in own container | Zain | Z4, Z9 | Z4: own container serving the base model; fine-tuned weights Z9 |
+| [x] | M10-2 | POST /score, /health, /ready | Zain | Z4 | Z4: `services/scorer`, `test_api.py`; probes green on minikube |
+| [x] | M10-3 | Schema validation, retry once, hosted fallback logged | Zain | Z4 | Z4: `eval/behaviour/test_scorer_cassettes.py` (live hosted call not verified: no key, M5 not built) |
 | [ ] | M10-4 | Comparison base vs fine-tuned vs hosted | Zain | Z9 | |
-| [ ] | M10-5 | No weights in git; requests/limits measured | Zain | Z9, Z11 | |
+| [~] | M10-5 | No weights in git; requests/limits measured | Zain | Z9, Z11 | Z4: no weights in git; base model measured (spec Z4 C4); final limits Z11 |
 | [ ] | M10t-1 | Data, scripts, documented commands in repo | Zain | Z9 | |
 
 ## M11 Verdict Engine
@@ -248,7 +248,7 @@ _Last updated: 2026-11-27 (Z0–Z3 in review; summary recounted from the rows)._
 | [~] | API-P8 | GET /metrics | Both | Z0, A8 | Z0: `/metrics` in `create_app`; gateway in A8 |
 | [ ] | API-I1 | M5 POST /fetch | Ahmad | A2 | |
 | [ ] | API-I2 | M6 POST /search | Ahmad | A4 | |
-| [ ] | API-I3 | M10 POST /score | Zain | Z4 | |
+| [x] | API-I3 | M10 POST /score | Zain | Z4 | Z4: `POST /score`, spec Z4 C3 |
 | [x] | API-I4 | M11 POST /verdict, /whatif | Zain | Z2 | `test_api.py` |
 | [ ] | API-I5 | M12 POST /check | Zain | Z6 | |
 | [x] | API-I6 | M13 POST /trace, GET /runs/{id}/trace | Zain | Z3 | `test_trace.py`, minikube smoke (spec Z3 C3) |
@@ -288,7 +288,7 @@ _Last updated: 2026-11-27 (Z0–Z3 in review; summary recounted from the rows)._
 | [ ] | FT-4 | Split by idea; no labelled-set ideas in training | Zain | Z9 | |
 | [ ] | FT-5 | JSONL messages format | Zain | Z9 | |
 | [ ] | FT-6 | LoRA/QLoRA 1B–3B on free GPU; settings recorded | Zain | Z9 | |
-| [ ] | FT-7 | Merge, GGUF, served behind /score; validate/retry/fallback | Zain | Z4, Z9 | |
+| [~] | FT-7 | Merge, GGUF, served behind /score; validate/retry/fallback | Zain | Z4, Z9 | Z4: GGUF served behind `/score` with validate/retry/fallback; adapter merge Z9; full image→PVC path with the real model not run (disk) |
 | [ ] | FT-8 | Comparison table (MAE, within-1, valid JSON, real ids, latency, cost) + failure case | Zain | Z9 | |
 
 ## AgenticOps

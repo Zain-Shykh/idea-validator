@@ -38,6 +38,18 @@ class LLMCassetteMissError(LLMError):
     """The fake backend has no recorded reply left for this call."""
 
 
+def describe_errors(error: ValidationError, limit: int = 5) -> str:
+    """Location and message of each error. These texts reach logs, so the name of an extra
+    field, which the model chose, is left out."""
+    problems = []
+    for e in error.errors()[:limit]:
+        where = ".".join(map(str, e["loc"])) or "(root)"
+        if e["type"] == "extra_forbidden":
+            where = "(extra field)"
+        problems.append(f"{where}: {e['msg']}")
+    return "; ".join(problems)
+
+
 @dataclass(frozen=True)
 class LLMResult[T: BaseModel]:
     content: str
@@ -53,7 +65,8 @@ class LLMResult[T: BaseModel]:
 _FENCE = re.compile(r"^```(?:json)?\s*(.*?)\s*```$", re.DOTALL | re.IGNORECASE)
 
 
-def _strip_fence(content: str) -> str:
+def strip_fence(content: str) -> str:
+    """The reply without a surrounding markdown code fence."""
     text = content.strip()
     match = _FENCE.match(text)
     return match.group(1) if match else text
@@ -150,12 +163,9 @@ class LLMClient:
             data: T | None = None
             if schema is not None:
                 try:
-                    data = schema.model_validate_json(_strip_fence(reply.content))
+                    data = schema.model_validate_json(strip_fence(reply.content))
                 except ValidationError as exc:
-                    problem = "; ".join(
-                        f"{'.'.join(map(str, e['loc'])) or '(root)'}: {e['msg']}"
-                        for e in exc.errors()[:5]
-                    )
+                    problem = describe_errors(exc)
                     request = request.model_copy(
                         update={
                             "messages": [
