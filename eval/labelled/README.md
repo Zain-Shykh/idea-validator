@@ -1,7 +1,7 @@
 # Labelled set (EVAL-1)
 
-> **`ideas.jsonl` holds 40 candidates drafted by AI (claude-sonnet-5-5, 2026-11-28). The owner has
-> not reviewed them (`owner_review: "pending"`).**
+> **`ideas.jsonl` holds 40 candidates drafted by AI (claude-sonnet-5-5, 2026-11-28). Zain reviewed and
+> accepted all 40 unchanged on 2026-11-28 (`owner_review: "accepted"`).**
 >
 > **`labels_zain.csv` is not an independent human labelling.** AI (claude-sonnet-5-5) drafted all 40
 > verdicts; Zain then reviewed and approved them on 2026-11-28 (decision Z10-26). Report this with
